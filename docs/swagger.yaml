@@ -1,5 +1,35 @@
 basePath: /api/v1
 definitions:
+  dto.CreateVenueRequest:
+    properties:
+      capacity:
+        type: integer
+      city:
+        type: string
+      country:
+        type: string
+      name:
+        type: string
+      status:
+        enum:
+        - ACTIVE
+        - INACTIVE
+        - DISABLE
+        type: string
+      type:
+        enum:
+        - STADIUM
+        - VENUE
+        - HALL
+        - OTHER
+        type: string
+    required:
+    - city
+    - country
+    - name
+    - status
+    - type
+    type: object
   dto.OrganizerResponse:
     properties:
       created_at:
@@ -11,6 +41,65 @@ definitions:
       name:
         type: string
       slug:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.UpdateOrganizerRequest:
+    properties:
+      name:
+        type: string
+      slug:
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  dto.UpdateVenueRequest:
+    properties:
+      capacity:
+        type: integer
+      city:
+        type: string
+      country:
+        type: string
+      name:
+        type: string
+      status:
+        enum:
+        - ACTIVE
+        - INACTIVE
+        - DISABLE
+        type: string
+      type:
+        enum:
+        - STADIUM
+        - VENUE
+        - HALL
+        - OTHER
+        type: string
+    required:
+    - city
+    - country
+    - name
+    - status
+    - type
+    type: object
+  dto.VenueResponse:
+    properties:
+      capacity:
+        type: integer
+      city:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      type:
         type: string
       updated_at:
         type: string
@@ -118,6 +207,42 @@ paths:
       tags:
       - organizer
   /organizers/{organizerId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete organizer
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizerId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Venue created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Delete organizer
+      tags:
+      - organizer
     get:
       description: Get organizer by ID
       parameters:
@@ -153,6 +278,229 @@ paths:
       summary: Get organizer by ID
       tags:
       - organizer
+    put:
+      consumes:
+      - application/json
+      description: Update organizer
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizerId
+        type: string
+      - description: Create venue request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateOrganizerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Venue created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Update organizer
+      tags:
+      - organizer
+  /venues:
+    get:
+      description: Create venue
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List venues
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VenueResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create venue
+      tags:
+      - venue
+    post:
+      consumes:
+      - application/json
+      description: Create venue
+      parameters:
+      - description: Create venue request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateVenueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Venue created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create venue
+      tags:
+      - venue
+  /venues/{venueId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete venue
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venueId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Delete venue
+      tags:
+      - venue
+    get:
+      description: Get venue By ID
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venueId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue by id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VenueResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get venue By ID
+      tags:
+      - venue
+    put:
+      consumes:
+      - application/json
+      description: Edit venue
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venueId
+        type: string
+      - description: update venue request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateVenueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Venue created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Edit venue
+      tags:
+      - venue
 securityDefinitions:
   BearerAuth:
     in: header

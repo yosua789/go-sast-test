@@ -9,6 +9,7 @@ import (
 
 type Handler struct {
 	OrganizerHandler handler.OrganizerHandler
+	VenueHandler     handler.VenueHandler
 }
 
 func Newhandler(
@@ -18,5 +19,6 @@ func Newhandler(
 ) Handler {
 	return Handler{
 		OrganizerHandler: handler.NewOrganizerHandler(env, s.OrganizerService, validator),
+		VenueHandler:     handler.NewVenueHandler(env, s.VenueService, validator),
 	}
 }

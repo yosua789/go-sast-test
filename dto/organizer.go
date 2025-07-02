@@ -14,10 +14,21 @@ type OrganizerResponse struct {
 	UpdatedAt *time.Time `json:"updated_at"`
 }
 
+type SimpleOrganizerResponse struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Logo string `json:"logo"`
+}
+
 type CreateOrganizerRequest struct {
-	Name string                `form:"name" binding:"required"`
-	Slug string                `form:"slug" binding:"required"`
+	Name string                `form:"name" binding:"required,max=255"`
+	Slug string                `form:"slug" binding:"required,max=255"`
 	Logo *multipart.FileHeader `form:"logo" binding:"required"`
+}
+
+type UpdateOrganizerRequest struct {
+	Name string `form:"name" binding:"required,max=255"`
+	Slug string `form:"slug" binding:"required,max=255"`
 }
 
 type GetOrganizerByIdParams struct {

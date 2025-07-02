@@ -16,8 +16,8 @@ type OrganizerHandler interface {
 	Create(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
 	GetAll(ctx *gin.Context)
-	// Update(ctx *gin.Context)
-	// Delete(ctx *gin.Context)
+	Update(ctx *gin.Context)
+	Delete(ctx *gin.Context)
 }
 
 type OrganizerHandlerImpl struct {
@@ -103,7 +103,7 @@ func (h *OrganizerHandlerImpl) Create(ctx *gin.Context) {
 		return
 	}
 
-	lib.RespondSuccess(ctx, http.StatusOK, "Organizer created successfully", nil)
+	lib.RespondSuccess(ctx, http.StatusCreated, "success", nil)
 }
 
 // @Summary Get organizer by ID
@@ -148,7 +148,7 @@ func (h *OrganizerHandlerImpl) GetByID(ctx *gin.Context) {
 		return
 	}
 
-	lib.RespondSuccess(ctx, http.StatusOK, "", res)
+	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
 }
 
 // @Summary Get all organizer
@@ -175,5 +175,116 @@ func (h *OrganizerHandlerImpl) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	lib.RespondSuccess(ctx, http.StatusOK, "", res)
+	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
+}
+
+// @Summary Update organizer
+// @Description Update organizer
+// @Tags organizer
+// @Produce json
+// @Accept json
+// @Param organizerId path string false "Organizer ID"
+// @Param request body dto.UpdateOrganizerRequest true "Create venue request"
+// @Success 200 {object} lib.APIResponse{data=nil} "Venue created successfully"
+// @Failure 400 {object} lib.HTTPError "Invalid request body"
+// @Failure 404 {object} lib.HTTPError "Not Found"
+// @Failure 500 {object} lib.HTTPError "Internal server error"
+// @Router /organizers/{organizerId} [put]
+func (h *OrganizerHandlerImpl) Update(ctx *gin.Context) {
+	var uriParams dto.GetOrganizerByIdParams
+
+	if err := ctx.ShouldBindUri(&uriParams); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			for _, fieldErr := range validationErrors {
+				lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+				return
+			}
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	var request dto.UpdateOrganizerRequest
+
+	if err := ctx.ShouldBind(&request); err != nil {
+		lib.RespondError(ctx, http.StatusBadRequest, err.Error(), err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	if err := h.Validator.Struct(request); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			for _, fieldErr := range validationErrors {
+				lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+				return
+			}
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	err := h.OrganizerService.Update(ctx, uriParams.OrganizerId, request)
+	if err != nil {
+		var tixErr *lib.TIXError
+		if errors.As(err, &tixErr) {
+			switch *tixErr {
+			case lib.ErrorOrganizerNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "not found", err, lib.ErrorOrganizerNotFound.Code, h.Env.App.Debug)
+			case lib.ErrorOrganizerIdInvalid:
+				lib.RespondError(ctx, http.StatusBadRequest, "invalid", err, lib.ErrorOrganizerIdInvalid.Code, h.Env.App.Debug)
+			default:
+				lib.RespondError(ctx, http.StatusInternalServerError, "failed to create venue", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			}
+		} else {
+			lib.RespondError(ctx, http.StatusInternalServerError, "failed to create venue", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		}
+		return
+	}
+
+	lib.RespondSuccess(ctx, http.StatusOK, "success", nil)
+}
+
+// @Summary Delete organizer
+// @Description Delete organizer
+// @Tags organizer
+// @Produce json
+// @Accept json
+// @Param organizerId path string false "Organizer ID"
+// @Success 200 {object} lib.APIResponse{data=nil} "Venue created successfully"
+// @Failure 400 {object} lib.HTTPError "Invalid request body"
+// @Failure 404 {object} lib.HTTPError "Not Found"
+// @Failure 500 {object} lib.HTTPError "Internal server error"
+// @Router /organizers/{organizerId} [delete]
+func (h *OrganizerHandlerImpl) Delete(ctx *gin.Context) {
+	var uriParams dto.GetOrganizerByIdParams
+
+	if err := ctx.ShouldBindUri(&uriParams); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			for _, fieldErr := range validationErrors {
+				lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+				return
+			}
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	err := h.OrganizerService.Delete(ctx, uriParams.OrganizerId)
+	if err != nil {
+		var tixErr *lib.TIXError
+		if errors.As(err, &tixErr) {
+			switch *tixErr {
+			case lib.ErrorOrganizerNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "not found", err, lib.ErrorOrganizerNotFound.Code, h.Env.App.Debug)
+			case lib.ErrorOrganizerIdInvalid:
+				lib.RespondError(ctx, http.StatusBadRequest, "invalid", err, lib.ErrorOrganizerIdInvalid.Code, h.Env.App.Debug)
+			default:
+				lib.RespondError(ctx, http.StatusInternalServerError, "failed to create venue", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			}
+		} else {
+			lib.RespondError(ctx, http.StatusInternalServerError, "failed to create venue", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		}
+		return
+	}
+
+	lib.RespondSuccess(ctx, http.StatusOK, "success", nil)
 }

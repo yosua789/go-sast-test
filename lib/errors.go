@@ -53,6 +53,21 @@ var (
 )
 
 var (
+	ErrorVenueNotFound = TIXError{
+		Code: 40404,
+		Err:  errors.New("venue not found"),
+	}
+	ErrorVenueIdInvalid = TIXError{
+		Code: 40004,
+		Err:  errors.New("organizer id is invalid"),
+	}
+	ErrorVenueNameConflict = TIXError{
+		Code: 40903,
+		Err:  errors.New("venue name is already used"),
+	}
+)
+
+var (
 	ErrorEventNotFound = TIXError{
 		Code: 40402,
 		Err:  errors.New("event not found"),
@@ -80,7 +95,7 @@ var (
 
 var (
 	ErrorFileNotFound = TIXError{
-		Code: 40402,
+		Code: 40403,
 		Err:  errors.New("file not found"),
 	}
 )

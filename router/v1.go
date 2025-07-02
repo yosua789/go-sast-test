@@ -8,6 +8,7 @@ func RouterApiV1(debug bool, h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/v1")
 
 	OrganizerRouter(h, r)
+	VenueRouter(h, r)
 }
 
 func OrganizerRouter(h Handler, rg *gin.RouterGroup) {
@@ -16,4 +17,16 @@ func OrganizerRouter(h Handler, rg *gin.RouterGroup) {
 	r.POST("", h.OrganizerHandler.Create)
 	r.GET("", h.OrganizerHandler.GetAll)
 	r.GET("/:organizerId", h.OrganizerHandler.GetByID)
+	r.PUT("/:organizerId", h.OrganizerHandler.Update)
+	r.DELETE("/:organizerId", h.OrganizerHandler.Delete)
+}
+
+func VenueRouter(h Handler, rg *gin.RouterGroup) {
+	r := rg.Group("/venues")
+
+	r.POST("", h.VenueHandler.Create)
+	r.GET("", h.VenueHandler.GetAll)
+	r.GET("/:venueId", h.VenueHandler.GetById)
+	r.PUT("/:venueId", h.VenueHandler.Update)
+	r.DELETE("/:venueId", h.VenueHandler.Delete)
 }

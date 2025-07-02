@@ -4,29 +4,37 @@ package lib
 const (
 	SectorStatusActive   = "ACTIVE"
 	SectorStatusInactive = "INACTIVE"
-	SectorStatusDisabled = "DISABLED"
+	SectorStatusDisabled = "DISABLE"
 )
 
 // Venue Status
 const (
 	VenueStatusActive   = "ACTIVE"
 	VenueStatusInactive = "INACTIVE"
-	VenueStatusDisabled = "DISABLED"
+	VenueStatusDisabled = "DISABLE"
 )
 
-// Seatmap status
+// Venue seatmap status
 const (
 	SeatmapStatusAvailable   = "AVAILABLE"
 	SeatmapStatusUnavailable = "UNAVAILABLE"
-	SeatmapStatusBooked      = "BOOKED"
-	SeatmapStatusDisabled    = "DISABLED"
+	SeatmapStatusDisable     = "DISABLE"
+)
+
+// Event venue seatmap status
+const (
+	EventVenueSeatmapStatusAvailable   = "AVAILABLE"
+	EventVenueSeatmapStatusUnavailable = "UNAVAILABLE"
+	EventVenueSeatmapStatusPreBooked   = "PREBOOKED"
+	EventVenueSeatmapStatusCompliment  = "COMPLIMENT"
+	EventVenueSeatmapStatusDisable     = "DISABLE"
 )
 
 // Event status
 const (
-	EventStatusActive    = "ACTIVE"
-	EventStatusInactive  = "INACTIVE"
+	EventStatusUpComing  = "UPCOMING"
+	EventStatusCanceled  = "CANCELED"
 	EventStatusPostponed = "POSTPONED"
-	EventStatusDisabled  = "DISABLED"
 	EventStatusFinished  = "FINISHED"
+	EventStatusOnGoing   = "ON_GOING"
 )

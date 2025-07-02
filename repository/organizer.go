@@ -57,7 +57,7 @@ func (r *OrganizerRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res [
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT id, name, slug, logo, created_at, updated_at FROM organizers`
+	query := `SELECT id, name, slug, logo, created_at, updated_at FROM organizers WHERE deleted_at IS NULL`
 
 	var rows pgx.Rows
 
@@ -99,7 +99,7 @@ func (r *OrganizerRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, organ
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT id, name, slug, logo, created_at, updated_at FROM organizers WHERE id = $1`
+	query := `SELECT id, name, slug, logo, created_at, updated_at FROM organizers WHERE id = $1 AND deleted_at IS NULL`
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query, organizerId).Scan(
@@ -140,7 +140,7 @@ func (r *OrganizerRepositoryImpl) Update(ctx context.Context, tx pgx.Tx, organiz
 		slug = COALESCE($2, slug),
 		logo = COALESCE($3, logo),
 		updated_at = CURRENT_TIMESTAMP 
-		WHERE id = $4`
+		WHERE id = $4 AND deleted_at IS NULL`
 
 	var cmdTag pgconn.CommandTag
 
@@ -174,23 +174,13 @@ func (r *OrganizerRepositoryImpl) SoftDelete(ctx context.Context, tx pgx.Tx, org
 
 	query := `UPDATE organizers SET
 		deleted_at = CURRENT_TIMESTAMP 
-		WHERE id = $1`
+		WHERE id = $1 AND deleted_at IS NULL`
 
 	// var cmdTag pgconn.CommandTag
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, organizerId)
 	} else {
 		_, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, organizerId)
-	}
-
-	if err != nil {
-		pgErr, ok := err.(*pgconn.PgError)
-		if ok {
-			if pgErr.Code == "23505" {
-				return &lib.ErrorOrganizerNameConflict
-			}
-		}
-		return err
 	}
 
 	return

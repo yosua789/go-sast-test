@@ -34,6 +34,7 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	r := router.Handler{
 		Env:              env,
 		OrganizerHandler: handler.OrganizerHandler,
+		VenueHandler:     handler.VenueHandler,
 		Middleware:       middleware,
 	}
 

@@ -19,6 +19,7 @@ import (
 type Handler struct {
 	Env              *config.EnvironmentVariable
 	OrganizerHandler handler.OrganizerHandler
+	VenueHandler     handler.VenueHandler
 	Middleware       middleware.Middleware
 }
 

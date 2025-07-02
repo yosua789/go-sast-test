@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"mime/multipart"
-	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -20,6 +19,8 @@ type OrganizerService interface {
 	UploadLogo(ctx context.Context, organizerId string, fileExtension string, fileHeader multipart.File) (err error)
 	GetAllOrganizer(ctx context.Context) (res []dto.OrganizerResponse, err error)
 	GetOrganizerById(ctx context.Context, organizerId string) (res dto.OrganizerResponse, err error)
+	Update(ctx context.Context, organizerId string, req dto.UpdateOrganizerRequest) (err error)
+	Delete(ctx context.Context, organizerId string) (err error)
 }
 
 type OrganizerServiceImpl struct {
@@ -71,6 +72,104 @@ func (s *OrganizerServiceImpl) CreateOrganizer(ctx context.Context, req dto.Crea
 	return
 }
 
+func (s *OrganizerServiceImpl) GetAllOrganizer(ctx context.Context) (res []dto.OrganizerResponse, err error) {
+	organizers, err := s.OrganizerRepo.FindAll(ctx, nil)
+	if err != nil {
+		return
+	}
+
+	res = make([]dto.OrganizerResponse, 0)
+
+	for _, organizer := range organizers {
+		res = append(res, dto.OrganizerResponse{
+			ID:        organizer.ID,
+			Name:      organizer.Name,
+			Slug:      organizer.Slug,
+			Logo:      organizer.Logo,
+			CreatedAt: organizer.CreatedAt,
+			UpdatedAt: helper.FromNilTime(organizer.UpdatedAt),
+		})
+	}
+
+	return
+}
+
+func (s *OrganizerServiceImpl) UploadLogo(ctx context.Context, organizerId string, fileExtension string, file multipart.File) (err error) {
+	organizer, err := s.OrganizerRepo.FindById(ctx, nil, organizerId)
+	if err != nil {
+		return err
+	}
+
+	_, filepath, err := singleUploadLogo(organizer.Name, file, fileExtension)
+	if err != nil {
+		return
+	}
+
+	oldLogo := organizer.Logo
+
+	organizer.Logo = filepath
+
+	err = s.OrganizerRepo.Update(ctx, nil, organizer)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to update organizer")
+		return err
+	}
+
+	profileDeleted := helper.DeleteUploadFile(oldLogo)
+	log.Info().Bool("IsDeleted", profileDeleted).Msg("Delete profile")
+
+	return nil
+}
+
+func (s *OrganizerServiceImpl) GetOrganizerById(ctx context.Context, organizerId string) (res dto.OrganizerResponse, err error) {
+	organizer, err := s.OrganizerRepo.FindById(ctx, nil, organizerId)
+	if err != nil {
+		return res, err
+	}
+
+	res = dto.OrganizerResponse{
+		ID:        organizer.ID,
+		Name:      organizer.Name,
+		Slug:      organizer.Slug,
+		Logo:      organizer.Logo,
+		CreatedAt: organizer.CreatedAt,
+		UpdatedAt: helper.FromNilTime(organizer.UpdatedAt),
+	}
+
+	return
+}
+
+func (s *OrganizerServiceImpl) Update(ctx context.Context, organizerId string, req dto.UpdateOrganizerRequest) (err error) {
+	organizer, err := s.OrganizerRepo.FindById(ctx, nil, organizerId)
+	if err != nil {
+		return
+	}
+
+	organizer.Name = req.Name
+	organizer.Slug = req.Slug
+
+	err = s.OrganizerRepo.Update(ctx, nil, organizer)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (s *OrganizerServiceImpl) Delete(ctx context.Context, organizerId string) (err error) {
+	_, err = s.OrganizerRepo.FindById(ctx, nil, organizerId)
+	if err != nil {
+		return
+	}
+
+	err = s.OrganizerRepo.SoftDelete(ctx, nil, organizerId)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
 func singleUploadLogo(organizerName string, file multipart.File, fileExtension string) (filename string, filepath string, err error) {
 	defer file.Close()
 
@@ -94,78 +193,4 @@ func singleUploadLogo(organizerName string, file multipart.File, fileExtension s
 	log.Info().Str("Filename", filename).Msg("Success write file")
 
 	return filename, filepath, nil
-}
-
-func (s *OrganizerServiceImpl) GetAllOrganizer(ctx context.Context) (res []dto.OrganizerResponse, err error) {
-	organizers, err := s.OrganizerRepo.FindAll(ctx, nil)
-	if err != nil {
-		return
-	}
-
-	for _, organizer := range organizers {
-		var updatedAt *time.Time
-		if organizer.UpdatedAt.Valid {
-			updatedAt = &organizer.UpdatedAt.Time
-		}
-		res = append(res, dto.OrganizerResponse{
-			ID:        organizer.ID,
-			Name:      organizer.Name,
-			Slug:      organizer.Slug,
-			Logo:      organizer.Logo,
-			CreatedAt: organizer.CreatedAt,
-			UpdatedAt: updatedAt,
-		})
-	}
-
-	return
-}
-
-func (c *OrganizerServiceImpl) UploadLogo(ctx context.Context, organizerId string, fileExtension string, file multipart.File) (err error) {
-	organizer, err := c.OrganizerRepo.FindById(ctx, nil, organizerId)
-	if err != nil {
-		return err
-	}
-
-	_, filepath, err := singleUploadLogo(organizer.Name, file, fileExtension)
-	if err != nil {
-		return
-	}
-
-	oldLogo := organizer.Logo
-
-	organizer.Logo = filepath
-
-	err = c.OrganizerRepo.Update(ctx, nil, organizer)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to update organizer")
-		return err
-	}
-
-	profileDeleted := helper.DeleteUploadFile(oldLogo)
-	log.Info().Bool("IsDeleted", profileDeleted).Msg("Delete profile")
-
-	return nil
-}
-
-func (c *OrganizerServiceImpl) GetOrganizerById(ctx context.Context, organizerId string) (res dto.OrganizerResponse, err error) {
-	organizer, err := c.OrganizerRepo.FindById(ctx, nil, organizerId)
-	if err != nil {
-		return res, err
-	}
-
-	var updatedAt *time.Time
-	if organizer.UpdatedAt.Valid {
-		updatedAt = &organizer.UpdatedAt.Time
-	}
-
-	res = dto.OrganizerResponse{
-		ID:        organizer.ID,
-		Name:      organizer.Name,
-		Slug:      organizer.Slug,
-		Logo:      organizer.Logo,
-		CreatedAt: organizer.CreatedAt,
-		UpdatedAt: updatedAt,
-	}
-
-	return
 }

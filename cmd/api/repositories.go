@@ -8,6 +8,7 @@ import (
 
 type Repository struct {
 	OrganizerRepo repository.OrganizerRepository
+	VenueRepo     repository.VenueRepository
 }
 
 func Newrepository(
@@ -16,5 +17,6 @@ func Newrepository(
 ) Repository {
 	return Repository{
 		OrganizerRepo: repository.NewOrganizerRepository(wrapDB, env),
+		VenueRepo:     repository.NewVenueRepository(wrapDB, env),
 	}
 }
