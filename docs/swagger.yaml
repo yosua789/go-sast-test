@@ -1,0 +1,161 @@
+basePath: /api/v1
+definitions:
+  dto.OrganizerResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      logo:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  lib.APIResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      success:
+        default: true
+        type: boolean
+    type: object
+  lib.HTTPError:
+    properties:
+      code:
+        type: integer
+      error: {}
+      message:
+        type: string
+      success:
+        default: false
+        type: boolean
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: Assist Tix API Documentation
+  title: Assist Tix Documentation
+  version: "1.0"
+paths:
+  /organizers:
+    get:
+      description: Get all organizer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organizers response
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.OrganizerResponse'
+                  type: array
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get all organizer
+      tags:
+      - organizer
+    post:
+      description: Create organizer
+      parameters:
+      - description: Name
+        in: formData
+        name: name
+        type: string
+      - description: Slug
+        in: formData
+        name: slug
+        type: string
+      - description: Logo
+        in: formData
+        name: logo
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organizer created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create organizer
+      tags:
+      - organizer
+  /organizers/{organizerId}:
+    get:
+      description: Get organizer by ID
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organizer response
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.OrganizerResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get organizer by ID
+      tags:
+      - organizer
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

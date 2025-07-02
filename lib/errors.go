@@ -1,0 +1,86 @@
+package lib
+
+import (
+	"errors"
+)
+
+type TIXError struct {
+	Code int
+	Err  error
+}
+
+func (e *TIXError) Error() string {
+	return e.Err.Error()
+}
+
+func HSErr(err error) *TIXError {
+	var hserr *TIXError
+	if errors.As(err, &hserr) {
+		return hserr
+	}
+
+	return nil
+}
+
+var (
+	ErrorBadRequest = TIXError{
+		Code: 40001,
+		Err:  errors.New("bad request"),
+	}
+	ErrorInternalServer = TIXError{
+		Code: 50001,
+		Err:  errors.New("internal server error"),
+	}
+)
+
+var (
+	ErrorOrganizerNotFound = TIXError{
+		Code: 40401,
+		Err:  errors.New("organizer not found"),
+	}
+	ErrorOrganizerIdInvalid = TIXError{
+		Code: 40002,
+		Err:  errors.New("organizer id is invalid"),
+	}
+	ErrorOrganizerNameConflict = TIXError{
+		Code: 40901,
+		Err:  errors.New("organizer name is already used"),
+	}
+	ErrorOrganizerPosterSizeExceeds = TIXError{
+		Code: 41301,
+		Err:  errors.New("organizer poster size exceeds the limit"),
+	}
+)
+
+var (
+	ErrorEventNotFound = TIXError{
+		Code: 40402,
+		Err:  errors.New("event not found"),
+	}
+	ErrorEventIdInvalid = TIXError{
+		Code: 40003,
+		Err:  errors.New("event id is invalid"),
+	}
+	ErrorEventNameConflict = TIXError{
+		Code: 40902,
+		Err:  errors.New("event name is already used"),
+	}
+	ErrorEventPosterSizeExceeds = TIXError{
+		Code: 41302,
+		Err:  errors.New("event poster size exceeds the limit"),
+	}
+)
+
+var (
+	ErrorForbidden = TIXError{
+		Code: 40302,
+		Err:  errors.New("resource forbidden"),
+	}
+)
+
+var (
+	ErrorFileNotFound = TIXError{
+		Code: 40402,
+		Err:  errors.New("file not found"),
+	}
+)
