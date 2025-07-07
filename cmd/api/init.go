@@ -35,6 +35,7 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 		Env:              env,
 		OrganizerHandler: handler.OrganizerHandler,
 		VenueHandler:     handler.VenueHandler,
+		EventHandler:     handler.EventHandler,
 		Middleware:       middleware,
 	}
 

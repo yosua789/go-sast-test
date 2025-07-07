@@ -2,6 +2,8 @@ package helper
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -60,4 +62,13 @@ func ConvertNullTimeToPointer(nt sql.NullTime) *time.Time {
 		return &truncatedTime
 	}
 	return nil
+}
+
+func JoinArrayToQuotedString(ids []string, separator string) string {
+	quotedIds := make([]string, len(ids))
+	for i, id := range ids {
+		quotedIds[i] = fmt.Sprintf("'%s'", id)
+	}
+	inClause := strings.Join(quotedIds, separator)
+	return inClause
 }

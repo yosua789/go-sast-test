@@ -4,7 +4,7 @@ import "time"
 
 type VenueResponse struct {
 	ID        string     `json:"id"`
-	Type      string     `json:"type"`
+	VenueType string     `json:"venue_type"`
 	Name      string     `json:"name"`
 	Country   string     `json:"country"`
 	City      string     `json:"city"`
@@ -14,29 +14,29 @@ type VenueResponse struct {
 }
 
 type SimpleVenueResponse struct {
-	ID      string `json:"id"`
-	Type    string `json:"type"`
-	Name    string `json:"name"`
-	Country string `json:"country"`
-	City    string `json:"city"`
+	ID        string `json:"id"`
+	VenueType string `json:"venue_type"`
+	Name      string `json:"name"`
+	Country   string `json:"country"`
+	City      string `json:"city"`
 }
 
 type CreateVenueRequest struct {
-	Type     string `json:"type" validate:"required,oneof=STADIUM VENUE HALL OTHER"`
-	Name     string `json:"name" validate:"required,max=255"`
-	Country  string `json:"country" validate:"required,max=255"`
-	City     string `json:"city" validate:"required,max=255"`
-	Status   string `json:"status" validate:"required,oneof=ACTIVE INACTIVE DISABLE"`
-	Capacity int    `json:"capacity"`
+	VenueType string `json:"venue_type" validate:"required,oneof=STADIUM VENUE HALL OTHER"`
+	Name      string `json:"name" validate:"required,max=255"`
+	Country   string `json:"country" validate:"required,max=255"`
+	City      string `json:"city" validate:"required,max=255"`
+	Status    string `json:"status" validate:"required,oneof=ACTIVE INACTIVE DISABLE"`
+	Capacity  int    `json:"capacity"`
 }
 
 type UpdateVenueRequest struct {
-	Type     string `json:"type" validate:"required,oneof=STADIUM VENUE HALL OTHER"`
-	Name     string `json:"name" validate:"required,max=255"`
-	Country  string `json:"country" validate:"required,max=255"`
-	City     string `json:"city" validate:"required,max=255"`
-	Status   string `json:"status" validate:"required,oneof=ACTIVE INACTIVE DISABLE"`
-	Capacity int    `json:"capacity"`
+	VenueType string `json:"venue_type" validate:"required,oneof=STADIUM VENUE HALL OTHER"`
+	Name      string `json:"name" validate:"required,max=255"`
+	Country   string `json:"country" validate:"required,max=255"`
+	City      string `json:"city" validate:"required,max=255"`
+	Status    string `json:"status" validate:"required,oneof=ACTIVE INACTIVE DISABLE"`
+	Capacity  int    `json:"capacity"`
 }
 
 type GetVenueByIdParams struct {

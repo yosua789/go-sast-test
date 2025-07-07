@@ -47,7 +47,7 @@ func (s *VenueServiceImpl) GetAllVenue(ctx context.Context) (res []dto.VenueResp
 	for _, val := range venues {
 		res = append(res, dto.VenueResponse{
 			ID:        val.ID,
-			Type:      val.VenueType,
+			VenueType: val.VenueType,
 			Name:      val.Name,
 			Country:   val.Country,
 			City:      val.City,
@@ -63,7 +63,7 @@ func (s *VenueServiceImpl) GetAllVenue(ctx context.Context) (res []dto.VenueResp
 func (s *VenueServiceImpl) CreateVenue(ctx context.Context, req dto.CreateVenueRequest) (res dto.VenueResponse, err error) {
 	data := model.Venue{
 		Name:      req.Name,
-		VenueType: req.Type,
+		VenueType: req.VenueType,
 		Country:   req.Country,
 		City:      req.City,
 		Status:    req.Status,
@@ -76,12 +76,12 @@ func (s *VenueServiceImpl) CreateVenue(ctx context.Context, req dto.CreateVenueR
 
 	data.ID = id
 	res = dto.VenueResponse{
-		ID:       id,
-		Type:     data.VenueType,
-		Name:     data.Name,
-		Country:  data.Country,
-		City:     data.City,
-		Capacity: data.Capacity,
+		ID:        id,
+		VenueType: data.VenueType,
+		Name:      data.Name,
+		Country:   data.Country,
+		City:      data.City,
+		Capacity:  data.Capacity,
 	}
 
 	return
@@ -95,7 +95,7 @@ func (s *VenueServiceImpl) GetVenueById(ctx context.Context, venueId string) (re
 
 	res = dto.VenueResponse{
 		ID:        venue.ID,
-		Type:      venue.VenueType,
+		VenueType: venue.VenueType,
 		Name:      venue.Name,
 		Country:   venue.Country,
 		City:      venue.City,
@@ -113,7 +113,7 @@ func (s *VenueServiceImpl) Update(ctx context.Context, venueId string, req dto.U
 		return
 	}
 
-	venue.VenueType = req.Type
+	venue.VenueType = req.VenueType
 	venue.Name = req.Name
 	venue.Country = req.Country
 	venue.City = req.City

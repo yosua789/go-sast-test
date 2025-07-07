@@ -99,3 +99,14 @@ var (
 		Err:  errors.New("file not found"),
 	}
 )
+
+var (
+	ErrorPaginationPageIsInvalid = TIXError{
+		Code: 40005,
+		Err:  errors.New("page invalid"),
+	}
+	ErrorPaginationReachMaxPage = TIXError{
+		Code: 40006,
+		Err:  errors.New("max reach page"),
+	}
+)

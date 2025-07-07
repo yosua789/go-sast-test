@@ -17,6 +17,7 @@ type OrganizerResponse struct {
 type SimpleOrganizerResponse struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+	Slug string `json:"slug"`
 	Logo string `json:"logo"`
 }
 

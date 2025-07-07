@@ -15,6 +15,197 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/events": {
+            "get": {
+                "description": "Get all paginated event",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get all paginated event",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search event",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "UPCOMING",
+                            "CANCELED",
+                            "POSTPONED",
+                            "FINISHED",
+                            "ON_GOING"
+                        ],
+                        "type": "string",
+                        "description": "Status event",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "page event",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated events",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PaginatedEvents"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{eventId}": {
+            "get": {
+                "description": "Get event By ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get event By ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get venue by id",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.EventResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete event",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Delete event",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Delete successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/organizers": {
             "get": {
                 "description": "Get all organizer",
@@ -325,14 +516,14 @@ const docTemplate = `{
         },
         "/venues": {
             "get": {
-                "description": "Create venue",
+                "description": "Get all venue",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "venue"
                 ],
-                "summary": "Create venue",
+                "summary": "Get all venue",
                 "responses": {
                     "200": {
                         "description": "List venues",
@@ -629,20 +820,23 @@ const docTemplate = `{
                 "country",
                 "name",
                 "status",
-                "type"
+                "venue_type"
             ],
             "properties": {
                 "capacity": {
                     "type": "integer"
                 },
                 "city": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "country": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "status": {
                     "type": "string",
@@ -652,7 +846,7 @@ const docTemplate = `{
                         "DISABLE"
                     ]
                 },
-                "type": {
+                "venue_type": {
                     "type": "string",
                     "enum": [
                         "STADIUM",
@@ -660,6 +854,47 @@ const docTemplate = `{
                         "HALL",
                         "OTHER"
                     ]
+                }
+            }
+        },
+        "dto.EventResponse": {
+            "type": "object",
+            "properties": {
+                "banner": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_sale_at": {
+                    "type": "string"
+                },
+                "event_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organizer": {
+                    "$ref": "#/definitions/dto.SimpleOrganizerResponse"
+                },
+                "start_sale_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "venue": {
+                    "$ref": "#/definitions/dto.SimpleVenueResponse"
                 }
             }
         },
@@ -686,6 +921,77 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.PaginatedEvents": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EventResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/dto.Pagination"
+                }
+            }
+        },
+        "dto.Pagination": {
+            "type": "object",
+            "properties": {
+                "current_page": {
+                    "type": "integer"
+                },
+                "max_page": {
+                    "type": "integer"
+                },
+                "next_page": {
+                    "type": "integer"
+                },
+                "prev_page": {
+                    "type": "integer"
+                },
+                "total_records": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.SimpleOrganizerResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SimpleVenueResponse": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "venue_type": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.UpdateOrganizerRequest": {
             "type": "object",
             "required": [
@@ -694,10 +1000,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "slug": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 }
             }
         },
@@ -708,20 +1016,23 @@ const docTemplate = `{
                 "country",
                 "name",
                 "status",
-                "type"
+                "venue_type"
             ],
             "properties": {
                 "capacity": {
                     "type": "integer"
                 },
                 "city": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "country": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "status": {
                     "type": "string",
@@ -731,7 +1042,7 @@ const docTemplate = `{
                         "DISABLE"
                     ]
                 },
-                "type": {
+                "venue_type": {
                     "type": "string",
                     "enum": [
                         "STADIUM",
@@ -763,10 +1074,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "type": {
+                "updated_at": {
                     "type": "string"
                 },
-                "updated_at": {
+                "venue_type": {
                     "type": "string"
                 }
             }

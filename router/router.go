@@ -20,6 +20,7 @@ type Handler struct {
 	Env              *config.EnvironmentVariable
 	OrganizerHandler handler.OrganizerHandler
 	VenueHandler     handler.VenueHandler
+	EventHandler     handler.EventHandler
 	Middleware       middleware.Middleware
 }
 

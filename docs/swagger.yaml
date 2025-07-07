@@ -5,10 +5,13 @@ definitions:
       capacity:
         type: integer
       city:
+        maxLength: 255
         type: string
       country:
+        maxLength: 255
         type: string
       name:
+        maxLength: 255
         type: string
       status:
         enum:
@@ -16,7 +19,7 @@ definitions:
         - INACTIVE
         - DISABLE
         type: string
-      type:
+      venue_type:
         enum:
         - STADIUM
         - VENUE
@@ -28,7 +31,34 @@ definitions:
     - country
     - name
     - status
-    - type
+    - venue_type
+    type: object
+  dto.EventResponse:
+    properties:
+      banner:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      end_sale_at:
+        type: string
+      event_time:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      organizer:
+        $ref: '#/definitions/dto.SimpleOrganizerResponse'
+      start_sale_at:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      venue:
+        $ref: '#/definitions/dto.SimpleVenueResponse'
     type: object
   dto.OrganizerResponse:
     properties:
@@ -45,11 +75,59 @@ definitions:
       updated_at:
         type: string
     type: object
-  dto.UpdateOrganizerRequest:
+  dto.PaginatedEvents:
     properties:
+      events:
+        items:
+          $ref: '#/definitions/dto.EventResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.Pagination'
+    type: object
+  dto.Pagination:
+    properties:
+      current_page:
+        type: integer
+      max_page:
+        type: integer
+      next_page:
+        type: integer
+      prev_page:
+        type: integer
+      total_records:
+        type: integer
+    type: object
+  dto.SimpleOrganizerResponse:
+    properties:
+      id:
+        type: string
+      logo:
+        type: string
       name:
         type: string
       slug:
+        type: string
+    type: object
+  dto.SimpleVenueResponse:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      venue_type:
+        type: string
+    type: object
+  dto.UpdateOrganizerRequest:
+    properties:
+      name:
+        maxLength: 255
+        type: string
+      slug:
+        maxLength: 255
         type: string
     required:
     - name
@@ -60,10 +138,13 @@ definitions:
       capacity:
         type: integer
       city:
+        maxLength: 255
         type: string
       country:
+        maxLength: 255
         type: string
       name:
+        maxLength: 255
         type: string
       status:
         enum:
@@ -71,7 +152,7 @@ definitions:
         - INACTIVE
         - DISABLE
         type: string
-      type:
+      venue_type:
         enum:
         - STADIUM
         - VENUE
@@ -83,7 +164,7 @@ definitions:
     - country
     - name
     - status
-    - type
+    - venue_type
     type: object
   dto.VenueResponse:
     properties:
@@ -99,9 +180,9 @@ definitions:
         type: string
       name:
         type: string
-      type:
-        type: string
       updated_at:
+        type: string
+      venue_type:
         type: string
     type: object
   lib.APIResponse:
@@ -131,6 +212,124 @@ info:
   title: Assist Tix Documentation
   version: "1.0"
 paths:
+  /events:
+    get:
+      description: Get all paginated event
+      parameters:
+      - description: Search event
+        in: query
+        name: search
+        type: string
+      - description: Status event
+        enum:
+        - UPCOMING
+        - CANCELED
+        - POSTPONED
+        - FINISHED
+        - ON_GOING
+        in: query
+        name: status
+        type: string
+      - description: page event
+        in: query
+        name: page
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated events
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PaginatedEvents'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get all paginated event
+      tags:
+      - events
+  /events/{eventId}:
+    delete:
+      description: Delete event
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Delete event
+      tags:
+      - events
+    get:
+      description: Get event By ID
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue by id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.EventResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get event By ID
+      tags:
+      - events
   /organizers:
     get:
       description: Get all organizer
@@ -322,7 +521,7 @@ paths:
       - organizer
   /venues:
     get:
-      description: Create venue
+      description: Get all venue
       produces:
       - application/json
       responses:
@@ -347,7 +546,7 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/lib.HTTPError'
-      summary: Create venue
+      summary: Get all venue
       tags:
       - venue
     post:

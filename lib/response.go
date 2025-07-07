@@ -4,26 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Pagination struct {
-	Total     int64 `json:"total"`
-	Page      int64 `json:"page"`
-	Size      int64 `json:"size"`
-	Prev      int64 `json:"prev"`
-	Next      int64 `json:"next"`
-	TotalPage int64 `json:"total_page"`
-	From      int64 `json:"from"`
-	To        int64 `json:"to"`
-}
-
 type APIResponse struct {
 	Success bool        `json:"success" default:"true" `
 	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
-}
-
-type APIResponsePaginated struct {
-	APIResponse
-	Pagination Pagination `json:"pagination,omitempty"`
 }
 
 type HTTPError struct {
@@ -53,13 +37,13 @@ func RespondSuccess(ctx *gin.Context, code int, message string, data interface{}
 	})
 }
 
-func RespondSuccessPaginated(ctx *gin.Context, code int, message string, data interface{}, pagination Pagination) {
-	ctx.JSON(code, APIResponsePaginated{
-		APIResponse: APIResponse{
-			Success: true,
-			Message: message,
-			Data:    data,
-		},
-		Pagination: pagination,
-	})
-}
+// func RespondSuccessPaginated(ctx *gin.Context, code int, message string, data interface{}, pagination Pagination) {
+// 	ctx.JSON(code, APIResponsePaginated{
+// 		APIResponse: APIResponse{
+// 			Success: true,
+// 			Message: message,
+// 			Data:    data,
+// 		},
+// 		Pagination: pagination,
+// 	})
+// }

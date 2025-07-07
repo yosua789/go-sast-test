@@ -85,8 +85,8 @@ func (h *VenueHandlerImpl) Create(ctx *gin.Context) {
 	lib.RespondSuccess(ctx, http.StatusCreated, "success", nil)
 }
 
-// @Summary Create venue
-// @Description Create venue
+// @Summary Get all venue
+// @Description Get all venue
 // @Tags venue
 // @Produce json
 // @Success 200 {object} lib.APIResponse{data=dto.VenueResponse} "List venues"

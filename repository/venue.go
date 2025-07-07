@@ -3,11 +3,13 @@ package repository
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/helper"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -18,6 +20,7 @@ type VenueRepository interface {
 	Create(ctx context.Context, tx pgx.Tx, venue model.Venue) (id string, err error)
 	FindAll(ctx context.Context, tx pgx.Tx) (res []model.Venue, err error)
 	FindById(ctx context.Context, tx pgx.Tx, venueId string) (venue model.Venue, err error)
+	FindByIds(ctx context.Context, tx pgx.Tx, venueIds ...string) (res []model.Venue, err error)
 	Update(ctx context.Context, tx pgx.Tx, venue model.Venue) (err error)
 	SoftDelete(ctx context.Context, tx pgx.Tx, venueId string) (err error)
 }
@@ -135,6 +138,51 @@ func (r *VenueRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, venueId s
 			return venue, &lib.ErrorVenueNotFound
 		}
 		return venue, err
+	}
+
+	return
+}
+
+func (r *VenueRepositoryImpl) FindByIds(ctx context.Context, tx pgx.Tx, venueIds ...string) (res []model.Venue, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := fmt.Sprintf(`SELECT id, venue_type, name, country, city, status, capacity, created_at, updated_at FROM venues WHERE id IN (%s) AND deleted_at IS NULL`, helper.JoinArrayToQuotedString(venueIds, ","))
+
+	var rows pgx.Rows
+
+	if tx != nil {
+		rows, err = tx.Query(ctx, query)
+	} else {
+		rows, err = r.WrapDB.Postgres.Conn.Query(ctx, query)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var venue model.Venue
+		rows.Scan(
+			&venue.ID,
+			&venue.VenueType,
+			&venue.Name,
+			&venue.Country,
+			&venue.City,
+			&venue.Status,
+			&venue.Capacity,
+			&venue.CreatedAt,
+			&venue.UpdatedAt,
+		)
+
+		res = append(res, venue)
+	}
+
+	if rows.Err() != nil {
+		log.Error().Err(rows.Err()).Msg("find venue error")
+		return res, rows.Err()
 	}
 
 	return

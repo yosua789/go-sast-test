@@ -9,6 +9,7 @@ func RouterApiV1(debug bool, h Handler, rg *gin.RouterGroup) {
 
 	OrganizerRouter(h, r)
 	VenueRouter(h, r)
+	EventRouter(h, r)
 }
 
 func OrganizerRouter(h Handler, rg *gin.RouterGroup) {
@@ -29,4 +30,12 @@ func VenueRouter(h Handler, rg *gin.RouterGroup) {
 	r.GET("/:venueId", h.VenueHandler.GetById)
 	r.PUT("/:venueId", h.VenueHandler.Update)
 	r.DELETE("/:venueId", h.VenueHandler.Delete)
+}
+
+func EventRouter(h Handler, rg *gin.RouterGroup) {
+	r := rg.Group("/events")
+
+	r.GET("", h.EventHandler.GetAllPaginated)
+	r.GET("/:eventId", h.EventHandler.GetById)
+	r.DELETE("/:eventId", h.EventHandler.Delete)
 }

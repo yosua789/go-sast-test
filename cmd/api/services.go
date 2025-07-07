@@ -9,6 +9,7 @@ import (
 type Service struct {
 	OrganizerService service.OrganizerService
 	VenueService     service.VenueService
+	EventService     service.EventService
 }
 
 func Newservice(
@@ -18,8 +19,10 @@ func Newservice(
 ) Service {
 	organizerService := service.NewOrganizerService(db, env, r.OrganizerRepo)
 	venueService := service.NewVenueService(db, env, r.VenueRepo)
+	eventService := service.NewEventService(db, env, r.EventRepo, r.OrganizerRepo, r.VenueRepo)
 	return Service{
 		OrganizerService: organizerService,
 		VenueService:     venueService,
+		EventService:     eventService,
 	}
 }

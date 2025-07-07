@@ -3,11 +3,13 @@ package repository
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/helper"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -18,6 +20,7 @@ type OrganizerRepository interface {
 	Create(ctx context.Context, tx pgx.Tx, organizer model.Organizer) (id string, err error)
 	FindAll(ctx context.Context, tx pgx.Tx) (res []model.Organizer, err error)
 	FindById(ctx context.Context, tx pgx.Tx, organizerId string) (organizer model.Organizer, err error)
+	FindByIds(ctx context.Context, tx pgx.Tx, organizerIds ...string) (res []model.Organizer, err error)
 	Update(ctx context.Context, tx pgx.Tx, organizer model.Organizer) (err error)
 	SoftDelete(ctx context.Context, tx pgx.Tx, organizerId string) (err error)
 }
@@ -126,6 +129,42 @@ func (r *OrganizerRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, organ
 			return organizer, &lib.ErrorOrganizerNotFound
 		}
 		return organizer, err
+	}
+
+	return
+}
+
+func (r *OrganizerRepositoryImpl) FindByIds(ctx context.Context, tx pgx.Tx, organizerIds ...string) (res []model.Organizer, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := fmt.Sprintf(`SELECT id, name, slug, logo, created_at, updated_at FROM organizers WHERE id IN (%s) AND deleted_at IS NULL`, helper.JoinArrayToQuotedString(organizerIds, ","))
+
+	var rows pgx.Rows
+	if tx != nil {
+		rows, err = tx.Query(ctx, query)
+	} else {
+		rows, err = r.WrapDB.Postgres.Conn.Query(ctx, query)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var organizer model.Organizer
+		rows.Scan(
+			&organizer.ID,
+			&organizer.Name,
+			&organizer.Slug,
+			&organizer.Logo,
+			&organizer.CreatedAt,
+			&organizer.UpdatedAt,
+		)
+
+		res = append(res, organizer)
 	}
 
 	return
