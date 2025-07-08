@@ -10,39 +10,41 @@ import (
 	"assist-tix/model"
 	"assist-tix/repository"
 	"context"
-	"fmt"
 )
 
 type EventService interface {
 	CreateEvent(ctx context.Context, req dto.CreateEventRequest) (res dto.EventResponse, err error)
 	GetAllEvent(ctx context.Context) (res []dto.EventResponse, err error)
 	GetAllEventPaginated(ctx context.Context, filter dto.FilterEventRequest, pagination dto.PaginationParam) (res dto.PaginatedEvents, err error)
-	GetEventById(ctx context.Context, eventId string) (res dto.EventResponse, err error)
+	GetEventById(ctx context.Context, eventId string) (res dto.DetailEventResponse, err error)
 	Update(ctx context.Context, eventId string, req dto.EventResponse) (err error)
 	Delete(ctx context.Context, eventId string) (err error)
 }
 
 type EventServiceImpl struct {
-	DB            *database.WrapDB
-	Env           *config.EnvironmentVariable
-	EventRepo     repository.EventRepository
-	OrganizerRepo repository.OrganizerRepository
-	VenueRepo     repository.VenueRepository
+	DB               *database.WrapDB
+	Env              *config.EnvironmentVariable
+	EventRepo        repository.EventRepository
+	EventSettingRepo repository.EventSettingsRepository
+	OrganizerRepo    repository.OrganizerRepository
+	VenueRepo        repository.VenueRepository
 }
 
 func NewEventService(
 	db *database.WrapDB,
 	env *config.EnvironmentVariable,
 	eventRepo repository.EventRepository,
+	eventSettingRepo repository.EventSettingsRepository,
 	organizerRepo repository.OrganizerRepository,
 	venueRepo repository.VenueRepository,
 ) EventService {
 	return &EventServiceImpl{
-		DB:            db,
-		Env:           env,
-		EventRepo:     eventRepo,
-		OrganizerRepo: organizerRepo,
-		VenueRepo:     venueRepo,
+		DB:               db,
+		Env:              env,
+		EventRepo:        eventRepo,
+		EventSettingRepo: eventSettingRepo,
+		OrganizerRepo:    organizerRepo,
+		VenueRepo:        venueRepo,
 	}
 }
 
@@ -133,13 +135,20 @@ func (s *EventServiceImpl) GetAllEvent(ctx context.Context) (res []dto.EventResp
 	return
 }
 
-func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (res dto.EventResponse, err error) {
+func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (res dto.DetailEventResponse, err error) {
 	event, err := s.EventRepo.FindByIdWithVenueAndOrganizer(ctx, nil, eventId)
 	if err != nil {
 		return
 	}
 
-	res = dto.EventResponse{
+	eventSettings, err := s.EventSettingRepo.FindByEventId(ctx, nil, eventId)
+	if err != nil {
+		return
+	}
+
+	eventResponse := lib.MapEventSettingEntityToEventSettingResponse(eventSettings)
+
+	res = dto.DetailEventResponse{
 		ID:          event.ID,
 		Organizer:   lib.MapOrganizerEntityToSimpleResponse(event.Organizer),
 		Name:        event.Name,
@@ -148,6 +157,10 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 		EventTime:   event.EventTime,
 		Status:      event.Status,
 		Venue:       lib.MapVenueEntityToSimpleResponse(event.Venue),
+
+		AdditionalInformation: event.AdditionalInformation,
+
+		ActiveSettings: eventResponse,
 
 		StartSaleAt: helper.ConvertNullTimeToPointer(event.StartSaleAt),
 		EndSaleAt:   helper.ConvertNullTimeToPointer(event.EndSaleAt),
@@ -167,13 +180,11 @@ func (s *EventServiceImpl) Update(ctx context.Context, eventId string, req dto.E
 func (s *EventServiceImpl) Delete(ctx context.Context, eventId string) (err error) {
 	_, err = s.EventRepo.FindById(ctx, nil, eventId)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 
 	err = s.EventRepo.SoftDelete(ctx, nil, eventId)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 
@@ -186,8 +197,6 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 		Search: filter.Search,
 		Status: filter.Status,
 	}
-
-	fmt.Println(filterDB)
 
 	if pagination.TargetPage < 1 {
 		pagination.TargetPage = 1
@@ -234,8 +243,6 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 			NextPage:     nextPage,
 		},
 	}
-
-	fmt.Println(res)
 
 	return
 }

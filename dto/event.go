@@ -21,6 +21,32 @@ type EventResponse struct {
 	UpdatedAt *time.Time `json:"updated_at"`
 }
 
+type DetailEventResponse struct {
+	ID          string                  `json:"id"`
+	Organizer   SimpleOrganizerResponse `json:"organizer"`
+	Name        string                  `json:"name"`
+	Description string                  `json:"description"`
+	Banner      string                  `json:"banner"`
+	EventTime   time.Time               `json:"event_time"`
+	Status      string                  `json:"status"`
+	Venue       SimpleVenueResponse     `json:"venue"`
+
+	AdditionalInformation string `json:"additional_information"`
+
+	ActiveSettings EventSettings `json:"active_settings"`
+
+	StartSaleAt *time.Time `json:"start_sale_at"`
+	EndSaleAt   *time.Time `json:"end_sale_at"`
+
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at"`
+}
+
+type EventSettings struct {
+	GarudaIdVerification         bool `json:"garuda_id_verification,omitempty"`
+	MaxAdultTicketPerTransaction int  `json:"max_adult_ticket_per_transaction,omitempty"`
+}
+
 type PaginatedEvents struct {
 	Events     []EventResponse `json:"events"`
 	Pagination Pagination      `json:"pagination"`

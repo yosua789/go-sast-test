@@ -114,7 +114,7 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT id, organizer_id, name, description, banner, event_time, status, venue_id, is_active, start_sale_at, end_sale_at, created_at, updated_at FROM events WHERE id = $1 AND deleted_at IS NULL LIMIT 1`
+	query := `SELECT id, organizer_id, name, description, banner, event_time, status, venue_id, additional_information, is_active, start_sale_at, end_sale_at, created_at, updated_at FROM events WHERE id = $1 AND deleted_at IS NULL LIMIT 1`
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query, eventId).Scan(
@@ -126,6 +126,7 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 			&event.EventTime,
 			&event.Status,
 			&event.VenueID,
+			&event.AdditionalInformation,
 			&event.IsActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
@@ -142,6 +143,7 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 			&event.EventTime,
 			&event.Status,
 			&event.VenueID,
+			&event.AdditionalInformation,
 			&event.IsActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
@@ -173,6 +175,7 @@ func (r *EventRepositoryImpl) FindByIdWithVenueAndOrganizer(ctx context.Context,
 		e.event_time, 
 		e.status, 
 		e.venue_id, 
+		e.additional_information,
 		e.is_active, 
 		e.start_sale_at, 
 		e.end_sale_at, 
@@ -203,6 +206,7 @@ func (r *EventRepositoryImpl) FindByIdWithVenueAndOrganizer(ctx context.Context,
 			&event.EventTime,
 			&event.Status,
 			&event.Venue.ID,
+			&event.AdditionalInformation,
 			&event.IsActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
@@ -229,6 +233,7 @@ func (r *EventRepositoryImpl) FindByIdWithVenueAndOrganizer(ctx context.Context,
 			&event.EventTime,
 			&event.Status,
 			&event.Venue.ID,
+			&event.AdditionalInformation,
 			&event.IsActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
@@ -421,8 +426,6 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 	ORDER BY $1 %s
 	LIMIT $2
 	OFFSET $3`, additionalParam, pagination.Order)
-
-	fmt.Println(query)
 
 	var rows pgx.Rows
 	var resPagination entity.Pagination

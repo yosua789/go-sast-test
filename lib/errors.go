@@ -110,3 +110,10 @@ var (
 		Err:  errors.New("max reach page"),
 	}
 )
+
+var (
+	ErrorNotImplemented = TIXError{
+		Code: 50099,
+		Err:  errors.New("internal server error"),
+	}
+)

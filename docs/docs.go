@@ -122,7 +122,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.EventResponse"
+                                            "$ref": "#/definitions/dto.DetailEventResponse"
                                         }
                                     }
                                 }
@@ -857,6 +857,53 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.DetailEventResponse": {
+            "type": "object",
+            "properties": {
+                "active_settings": {
+                    "$ref": "#/definitions/dto.EventSettings"
+                },
+                "additional_information": {
+                    "type": "string"
+                },
+                "banner": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_sale_at": {
+                    "type": "string"
+                },
+                "event_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organizer": {
+                    "$ref": "#/definitions/dto.SimpleOrganizerResponse"
+                },
+                "start_sale_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "venue": {
+                    "$ref": "#/definitions/dto.SimpleVenueResponse"
+                }
+            }
+        },
         "dto.EventResponse": {
             "type": "object",
             "properties": {
@@ -895,6 +942,17 @@ const docTemplate = `{
                 },
                 "venue": {
                     "$ref": "#/definitions/dto.SimpleVenueResponse"
+                }
+            }
+        },
+        "dto.EventSettings": {
+            "type": "object",
+            "properties": {
+                "garuda_id_verification": {
+                    "type": "boolean"
+                },
+                "max_adult_ticket_per_transaction": {
+                    "type": "integer"
                 }
             }
         },

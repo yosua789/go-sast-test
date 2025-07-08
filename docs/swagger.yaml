@@ -33,6 +33,37 @@ definitions:
     - status
     - venue_type
     type: object
+  dto.DetailEventResponse:
+    properties:
+      active_settings:
+        $ref: '#/definitions/dto.EventSettings'
+      additional_information:
+        type: string
+      banner:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      end_sale_at:
+        type: string
+      event_time:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      organizer:
+        $ref: '#/definitions/dto.SimpleOrganizerResponse'
+      start_sale_at:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      venue:
+        $ref: '#/definitions/dto.SimpleVenueResponse'
+    type: object
   dto.EventResponse:
     properties:
       banner:
@@ -59,6 +90,13 @@ definitions:
         type: string
       venue:
         $ref: '#/definitions/dto.SimpleVenueResponse'
+    type: object
+  dto.EventSettings:
+    properties:
+      garuda_id_verification:
+        type: boolean
+      max_adult_ticket_per_transaction:
+        type: integer
     type: object
   dto.OrganizerResponse:
     properties:
@@ -313,7 +351,7 @@ paths:
             - $ref: '#/definitions/lib.APIResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/dto.EventResponse'
+                  $ref: '#/definitions/dto.DetailEventResponse'
               type: object
         "400":
           description: Invalid request body

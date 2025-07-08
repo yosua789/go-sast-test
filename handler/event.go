@@ -150,7 +150,7 @@ func (h *EventHandlerImpl) GetAllPaginated(ctx *gin.Context) {
 // @Tags events
 // @Produce json
 // @Param eventId path string false "Event ID"
-// @Success 200 {object} lib.APIResponse{data=dto.EventResponse} "Get venue by id"
+// @Success 200 {object} lib.APIResponse{data=dto.DetailEventResponse} "Get venue by id"
 // @Failure 400 {object} lib.HTTPError "Invalid request body"
 // @Failure 404 {object} lib.HTTPError "Not Found"
 // @Failure 500 {object} lib.HTTPError "Internal server error"

@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS events (
     status event_status not null,
     venue_id uuid not null REFERENCES venues(id) ON DELETE CASCADE ON UPDATE CASCADE,
 
+    additional_information text,
+
     is_active boolean,
     
     start_sale_at timestamptz,
@@ -31,6 +33,8 @@ INSERT INTO
         status,
         venue_id,
 
+        additional_information,
+
         is_active,
 
         start_sale_at,
@@ -50,6 +54,8 @@ VALUES
         '2025-07-14 07:37:15.154 +0000',
         'UPCOMING',
         'fa6b76af-fcf2-4a04-b63d-d933c61905d8',
+
+        '# Request Deployment Notification Service',
 
         true,
         

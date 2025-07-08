@@ -17,6 +17,8 @@ type Event struct {
 	EventTime   time.Time
 	Status      string
 
+	AdditionalInformation string
+
 	IsActive bool
 
 	StartSaleAt sql.NullTime

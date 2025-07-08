@@ -15,6 +15,8 @@ type Event struct {
 	Status      string
 	VenueID     string
 
+	AdditionalInformation string
+
 	IsActive bool
 
 	StartSaleAt sql.NullTime
