@@ -1,0 +1,49 @@
+stages:   
+  - sast
+  - build
+  - deploy
+
+sast-job:
+  stage: sast
+  image: 
+    name: sonarsource/sonar-scanner-cli:11
+    entrypoint: [""]
+  tags:
+  - registry
+  only:
+    - staging
+  cache:
+    policy: pull-push
+    key: "sonar-cache-$CI_COMMIT_REF_SLUG"
+    paths:
+    - "${SONAR_USER_HOME}/cache"
+    - sonar-scanner/
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+    SONAR_HOST_URL: https://sonarqube.assistx.dev 
+  script: 
+  - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
+  allow_failure: true
+
+build-job: 
+  stage: build
+  only:
+    - staging
+  tags:
+    - registry
+  script:
+    - docker build -t registry.assistx.dev/assist-tix/backend-api:staging .   
+    - docker push registry.assistx.dev/assist-tix/backend-api:staging
+
+deploy-job: 
+  stage: deploy
+  only:
+    - staging
+  tags:
+    - dev-server-new
+  script:
+    - cd ~/assist-tix
+    - docker compose pull api 
+    - docker compose up -d 
+    - docker image prune -f
