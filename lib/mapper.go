@@ -42,6 +42,21 @@ func MapVenueModelToSimpleResponse(
 	}
 }
 
+func MapVenueModelToVenueResponse(
+	venue model.Venue,
+) dto.VenueResponse {
+	return dto.VenueResponse{
+		ID:        venue.ID,
+		VenueType: venue.VenueType,
+		Capacity:  venue.Capacity,
+		Name:      venue.Name,
+		Country:   venue.Country,
+		City:      venue.City,
+		CreatedAt: venue.CreatedAt,
+		UpdatedAt: helper.ConvertNullTimeToPointer(venue.UpdatedAt),
+	}
+}
+
 func MapVenueEntityToSimpleResponse(
 	venue entity.Venue,
 ) dto.SimpleVenueResponse {
@@ -130,5 +145,45 @@ func MapEventTicketCategoryModelToDetailEventTicketCategoryResponse(
 		Entrance:             data.Entrance,
 		CreatedAt:            data.CreatedAt,
 		UpdatedAt:            helper.ConvertNullTimeToPointer(data.UpdatedAt),
+	}
+}
+
+func MapEntitySectorToTicketCategorySectorResponse(
+	data entity.Sector,
+) dto.TicketCategorySectorResponse {
+	return dto.TicketCategorySectorResponse{
+		ID:       data.ID,
+		Name:     data.Name,
+		Color:    data.Color,
+		AreaCode: data.AreaCode,
+	}
+}
+
+func MapDetailEventPublicTicketCategoryModelToDetailEventPublicTicketCategoryResponse(
+	data model.EventTicketCategory,
+) dto.DetailEventPublicTicketCategoryResponse {
+	return dto.DetailEventPublicTicketCategoryResponse{
+		ID:               data.ID,
+		Name:             data.Name,
+		Description:      data.Description,
+		Price:            data.Price,
+		TotalPublicStock: data.TotalPublicStock,
+		Code:             data.Code,
+		Entrance:         data.Entrance,
+	}
+}
+
+func MapEntityTicketCategoryToDetailEventPublicTicketCategoryResponse(
+	data entity.TicketCategory,
+) dto.DetailEventPublicTicketCategoryResponse {
+	return dto.DetailEventPublicTicketCategoryResponse{
+		ID:               data.ID,
+		Name:             data.Name,
+		Sector:           MapEntitySectorToTicketCategorySectorResponse(data.Sector),
+		Description:      data.Description,
+		Price:            data.Price,
+		TotalPublicStock: data.TotalPublicStock,
+		Code:             data.Code,
+		Entrance:         data.Entrance,
 	}
 }

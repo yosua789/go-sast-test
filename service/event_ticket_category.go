@@ -12,6 +12,7 @@ import (
 
 type EventTicketCategoryService interface {
 	Create(ctx context.Context, req dto.CreateEventTicketCategoryRequest) (err error)
+	GetVenueTicketsByEventId(ctx context.Context, eventId string) (res dto.VenueEventTicketCategoryResponse, err error)
 	GetByEventId(ctx context.Context, eventId string) (res []dto.DetailEventTicketCategoryResponse, err error)
 	GetById(ctx context.Context, eventId string, ticketCategoryId string) (res dto.DetailEventTicketCategoryResponse, err error)
 	Delete(ctx context.Context, eventId, ticketCategoryId string) (err error)
@@ -20,6 +21,7 @@ type EventTicketCategoryService interface {
 type EventTicketCategoryServiceImpl struct {
 	DB                            *database.WrapDB
 	Env                           *config.EnvironmentVariable
+	VenueRepository               repository.VenueRepository
 	EventRepository               repository.EventRepository
 	EventTicketCategoryRepository repository.EventTicketCategoryRepository
 }
@@ -27,12 +29,14 @@ type EventTicketCategoryServiceImpl struct {
 func NewEventTicketCategoryService(
 	db *database.WrapDB,
 	env *config.EnvironmentVariable,
+	venueRepository repository.VenueRepository,
 	eventRepository repository.EventRepository,
 	eventTicketCategoryRepository repository.EventTicketCategoryRepository,
 ) EventTicketCategoryService {
 	return &EventTicketCategoryServiceImpl{
 		DB:                            db,
 		Env:                           env,
+		VenueRepository:               venueRepository,
 		EventRepository:               eventRepository,
 		EventTicketCategoryRepository: eventTicketCategoryRepository,
 	}
@@ -83,6 +87,36 @@ func (s *EventTicketCategoryServiceImpl) GetByEventId(ctx context.Context, event
 	res = make([]dto.DetailEventTicketCategoryResponse, 0)
 	for _, val := range ticketCategories {
 		res = append(res, lib.MapEventTicketCategoryModelToDetailEventTicketCategoryResponse(val))
+	}
+
+	return
+}
+
+func (s *EventTicketCategoryServiceImpl) GetVenueTicketsByEventId(ctx context.Context, eventId string) (res dto.VenueEventTicketCategoryResponse, err error) {
+	// Validate event id
+	event, err := s.EventRepository.FindById(ctx, nil, eventId)
+	if err != nil {
+		return
+	}
+
+	venue, err := s.VenueRepository.FindById(ctx, nil, event.VenueID)
+	if err != nil {
+		return
+	}
+
+	ticketCategories, err := s.EventTicketCategoryRepository.FindTicketSectorsByEventId(ctx, nil, eventId)
+	if err != nil {
+		return
+	}
+
+	tickets := make([]dto.DetailEventPublicTicketCategoryResponse, 0)
+	for _, val := range ticketCategories {
+		tickets = append(tickets, lib.MapEntityTicketCategoryToDetailEventPublicTicketCategoryResponse(val))
+	}
+
+	res = dto.VenueEventTicketCategoryResponse{
+		Venue:            lib.MapVenueModelToVenueResponse(venue),
+		TicketCategories: tickets,
 	}
 
 	return

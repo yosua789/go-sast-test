@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS event_ticket_categories (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     event_id uuid not null REFERENCES events(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    venue_sector_id uuid not null REFERENCES venue_sectors(id) ON DELETE CASCADE ON UPDATE CASCADE,
     name varchar(255) not null,
     description text not null,
     price integer not null,
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS event_ticket_categories (
 INSERT INTO event_ticket_categories (
     id,
     event_id,
+    venue_sector_id,
     name,
     description,
     price,
@@ -44,6 +46,7 @@ INSERT INTO event_ticket_categories (
 ) VALUES (
     'fefb5c70-25ee-4326-94e4-3aa21a007299',
     '77797e23-a2b7-40bd-b8b0-ef628568f815',
+    '495c79ef-65a0-43ee-ade8-fe5dba6883aa',
     'Test Ticket categories - VVIP',
     'yaa ticket test VVIP',
     750000,
@@ -60,6 +63,7 @@ INSERT INTO event_ticket_categories (
 ), (
     'f6caa128-ced2-42b1-8d05-d10490023fbb',
     '77797e23-a2b7-40bd-b8b0-ef628568f815',
+    'b64e0a9e-66fd-4d38-9b27-e743430fa4ab',
     'Test Ticket categories - VIP',
     'yaa ticket test VIP',
     600000,
@@ -76,6 +80,7 @@ INSERT INTO event_ticket_categories (
 ), (
     '8668df6c-1a0a-4175-9f90-21c4427bb798',
     '77797e23-a2b7-40bd-b8b0-ef628568f815',
+    '3f189cd4-a388-4f21-9957-1bc197733e00',
     'Test Ticket categories - Reguler',
     'yaa ticket test REGULER',
     350000,

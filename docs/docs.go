@@ -215,7 +215,7 @@ const docTemplate = `{
                 "tags": [
                     "events"
                 ],
-                "summary": "Get detail ticket categories by event ID",
+                "summary": "Get public ticket categories by event ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -236,7 +236,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.DetailEventResponse"
+                                            "$ref": "#/definitions/dto.VenueEventTicketCategoryResponse"
                                         }
                                     }
                                 }
@@ -327,7 +327,7 @@ const docTemplate = `{
                 "tags": [
                     "events"
                 ],
-                "summary": "Get event ticket category by id",
+                "summary": "Get detail event ticket category by id",
                 "parameters": [
                     {
                         "type": "string",
@@ -1033,6 +1033,35 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.DetailEventPublicTicketCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "entrance": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "sector": {
+                    "$ref": "#/definitions/dto.TicketCategorySectorResponse"
+                },
+                "total_public_stock": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.DetailEventResponse": {
             "type": "object",
             "properties": {
@@ -1249,6 +1278,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.TicketCategorySectorResponse": {
+            "type": "object",
+            "properties": {
+                "area_code": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.UpdateOrganizerRequest": {
             "type": "object",
             "required": [
@@ -1307,6 +1353,20 @@ const docTemplate = `{
                         "HALL",
                         "OTHER"
                     ]
+                }
+            }
+        },
+        "dto.VenueEventTicketCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "ticket_categories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.DetailEventPublicTicketCategoryResponse"
+                    }
+                },
+                "venue": {
+                    "$ref": "#/definitions/dto.VenueResponse"
                 }
             }
         },

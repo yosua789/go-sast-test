@@ -53,7 +53,7 @@ func (r *EventRepositoryImpl) Create(ctx context.Context, tx pgx.Tx, event model
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, event.OrganizerID, event.Name, event.Description, event.Banner, event.EventTime, event.Status, event.VenueID, event.IsActive, event.StartSaleAt, event.EndSaleAt)
 	} else {
-		_, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, event.OrganizerID, event.Name, event.Description, event.Banner, event.EventTime, event.Status, event.VenueID, event.IsActive, event.StartSaleAt, event.EndSaleAt)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, event.OrganizerID, event.Name, event.Description, event.Banner, event.EventTime, event.Status, event.VenueID, event.IsActive, event.StartSaleAt, event.EndSaleAt)
 	}
 
 	return
@@ -72,7 +72,7 @@ func (r *EventRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 	if tx != nil {
 		rows, err = tx.Query(ctx, query)
 	} else {
-		rows, err = r.WrapDB.Postgres.Conn.Query(ctx, query)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query)
 	}
 
 	if err != nil {
@@ -134,7 +134,7 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 			&event.UpdatedAt,
 		)
 	} else {
-		err = r.WrapDB.Postgres.Conn.QueryRow(ctx, query, eventId).Scan(
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, eventId).Scan(
 			&event.ID,
 			&event.OrganizerID,
 			&event.Name,
@@ -224,7 +224,7 @@ func (r *EventRepositoryImpl) FindByIdWithVenueAndOrganizer(ctx context.Context,
 			&event.Venue.Capacity,
 		)
 	} else {
-		err = r.WrapDB.Postgres.Conn.QueryRow(ctx, query, eventId).Scan(
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, eventId).Scan(
 			&event.ID,
 			&event.Organizer.ID,
 			&event.Name,
@@ -297,7 +297,7 @@ func (r *EventRepositoryImpl) Update(ctx context.Context, tx pgx.Tx, event model
 			event.ID,
 		)
 	} else {
-		cmdTag, err = r.WrapDB.Postgres.Conn.Exec(ctx, query,
+		cmdTag, err = r.WrapDB.Postgres.Exec(ctx, query,
 			event.OrganizerID,
 			event.Name,
 			event.Description,
@@ -327,11 +327,11 @@ func (r *EventRepositoryImpl) SoftDelete(ctx context.Context, tx pgx.Tx, eventId
 		deleted_at = CURRENT_TIMESTAMP 
 		WHERE id = $1 AND deleted_at IS NULL`
 
-	// var cmdTag pgconn.CommandTag
+	// var cmdTag pgCommandTag
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, eventId)
 	} else {
-		_, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, eventId)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, eventId)
 	}
 
 	return
@@ -346,7 +346,7 @@ func (r *EventRepositoryImpl) Count(ctx context.Context, tx pgx.Tx) (res int64, 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query).Scan(&res)
 	} else {
-		err = r.WrapDB.Postgres.Conn.QueryRow(ctx, query).Scan(&res)
+		err = r.WrapDB.Postgres.QueryRow(ctx, query).Scan(&res)
 	}
 
 	return
@@ -458,7 +458,7 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 	if tx != nil {
 		rows, err = tx.Query(ctx, query, pagination.Order, pagination.TargetPage, offsetParam)
 	} else {
-		rows, err = r.WrapDB.Postgres.Conn.Query(ctx, query, pagination.Order, pagination.TargetPage, offsetParam)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, pagination.Order, pagination.TargetPage, offsetParam)
 	}
 
 	if err != nil {
