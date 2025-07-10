@@ -38,4 +38,14 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 	r.GET("", h.EventHandler.GetAllPaginated)
 	r.GET("/:eventId", h.EventHandler.GetById)
 	r.DELETE("/:eventId", h.EventHandler.Delete)
+
+	EventTicketCategories(h, r)
+}
+
+func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
+	// /events/{eventId}/ticket-categories
+
+	rg.POST("/:eventId/ticket-categories", h.EventTicketCategoryHandler.Create)
+	rg.GET("/:eventId/ticket-categories", h.EventTicketCategoryHandler.GetByEventId)
+	rg.GET("/:eventId/ticket-categories/:ticketCategoryId", h.EventTicketCategoryHandler.GetById)
 }

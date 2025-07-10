@@ -22,12 +22,13 @@ type EventService interface {
 }
 
 type EventServiceImpl struct {
-	DB               *database.WrapDB
-	Env              *config.EnvironmentVariable
-	EventRepo        repository.EventRepository
-	EventSettingRepo repository.EventSettingsRepository
-	OrganizerRepo    repository.OrganizerRepository
-	VenueRepo        repository.VenueRepository
+	DB                      *database.WrapDB
+	Env                     *config.EnvironmentVariable
+	EventRepo               repository.EventRepository
+	EventSettingRepo        repository.EventSettingsRepository
+	EventTicketCategoryRepo repository.EventTicketCategoryRepository
+	OrganizerRepo           repository.OrganizerRepository
+	VenueRepo               repository.VenueRepository
 }
 
 func NewEventService(
@@ -35,16 +36,18 @@ func NewEventService(
 	env *config.EnvironmentVariable,
 	eventRepo repository.EventRepository,
 	eventSettingRepo repository.EventSettingsRepository,
+	eventTicketCategoryRepo repository.EventTicketCategoryRepository,
 	organizerRepo repository.OrganizerRepository,
 	venueRepo repository.VenueRepository,
 ) EventService {
 	return &EventServiceImpl{
-		DB:               db,
-		Env:              env,
-		EventRepo:        eventRepo,
-		EventSettingRepo: eventSettingRepo,
-		OrganizerRepo:    organizerRepo,
-		VenueRepo:        venueRepo,
+		DB:                      db,
+		Env:                     env,
+		EventRepo:               eventRepo,
+		EventSettingRepo:        eventSettingRepo,
+		EventTicketCategoryRepo: eventTicketCategoryRepo,
+		OrganizerRepo:           organizerRepo,
+		VenueRepo:               venueRepo,
 	}
 }
 
@@ -148,6 +151,17 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 
 	eventResponse := lib.MapEventSettingEntityToEventSettingResponse(eventSettings)
 
+	ticketCategories, err := s.EventTicketCategoryRepo.FindByEventId(ctx, nil, eventId)
+	if err != nil {
+		return
+	}
+
+	var ticketCategoriesResponse []dto.EventTicketCategoryResponse = make([]dto.EventTicketCategoryResponse, 0)
+	for _, ticketCategory := range ticketCategories {
+		ticketCategoryResponse := lib.MapEventTicketCategoryModelToEventTicketCategoryResponse(ticketCategory)
+		ticketCategoriesResponse = append(ticketCategoriesResponse, ticketCategoryResponse)
+	}
+
 	res = dto.DetailEventResponse{
 		ID:          event.ID,
 		Organizer:   lib.MapOrganizerEntityToSimpleResponse(event.Organizer),
@@ -161,6 +175,8 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 		AdditionalInformation: event.AdditionalInformation,
 
 		ActiveSettings: eventResponse,
+
+		TicketCategories: ticketCategoriesResponse,
 
 		StartSaleAt: helper.ConvertNullTimeToPointer(event.StartSaleAt),
 		EndSaleAt:   helper.ConvertNullTimeToPointer(event.EndSaleAt),

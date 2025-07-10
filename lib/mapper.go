@@ -100,3 +100,35 @@ func MapEventSettingEntityToEventSettingResponse(
 
 	return res
 }
+
+func MapEventTicketCategoryModelToEventTicketCategoryResponse(
+	data model.EventTicketCategory,
+) dto.EventTicketCategoryResponse {
+	return dto.EventTicketCategoryResponse{
+		ID:          data.ID,
+		Name:        data.Name,
+		Description: data.Description,
+		Price:       data.Price,
+	}
+}
+
+func MapEventTicketCategoryModelToDetailEventTicketCategoryResponse(
+	data model.EventTicketCategory,
+) dto.DetailEventTicketCategoryResponse {
+	return dto.DetailEventTicketCategoryResponse{
+		ID:          data.ID,
+		Name:        data.Name,
+		Description: data.Description,
+		Price:       data.Price,
+
+		TotalStock:           data.TotalStock,
+		TotalPublicStock:     data.TotalPublicStock,
+		PublicStock:          data.PublicStock,
+		TotalComplimentStock: data.TotalComplimentStock,
+		ComplimentStock:      data.ComplimentStock,
+		Code:                 data.Code,
+		Entrance:             data.Entrance,
+		CreatedAt:            data.CreatedAt,
+		UpdatedAt:            helper.ConvertNullTimeToPointer(data.UpdatedAt),
+	}
+}

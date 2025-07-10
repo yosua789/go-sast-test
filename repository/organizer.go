@@ -53,6 +53,10 @@ func (r *OrganizerRepositoryImpl) Create(ctx context.Context, tx pgx.Tx, organiz
 		_, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, organizer.Name, organizer.Slug, organizer.Logo)
 	}
 
+	if err != nil {
+		return
+	}
+
 	return
 }
 

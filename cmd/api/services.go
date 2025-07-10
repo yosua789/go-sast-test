@@ -7,9 +7,10 @@ import (
 )
 
 type Service struct {
-	OrganizerService service.OrganizerService
-	VenueService     service.VenueService
-	EventService     service.EventService
+	OrganizerService           service.OrganizerService
+	VenueService               service.VenueService
+	EventService               service.EventService
+	EventTicketCategoryService service.EventTicketCategoryService
 }
 
 func Newservice(
@@ -19,10 +20,12 @@ func Newservice(
 ) Service {
 	organizerService := service.NewOrganizerService(db, env, r.OrganizerRepo)
 	venueService := service.NewVenueService(db, env, r.VenueRepo)
-	eventService := service.NewEventService(db, env, r.EventRepo, r.EventSettingRepo, r.OrganizerRepo, r.VenueRepo)
+	eventService := service.NewEventService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.OrganizerRepo, r.VenueRepo)
+	eventTicketCategoryService := service.NewEventTicketCategoryService(db, env, r.EventRepo, r.EventTicketCategoryRepo)
 	return Service{
-		OrganizerService: organizerService,
-		VenueService:     venueService,
-		EventService:     eventService,
+		OrganizerService:           organizerService,
+		VenueService:               venueService,
+		EventService:               eventService,
+		EventTicketCategoryService: eventTicketCategoryService,
 	}
 }

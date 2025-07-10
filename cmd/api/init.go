@@ -32,11 +32,12 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	middleware := middleware.NewMiddleware(env)
 
 	r := router.Handler{
-		Env:              env,
-		OrganizerHandler: handler.OrganizerHandler,
-		VenueHandler:     handler.VenueHandler,
-		EventHandler:     handler.EventHandler,
-		Middleware:       middleware,
+		Env:                        env,
+		OrganizerHandler:           handler.OrganizerHandler,
+		VenueHandler:               handler.VenueHandler,
+		EventHandler:               handler.EventHandler,
+		EventTicketCategoryHandler: handler.EventTicketCategoryHandler,
+		Middleware:                 middleware,
 	}
 
 	routes := router.NewRouter(r)

@@ -35,6 +35,8 @@ type DetailEventResponse struct {
 
 	ActiveSettings EventSettings `json:"active_settings"`
 
+	TicketCategories []EventTicketCategoryResponse `json:"ticket_categories"`
+
 	StartSaleAt *time.Time `json:"start_sale_at"`
 	EndSaleAt   *time.Time `json:"end_sale_at"`
 
@@ -91,4 +93,54 @@ type GetEventByIdParams struct {
 type FilterEventRequest struct {
 	Search string `form:"search" validate:"omitempty,min=3"`
 	Status string `form:"status" validate:"omitempty,oneof=UPCOMING CANCELED POSTPONED FINISHED ON_GOING"`
+}
+
+// ### Ticket category section ###
+type EventTicketCategoryResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Price       int    `json:"price"`
+}
+
+type DetailEventTicketCategoryResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Price       int    `json:"price"`
+
+	TotalStock           int `json:"total_stock"`
+	TotalPublicStock     int `json:"total_public_stock"`
+	PublicStock          int `json:"public_stock"`
+	TotalComplimentStock int `json:"total_compliment_stock"`
+	ComplimentStock      int `json:"compliment_stock"`
+
+	Code     string `json:"code"`
+	Entrance string `json:"entrance"`
+
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at"`
+}
+
+type CreateEventTicketCategoryRequest struct {
+	EventID              string `json:"event_id" validate:"required,uuid"`
+	Name                 string `json:"name" validate:"required,min=3" example:"Ticket Reguler"`
+	Description          string `json:"description" validate:"required" example:"Ticket description"`
+	Price                int    `json:"price" validate:"required,min=0" example:"100000"`
+	TotalStock           int    `json:"total_stock" validate:"required,min=0" example:"10"`
+	TotalPublicStock     int    `json:"total_public_stock" validate:"required,min=0" example:"0"`
+	PublicStock          int    `json:"public_stock" validate:"required,min=0" example:"0"`
+	TotalComplimentStock int    `json:"total_compliment_stock" validate:"required,min=0" example:"0"`
+	ComplimentStock      int    `json:"compliment_stock" validate:"required,min=0" example:"0"`
+	Code                 string `json:"code" validate:"required,max=255"`
+	Entrance             string `json:"entrance" validate:"max=255"`
+}
+
+type GetEventTicketCategoryByIdParams struct {
+	EventID string `uri:"eventId" binding:"required,min=1,uuid"`
+}
+
+type GetDetailEventTicketCategoryByIdParams struct {
+	EventID          string `uri:"eventId" binding:"required,min=1,uuid"`
+	TicketCategoryId string `uri:"ticketCategoryId" binding:"required,min=1,uuid"`
 }

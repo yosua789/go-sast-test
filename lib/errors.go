@@ -68,6 +68,13 @@ var (
 )
 
 var (
+	ErrorTicketCategoryNotFound = TIXError{
+		Code: 40405,
+		Err:  errors.New("ticket category not found"),
+	}
+)
+
+var (
 	ErrorEventNotFound = TIXError{
 		Code: 40402,
 		Err:  errors.New("event not found"),

@@ -59,6 +59,10 @@ definitions:
         type: string
       status:
         type: string
+      ticket_categories:
+        items:
+          $ref: '#/definitions/dto.EventTicketCategoryResponse'
+        type: array
       updated_at:
         type: string
       venue:
@@ -96,6 +100,17 @@ definitions:
       garuda_id_verification:
         type: boolean
       max_adult_ticket_per_transaction:
+        type: integer
+    type: object
+  dto.EventTicketCategoryResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      price:
         type: integer
     type: object
   dto.OrganizerResponse:
@@ -366,6 +381,113 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Get event By ID
+      tags:
+      - events
+  /events/{eventId}/ticket-categories:
+    get:
+      description: Get event By ID
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue by id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DetailEventResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get detail ticket categories by event ID
+      tags:
+      - events
+    post:
+      consumes:
+      - application/json
+      description: Create event ticket category
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success create event ticket category
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create event ticket category
+      tags:
+      - events
+  /events/{eventId}/ticket-categories/{ticketCategoryId}:
+    get:
+      consumes:
+      - application/json
+      description: Get event ticket category by id
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      - description: Ticket Category ID
+        in: path
+        name: ticketCategoryId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue by id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DetailEventResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get event ticket category by id
       tags:
       - events
   /organizers:

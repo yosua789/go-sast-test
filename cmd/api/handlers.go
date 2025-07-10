@@ -8,9 +8,10 @@ import (
 )
 
 type Handler struct {
-	OrganizerHandler handler.OrganizerHandler
-	VenueHandler     handler.VenueHandler
-	EventHandler     handler.EventHandler
+	OrganizerHandler           handler.OrganizerHandler
+	VenueHandler               handler.VenueHandler
+	EventHandler               handler.EventHandler
+	EventTicketCategoryHandler handler.EventTicketCategoryHandler
 }
 
 func Newhandler(
@@ -19,8 +20,9 @@ func Newhandler(
 	validator *validator.Validate,
 ) Handler {
 	return Handler{
-		OrganizerHandler: handler.NewOrganizerHandler(env, s.OrganizerService, validator),
-		VenueHandler:     handler.NewVenueHandler(env, s.VenueService, validator),
-		EventHandler:     handler.NewEventHandler(env, s.EventService, validator),
+		OrganizerHandler:           handler.NewOrganizerHandler(env, s.OrganizerService, validator),
+		VenueHandler:               handler.NewVenueHandler(env, s.VenueService, validator),
+		EventHandler:               handler.NewEventHandler(env, s.EventService, validator),
+		EventTicketCategoryHandler: handler.NewEventTicketCategoryHandler(env, s.EventTicketCategoryService, validator),
 	}
 }
