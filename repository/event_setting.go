@@ -52,7 +52,7 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 	if tx != nil {
 		rows, err = tx.Query(ctx, query, eventId)
 	} else {
-		rows, err = r.WrapDB.Postgres.Conn.Query(ctx, query, eventId)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, eventId)
 	}
 
 	if err != nil {

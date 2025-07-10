@@ -3,17 +3,25 @@ package postgres
 import (
 	"assist-tix/config"
 	"context"
+	"errors"
 	"fmt"
+	"path/filepath"
 
+	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
+
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type WrapDatabase struct {
 	Conn *pgxpool.Pool
 }
 
-func InitDatabase(env *config.EnvironmentVariable) *WrapDatabase {
+const MIGRATION_LOCATIONS = "database/migrations"
+
+func NewDBConnection(env *config.EnvironmentVariable) *pgxpool.Pool {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s",
 		env.Database.Postgres.User,
 		env.Database.Postgres.Password,
@@ -38,7 +46,34 @@ func InitDatabase(env *config.EnvironmentVariable) *WrapDatabase {
 		panic(err)
 	}
 
-	return &WrapDatabase{
-		Conn: conn,
+	return conn
+}
+
+func InitMigrations(env *config.EnvironmentVariable) error {
+	log.Info().Msg("Checking migrations")
+
+	absPath, err := filepath.Abs(MIGRATION_LOCATIONS)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Cannot resolve absolute path for migrations")
+		return err
 	}
+
+	m, err := migrate.New(
+		fmt.Sprintf("file://%s", absPath),
+		env.GetDBUrl(),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed load migrations")
+		return err
+	}
+	if err := m.Up(); err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			log.Info().Msg("Database has not changed")
+			return nil
+		}
+		log.Fatal().Err(err).Msg("Failed to run migration")
+		return err
+	}
+
+	return nil
 }
