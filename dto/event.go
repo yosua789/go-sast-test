@@ -103,6 +103,20 @@ type EventTicketCategoryResponse struct {
 	Price       int    `json:"price"`
 }
 
+type DetailEventPublicTicketCategoryResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Price       int    `json:"price"`
+
+	Sector TicketCategorySectorResponse `json:"sector"`
+
+	TotalPublicStock int `json:"total_public_stock"`
+
+	Code     string `json:"code"`
+	Entrance string `json:"entrance"`
+}
+
 type DetailEventTicketCategoryResponse struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -124,6 +138,7 @@ type DetailEventTicketCategoryResponse struct {
 
 type CreateEventTicketCategoryRequest struct {
 	EventID              string `json:"event_id" validate:"required,uuid"`
+	SectorID             string `json:"venue_sector_id" validate:"required,uuid"`
 	Name                 string `json:"name" validate:"required,min=3" example:"Ticket Reguler"`
 	Description          string `json:"description" validate:"required" example:"Ticket description"`
 	Price                int    `json:"price" validate:"required,min=0" example:"100000"`

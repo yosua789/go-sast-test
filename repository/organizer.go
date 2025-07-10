@@ -50,7 +50,7 @@ func (r *OrganizerRepositoryImpl) Create(ctx context.Context, tx pgx.Tx, organiz
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, organizer.Name, organizer.Slug, organizer.Logo)
 	} else {
-		_, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, organizer.Name, organizer.Slug, organizer.Logo)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, organizer.Name, organizer.Slug, organizer.Logo)
 	}
 
 	if err != nil {
@@ -71,7 +71,7 @@ func (r *OrganizerRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res [
 	if tx != nil {
 		rows, err = tx.Query(ctx, query)
 	} else {
-		rows, err = r.WrapDB.Postgres.Conn.Query(ctx, query)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query)
 	}
 
 	if err != nil {
@@ -118,7 +118,7 @@ func (r *OrganizerRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, organ
 			&organizer.UpdatedAt,
 		)
 	} else {
-		err = r.WrapDB.Postgres.Conn.QueryRow(ctx, query, organizerId).Scan(
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, organizerId).Scan(
 			&organizer.ID,
 			&organizer.Name,
 			&organizer.Slug,
@@ -148,7 +148,7 @@ func (r *OrganizerRepositoryImpl) FindByIds(ctx context.Context, tx pgx.Tx, orga
 	if tx != nil {
 		rows, err = tx.Query(ctx, query)
 	} else {
-		rows, err = r.WrapDB.Postgres.Conn.Query(ctx, query)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query)
 	}
 
 	if err != nil {
@@ -190,7 +190,7 @@ func (r *OrganizerRepositoryImpl) Update(ctx context.Context, tx pgx.Tx, organiz
 	if tx != nil {
 		cmdTag, err = tx.Exec(ctx, query, organizer.Name, organizer.Slug, organizer.Logo, organizer.ID)
 	} else {
-		cmdTag, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, organizer.Name, organizer.Slug, organizer.Logo, organizer.ID)
+		cmdTag, err = r.WrapDB.Postgres.Exec(ctx, query, organizer.Name, organizer.Slug, organizer.Logo, organizer.ID)
 	}
 
 	if err != nil {
@@ -223,7 +223,7 @@ func (r *OrganizerRepositoryImpl) SoftDelete(ctx context.Context, tx pgx.Tx, org
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, organizerId)
 	} else {
-		_, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, organizerId)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, organizerId)
 	}
 
 	return

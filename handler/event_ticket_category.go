@@ -82,12 +82,12 @@ func (h *EventTicketCategoryHandlerImpl) Create(ctx *gin.Context) {
 	lib.RespondSuccess(ctx, http.StatusOK, "success", nil)
 }
 
-// @Summary Get detail ticket categories by event ID
+// @Summary Get public ticket categories by event ID
 // @Description Get event By ID
 // @Tags events
 // @Produce json
 // @Param eventId path string false "Event ID"
-// @Success 200 {object} lib.APIResponse{data=dto.DetailEventResponse} "Get venue by id"
+// @Success 200 {object} lib.APIResponse{data=dto.VenueEventTicketCategoryResponse} "Get venue by id"
 // @Failure 400 {object} lib.HTTPError "Invalid request body"
 // @Failure 404 {object} lib.HTTPError "Not Found"
 // @Failure 500 {object} lib.HTTPError "Internal server error"
@@ -106,7 +106,7 @@ func (h *EventTicketCategoryHandlerImpl) GetByEventId(ctx *gin.Context) {
 		return
 	}
 
-	res, err := h.EventTicketCategoryService.GetByEventId(ctx, uriParams.EventID)
+	res, err := h.EventTicketCategoryService.GetVenueTicketsByEventId(ctx, uriParams.EventID)
 	if err != nil {
 		if err != nil {
 			var tixErr *lib.TIXError
@@ -129,7 +129,7 @@ func (h *EventTicketCategoryHandlerImpl) GetByEventId(ctx *gin.Context) {
 	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
 }
 
-// @Summary Get event ticket category by id
+// @Summary Get detail event ticket category by id
 // @Description Get event ticket category by id
 // @Tags events
 // @Produce json

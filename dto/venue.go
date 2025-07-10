@@ -42,3 +42,8 @@ type UpdateVenueRequest struct {
 type GetVenueByIdParams struct {
 	VenueID string `uri:"venueId" binding:"required,min=1,uuid"`
 }
+
+type VenueEventTicketCategoryResponse struct {
+	Venue            VenueResponse                             `json:"venue"`
+	TicketCategories []DetailEventPublicTicketCategoryResponse `json:"ticket_categories"`
+}

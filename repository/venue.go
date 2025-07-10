@@ -50,7 +50,7 @@ func (r *VenueRepositoryImpl) Create(ctx context.Context, tx pgx.Tx, venue model
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Status, venue.Capacity)
 	} else {
-		_, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Status, venue.Capacity)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Status, venue.Capacity)
 	}
 
 	return
@@ -67,7 +67,7 @@ func (r *VenueRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 	if tx != nil {
 		rows, err = tx.Query(ctx, query)
 	} else {
-		rows, err = r.WrapDB.Postgres.Conn.Query(ctx, query)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query)
 	}
 
 	if err != nil {
@@ -120,7 +120,7 @@ func (r *VenueRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, venueId s
 			&venue.UpdatedAt,
 		)
 	} else {
-		err = r.WrapDB.Postgres.Conn.QueryRow(ctx, query, venueId).Scan(
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, venueId).Scan(
 			&venue.ID,
 			&venue.VenueType,
 			&venue.Name,
@@ -154,7 +154,7 @@ func (r *VenueRepositoryImpl) FindByIds(ctx context.Context, tx pgx.Tx, venueIds
 	if tx != nil {
 		rows, err = tx.Query(ctx, query)
 	} else {
-		rows, err = r.WrapDB.Postgres.Conn.Query(ctx, query)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query)
 	}
 
 	if err != nil {
@@ -207,7 +207,7 @@ func (r *VenueRepositoryImpl) Update(ctx context.Context, tx pgx.Tx, venue model
 	if tx != nil {
 		cmdTag, err = tx.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Status, venue.Capacity, venue.ID)
 	} else {
-		cmdTag, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Status, venue.Capacity, venue.ID)
+		cmdTag, err = r.WrapDB.Postgres.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Status, venue.Capacity, venue.ID)
 	}
 
 	if err != nil {
@@ -239,7 +239,7 @@ func (r *VenueRepositoryImpl) SoftDelete(ctx context.Context, tx pgx.Tx, venueId
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, venueId)
 	} else {
-		_, err = r.WrapDB.Postgres.Conn.Exec(ctx, query, venueId)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, venueId)
 	}
 
 	return

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -42,11 +43,13 @@ type EnvironmentVariable struct {
 	} `mapstructure:"API"`
 	Database struct {
 		Postgres struct {
-			Host     string `mapstructure:"HOST"`
-			Port     string `mapstructure:"PORT"`
-			User     string `mapstructure:"USER"`
-			Password string `mapstructure:"PASSWORD"`
-			Name     string `mapstructure:"NAME"`
+			Scheme            string `mapstructure:"SCHEME"`
+			Host              string `mapstructure:"HOST"`
+			Port              string `mapstructure:"PORT"`
+			User              string `mapstructure:"USER"`
+			Password          string `mapstructure:"PASSWORD"`
+			Name              string `mapstructure:"NAME"`
+			MigrationLocation string `mapstructure:"MIGRATION_LOCATION"`
 		} `mapstructure:"POSTGRES"`
 		Timeout struct {
 			Ping  time.Duration `mapstructure:"PING"`
@@ -72,4 +75,12 @@ type EnvironmentVariable struct {
 	FileUpload struct {
 		MaxSize int `mapstructure:"MAX_SIZE"`
 	} `mapstructure:"FILE_UPLOAD"`
+}
+
+func (e *EnvironmentVariable) GetDBDSN() string {
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", e.Database.Postgres.Host, e.Database.Postgres.Port, e.Database.Postgres.User, e.Database.Postgres.Password, e.Database.Postgres.Name)
+}
+
+func (e *EnvironmentVariable) GetDBUrl() string {
+	return fmt.Sprintf("%s://%s:%s@%s:%s/%s?sslmode=disable", e.Database.Postgres.Scheme, e.Database.Postgres.User, e.Database.Postgres.Password, e.Database.Postgres.Host, e.Database.Postgres.Port, e.Database.Postgres.Name)
 }

@@ -33,6 +33,25 @@ definitions:
     - status
     - venue_type
     type: object
+  dto.DetailEventPublicTicketCategoryResponse:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      entrance:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      sector:
+        $ref: '#/definitions/dto.TicketCategorySectorResponse'
+      total_public_stock:
+        type: integer
+    type: object
   dto.DetailEventResponse:
     properties:
       active_settings:
@@ -174,6 +193,17 @@ definitions:
       venue_type:
         type: string
     type: object
+  dto.TicketCategorySectorResponse:
+    properties:
+      area_code:
+        type: string
+      color:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   dto.UpdateOrganizerRequest:
     properties:
       name:
@@ -218,6 +248,15 @@ definitions:
     - name
     - status
     - venue_type
+    type: object
+  dto.VenueEventTicketCategoryResponse:
+    properties:
+      ticket_categories:
+        items:
+          $ref: '#/definitions/dto.DetailEventPublicTicketCategoryResponse'
+        type: array
+      venue:
+        $ref: '#/definitions/dto.VenueResponse'
     type: object
   dto.VenueResponse:
     properties:
@@ -401,7 +440,7 @@ paths:
             - $ref: '#/definitions/lib.APIResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/dto.DetailEventResponse'
+                  $ref: '#/definitions/dto.VenueEventTicketCategoryResponse'
               type: object
         "400":
           description: Invalid request body
@@ -415,7 +454,7 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/lib.HTTPError'
-      summary: Get detail ticket categories by event ID
+      summary: Get public ticket categories by event ID
       tags:
       - events
     post:
@@ -487,7 +526,7 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/lib.HTTPError'
-      summary: Get event ticket category by id
+      summary: Get detail event ticket category by id
       tags:
       - events
   /organizers:
