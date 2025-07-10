@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -52,14 +51,8 @@ func NewDBConnection(env *config.EnvironmentVariable) *pgxpool.Pool {
 func InitMigrations(env *config.EnvironmentVariable) error {
 	log.Info().Msg("Checking migrations")
 
-	absPath, err := filepath.Abs(MIGRATION_LOCATIONS)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Cannot resolve absolute path for migrations")
-		return err
-	}
-
 	m, err := migrate.New(
-		fmt.Sprintf("file://%s", absPath),
+		fmt.Sprintf("file://%s", MIGRATION_LOCATIONS),
 		env.GetDBUrl(),
 	)
 	if err != nil {
