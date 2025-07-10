@@ -28,6 +28,7 @@ USER assistx
 
 COPY --chown=assistx:assistx --from=builder --chmod=744 /app/assisttix-api .
 COPY --chown=assistx:assistx --chmod=744 entrypoint.sh entrypoint.sh
+COPY --chown=assistx:assistx --from=builder --chmod=744 /app/database/migrations /app/database
 
 EXPOSE 3000
 
