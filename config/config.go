@@ -39,7 +39,8 @@ type EnvironmentVariable struct {
 		Debug bool   `mapstructure:"DEBUG"`
 	} `mapstructure:"APP"`
 	Api struct {
-		BasePath string `mapstructure:"BASE_PATH"`
+		CorsEnable bool   `mapstructure:"CORS_ENABLE"`
+		BasePath   string `mapstructure:"BASE_PATH"`
 	} `mapstructure:"API"`
 	Database struct {
 		Postgres struct {

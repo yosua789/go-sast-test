@@ -31,6 +31,9 @@ func NewRouter(handler Handler) *gin.Engine {
 	}
 
 	router := gin.Default()
+	if handler.Env.Api.CorsEnable {
+		router.Use(handler.Middleware.CORSMiddleware())
+	}
 
 	HelloWorld(router)
 
