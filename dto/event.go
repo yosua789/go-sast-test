@@ -137,7 +137,6 @@ type DetailEventTicketCategoryResponse struct {
 }
 
 type CreateEventTicketCategoryRequest struct {
-	EventID              string `json:"event_id" validate:"required,uuid"`
 	SectorID             string `json:"venue_sector_id" validate:"required,uuid"`
 	Name                 string `json:"name" validate:"required,min=3" example:"Ticket Reguler"`
 	Description          string `json:"description" validate:"required" example:"Ticket description"`

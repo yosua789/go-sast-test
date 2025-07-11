@@ -1,5 +1,58 @@
 basePath: /api/v1
 definitions:
+  dto.CreateEventTicketCategoryRequest:
+    properties:
+      code:
+        maxLength: 255
+        type: string
+      compliment_stock:
+        example: 0
+        minimum: 0
+        type: integer
+      description:
+        example: Ticket description
+        type: string
+      entrance:
+        maxLength: 255
+        type: string
+      name:
+        example: Ticket Reguler
+        minLength: 3
+        type: string
+      price:
+        example: 100000
+        minimum: 0
+        type: integer
+      public_stock:
+        example: 0
+        minimum: 0
+        type: integer
+      total_compliment_stock:
+        example: 0
+        minimum: 0
+        type: integer
+      total_public_stock:
+        example: 0
+        minimum: 0
+        type: integer
+      total_stock:
+        example: 10
+        minimum: 0
+        type: integer
+      venue_sector_id:
+        type: string
+    required:
+    - code
+    - compliment_stock
+    - description
+    - name
+    - price
+    - public_stock
+    - total_compliment_stock
+    - total_public_stock
+    - total_stock
+    - venue_sector_id
+    type: object
   dto.CreateVenueRequest:
     properties:
       capacity:
@@ -461,6 +514,17 @@ paths:
       consumes:
       - application/json
       description: Create event ticket category
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      - description: Create event ticket category
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEventTicketCategoryRequest'
       produces:
       - application/json
       responses:
