@@ -11,7 +11,7 @@ import (
 )
 
 type EventTicketCategoryService interface {
-	Create(ctx context.Context, req dto.CreateEventTicketCategoryRequest) (err error)
+	Create(ctx context.Context, eventId string, req dto.CreateEventTicketCategoryRequest) (err error)
 	GetVenueTicketsByEventId(ctx context.Context, eventId string) (res dto.VenueEventTicketCategoryResponse, err error)
 	GetByEventId(ctx context.Context, eventId string) (res []dto.DetailEventTicketCategoryResponse, err error)
 	GetById(ctx context.Context, eventId string, ticketCategoryId string) (res dto.DetailEventTicketCategoryResponse, err error)
@@ -42,16 +42,16 @@ func NewEventTicketCategoryService(
 	}
 }
 
-func (s *EventTicketCategoryServiceImpl) Create(ctx context.Context, req dto.CreateEventTicketCategoryRequest) (err error) {
+func (s *EventTicketCategoryServiceImpl) Create(ctx context.Context, eventId string, req dto.CreateEventTicketCategoryRequest) (err error) {
 
 	// Validate event id
-	_, err = s.EventRepository.FindById(ctx, nil, req.EventID)
+	_, err = s.EventRepository.FindById(ctx, nil, eventId)
 	if err != nil {
 		return
 	}
 
 	createEventTicketCategory := model.EventTicketCategory{
-		EventID:              req.EventID,
+		EventID:              eventId,
 		Name:                 req.Name,
 		Description:          req.Description,
 		Price:                req.Price,

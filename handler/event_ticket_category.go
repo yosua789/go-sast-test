@@ -41,12 +41,27 @@ func NewEventTicketCategoryHandler(
 // @Tags events
 // @Produce json
 // @Accept json
+// @Param eventId path string false "Event ID"
+// @Param request body dto.CreateEventTicketCategoryRequest true "Create event ticket category"
 // @Success 200 {object} lib.APIResponse{data=nil} "Success create event ticket category"
 // @Failure 400 {object} lib.HTTPError "Invalid request body"
 // @Failure 404 {object} lib.HTTPError "Not Found"
 // @Failure 500 {object} lib.HTTPError "Internal server error"
 // @Router /events/{eventId}/ticket-categories [post]
 func (h *EventTicketCategoryHandlerImpl) Create(ctx *gin.Context) {
+	var uriParams dto.GetEventTicketCategoryByIdParams
+
+	if err := ctx.ShouldBindUri(&uriParams); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			for _, fieldErr := range validationErrors {
+				lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+				return
+			}
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
 	var request dto.CreateEventTicketCategoryRequest
 
 	if err := ctx.ShouldBind(&request); err != nil {
@@ -65,7 +80,7 @@ func (h *EventTicketCategoryHandlerImpl) Create(ctx *gin.Context) {
 		return
 	}
 
-	err := h.EventTicketCategoryService.Create(ctx, request)
+	err := h.EventTicketCategoryService.Create(ctx, uriParams.EventID, request)
 	if err != nil {
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {

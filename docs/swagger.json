@@ -269,6 +269,23 @@
                     "events"
                 ],
                 "summary": "Create event ticket category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path"
+                    },
+                    {
+                        "description": "Create event ticket category",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateEventTicketCategoryRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Success create event ticket category",
@@ -983,6 +1000,73 @@
         }
     },
     "definitions": {
+        "dto.CreateEventTicketCategoryRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "compliment_stock",
+                "description",
+                "name",
+                "price",
+                "public_stock",
+                "total_compliment_stock",
+                "total_public_stock",
+                "total_stock",
+                "venue_sector_id"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "compliment_stock": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 0
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Ticket description"
+                },
+                "entrance": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "name": {
+                    "type": "string",
+                    "minLength": 3,
+                    "example": "Ticket Reguler"
+                },
+                "price": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 100000
+                },
+                "public_stock": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 0
+                },
+                "total_compliment_stock": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 0
+                },
+                "total_public_stock": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 0
+                },
+                "total_stock": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 10
+                },
+                "venue_sector_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateVenueRequest": {
             "type": "object",
             "required": [
