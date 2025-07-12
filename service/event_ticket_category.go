@@ -66,7 +66,7 @@ func (s *EventTicketCategoryServiceImpl) Create(ctx context.Context, eventId str
 		return
 	}
 
-	if sector.VenueID != event.ID {
+	if sector.VenueID != event.VenueID {
 		err = &lib.ErrorVenueSectorNotFound
 		return
 	}
