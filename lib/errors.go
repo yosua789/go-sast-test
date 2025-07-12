@@ -68,6 +68,25 @@ var (
 )
 
 var (
+	ErrorVenueSectorNotFound = TIXError{
+		Code: 40406,
+		Err:  errors.New("venue sector not found"),
+	}
+	ErrorVenueSectorIdInvalid = TIXError{
+		Code: 40006,
+		Err:  errors.New("venue sector id is invalid"),
+	}
+	ErrorVenueSectorDoesntHaveSeatmap = TIXError{
+		Code: 40407,
+		Err:  errors.New("venue sector doesn't have seatmap"),
+	}
+	ErrorVenueSectorNameConflict = TIXError{
+		Code: 40904,
+		Err:  errors.New("venue sector name is already used"),
+	}
+)
+
+var (
 	ErrorTicketCategoryNotFound = TIXError{
 		Code: 40405,
 		Err:  errors.New("ticket category not found"),

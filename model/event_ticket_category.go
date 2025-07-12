@@ -6,11 +6,12 @@ import (
 )
 
 type EventTicketCategory struct {
-	ID          string
-	EventID     string
-	Name        string
-	Description string
-	Price       int
+	ID            string
+	EventID       string
+	VenueSectorId string
+	Name          string
+	Description   string
+	Price         int
 
 	TotalStock           int
 	TotalPublicStock     int

@@ -26,7 +26,7 @@ type CreateVenueRequest struct {
 	Name      string `json:"name" validate:"required,max=255"`
 	Country   string `json:"country" validate:"required,max=255"`
 	City      string `json:"city" validate:"required,max=255"`
-	Status    string `json:"status" validate:"required,oneof=ACTIVE INACTIVE DISABLE"`
+	IsActive  bool   `json:"status" validate:"required"`
 	Capacity  int    `json:"capacity"`
 }
 
@@ -35,7 +35,7 @@ type UpdateVenueRequest struct {
 	Name      string `json:"name" validate:"required,max=255"`
 	Country   string `json:"country" validate:"required,max=255"`
 	City      string `json:"city" validate:"required,max=255"`
-	Status    string `json:"status" validate:"required,oneof=ACTIVE INACTIVE DISABLE"`
+	IsActive  bool   `json:"status" validate:"required"`
 	Capacity  int    `json:"capacity"`
 }
 

@@ -15,6 +15,7 @@ type EventTicketCategoryService interface {
 	GetVenueTicketsByEventId(ctx context.Context, eventId string) (res dto.VenueEventTicketCategoryResponse, err error)
 	GetByEventId(ctx context.Context, eventId string) (res []dto.DetailEventTicketCategoryResponse, err error)
 	GetById(ctx context.Context, eventId string, ticketCategoryId string) (res dto.DetailEventTicketCategoryResponse, err error)
+	GetSeatmapByTicketCategoryId(ctx context.Context, eventId, ticketCategoryId string) (res dto.EventSectorSeatmapResponse, err error)
 	Delete(ctx context.Context, eventId, ticketCategoryId string) (err error)
 }
 
@@ -22,6 +23,7 @@ type EventTicketCategoryServiceImpl struct {
 	DB                            *database.WrapDB
 	Env                           *config.EnvironmentVariable
 	VenueRepository               repository.VenueRepository
+	VenueSectorRepository         repository.VenueSectorRepository
 	EventRepository               repository.EventRepository
 	EventTicketCategoryRepository repository.EventTicketCategoryRepository
 }
@@ -30,6 +32,7 @@ func NewEventTicketCategoryService(
 	db *database.WrapDB,
 	env *config.EnvironmentVariable,
 	venueRepository repository.VenueRepository,
+	venueSectorRepository repository.VenueSectorRepository,
 	eventRepository repository.EventRepository,
 	eventTicketCategoryRepository repository.EventTicketCategoryRepository,
 ) EventTicketCategoryService {
@@ -37,6 +40,7 @@ func NewEventTicketCategoryService(
 		DB:                            db,
 		Env:                           env,
 		VenueRepository:               venueRepository,
+		VenueSectorRepository:         venueSectorRepository,
 		EventRepository:               eventRepository,
 		EventTicketCategoryRepository: eventTicketCategoryRepository,
 	}
@@ -142,6 +146,77 @@ func (s *EventTicketCategoryServiceImpl) Delete(ctx context.Context, eventId, ti
 	if err != nil {
 		return
 	}
+
+	return
+}
+
+// TODO: Implement Booked seat, mark seat as unavailable when seat is booked
+func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx context.Context, eventId, ticketCategoryId string) (res dto.EventSectorSeatmapResponse, err error) {
+	eventTickets, err := s.EventTicketCategoryRepository.FindByIdAndEventId(ctx, nil, eventId, ticketCategoryId)
+	if err != nil {
+		return
+	}
+
+	sector, err := s.VenueSectorRepository.FindById(ctx, nil, eventTickets.VenueSectorId)
+	if err != nil {
+		return
+	}
+
+	if !sector.HasSeatmap {
+		err = &lib.ErrorVenueSectorDoesntHaveSeatmap
+		return
+	}
+
+	seatmapRes, err := s.EventTicketCategoryRepository.FindSeatmapByEventSectorId(ctx, nil, eventId, sector.ID)
+	if err != nil {
+		return
+	}
+
+	var (
+		currentRow   int = -1
+		currentSeats []dto.SectorSeatmapResponse
+
+		seatmap = make([]dto.SectorSeatmapRowResponse, 0)
+	)
+
+	res = dto.EventSectorSeatmapResponse{
+		ID:       sector.ID,
+		Name:     sector.Name,
+		Color:    sector.SectorColor,
+		AreaCode: sector.AreaCode,
+	}
+
+	for i, val := range seatmapRes {
+		if currentRow == -1 {
+			currentRow = val.SeatRow
+		}
+
+		seat := dto.SectorSeatmapResponse{
+			Column: val.SeatColumn,
+			Label:  val.Label,
+			Status: val.Status,
+		}
+
+		if val.SeatRow != currentRow {
+			seatmap = append(seatmap, dto.SectorSeatmapRowResponse{
+				Row:   currentRow,
+				Seats: currentSeats,
+			})
+
+			currentSeats = nil
+			currentRow = val.SeatRow
+		}
+		currentSeats = append(currentSeats, seat)
+
+		if i == len(seatmapRes)-1 {
+			seatmap = append(seatmap, dto.SectorSeatmapRowResponse{
+				Row:   currentRow,
+				Seats: currentSeats,
+			})
+		}
+	}
+
+	res.Seatmap = seatmap
 
 	return
 }

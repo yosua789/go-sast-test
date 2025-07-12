@@ -7,13 +7,6 @@ const (
 	SectorStatusDisabled = "DISABLE"
 )
 
-// Venue Status
-const (
-	VenueStatusActive   = "ACTIVE"
-	VenueStatusInactive = "INACTIVE"
-	VenueStatusDisabled = "DISABLE"
-)
-
 // Venue seatmap status
 const (
 	SeatmapStatusAvailable   = "AVAILABLE"

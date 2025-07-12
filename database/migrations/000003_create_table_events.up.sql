@@ -44,25 +44,44 @@ INSERT INTO
         updated_at,
         deleted_at
     )
-VALUES
-    (
-        '77797e23-a2b7-40bd-b8b0-ef628568f815',
-        '160ec557-880f-4167-a30e-1a5dcaee78af',
-        'Test Events',
-        'Ini hanyalah testing belaka',
-        'default-banner.png',
-        '2025-07-14 07:37:15.154 +0000',
-        'UPCOMING',
-        'fa6b76af-fcf2-4a04-b63d-d933c61905d8',
+VALUES (
+    '77797e23-a2b7-40bd-b8b0-ef628568f815',
+    '160ec557-880f-4167-a30e-1a5dcaee78af',
+    'Test Events',
+    'Ini hanyalah testing belaka',
+    'default-banner.png',
+    '2025-07-14 07:37:15.154 +0000',
+    'UPCOMING',
+    'fa6b76af-fcf2-4a04-b63d-d933c61905d8',
 
-        '# Request Deployment Notification Service',
+    '# Additional Information for this event',
 
-        true,
-        
-        '2025-07-02 07:37:15.154 +0000',
-        '2025-07-03 07:37:15.154 +0000',
+    true,
+    
+    '2025-07-02 07:37:15.154 +0000',
+    '2025-07-03 07:37:15.154 +0000',
 
-        NOW(),
-        NOW(), 
-        NULL
-    );
+    NOW(),
+    NOW(), 
+    NULL
+), (
+    'aabeaad8-8725-41f9-bd8f-3e6baff86573',
+    '160ec557-880f-4167-a30e-1a5dcaee78af',
+    'Test Events 2',
+    'Ini hanyalah testing belaka yang ke 2',
+    'default-banner.png',
+    '2025-07-14 07:37:15.154 +0000',
+    'UPCOMING',
+    'fa6b76af-fcf2-4a04-b63d-d933c61905d8',
+
+    '# Additional Information for this event',
+
+    true,
+    
+    '2025-07-02 07:37:15.154 +0000',
+    '2025-07-03 07:37:15.154 +0000',
+
+    NOW(),
+    NOW(), 
+    NULL
+);

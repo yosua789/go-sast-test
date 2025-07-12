@@ -6,6 +6,6 @@ type Venue struct {
 	Name      string
 	Country   string
 	City      string
-	Status    string
+	IsActive  bool
 	Capacity  int
 }

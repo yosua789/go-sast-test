@@ -66,7 +66,7 @@ func (s *VenueServiceImpl) CreateVenue(ctx context.Context, req dto.CreateVenueR
 		VenueType: req.VenueType,
 		Country:   req.Country,
 		City:      req.City,
-		Status:    req.Status,
+		IsActive:  req.IsActive,
 		Capacity:  req.Capacity,
 	}
 	id, err := s.VenueRepo.Create(ctx, nil, data)
@@ -118,7 +118,7 @@ func (s *VenueServiceImpl) Update(ctx context.Context, venueId string, req dto.U
 	venue.Country = req.Country
 	venue.City = req.City
 	venue.Capacity = req.Capacity
-	venue.Status = req.Status
+	venue.IsActive = req.IsActive
 
 	err = s.VenueRepo.Update(ctx, nil, venue)
 	if err != nil {

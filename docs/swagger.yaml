@@ -67,11 +67,7 @@ definitions:
         maxLength: 255
         type: string
       status:
-        enum:
-        - ACTIVE
-        - INACTIVE
-        - DISABLE
-        type: string
+        type: boolean
       venue_type:
         enum:
         - STADIUM
@@ -167,6 +163,21 @@ definitions:
       venue:
         $ref: '#/definitions/dto.SimpleVenueResponse'
     type: object
+  dto.EventSectorSeatmapResponse:
+    properties:
+      area_code:
+        type: string
+      color:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      seatmap:
+        items:
+          $ref: '#/definitions/dto.SectorSeatmapRowResponse'
+        type: array
+    type: object
   dto.EventSettings:
     properties:
       garuda_id_verification:
@@ -221,6 +232,24 @@ definitions:
         type: integer
       total_records:
         type: integer
+    type: object
+  dto.SectorSeatmapResponse:
+    properties:
+      column:
+        type: integer
+      label:
+        type: string
+      status:
+        type: string
+    type: object
+  dto.SectorSeatmapRowResponse:
+    properties:
+      row:
+        type: integer
+      seats:
+        items:
+          $ref: '#/definitions/dto.SectorSeatmapResponse'
+        type: array
     type: object
   dto.SimpleOrganizerResponse:
     properties:
@@ -283,11 +312,7 @@ definitions:
         maxLength: 255
         type: string
       status:
-        enum:
-        - ACTIVE
-        - INACTIVE
-        - DISABLE
-        type: string
+        type: boolean
       venue_type:
         enum:
         - STADIUM
@@ -591,6 +616,47 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Get detail event ticket category by id
+      tags:
+      - events
+  /events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap:
+    get:
+      consumes:
+      - application/json
+      description: Get seatmap by event and ticket category id
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      - description: Ticket Category ID
+        in: path
+        name: ticketCategoryId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success get seatmap
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.EventSectorSeatmapResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get seatmap by event and ticket category id
       tags:
       - events
   /organizers:
