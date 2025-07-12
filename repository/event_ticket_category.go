@@ -43,7 +43,7 @@ func (r *EventTicketCategoryRepositoryImpl) Create(ctx context.Context, tx pgx.T
 	defer cancel()
 
 	query := `INSERT INTO event_ticket_categories (event_id, name, description, price, total_stock, total_public_stock, public_stock, total_compliment_stock, compliment_stock, code, entrance, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`
 
 	if tx != nil {
 		_, err = tx.Exec(ctx, query,
