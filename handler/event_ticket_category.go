@@ -86,6 +86,10 @@ func (h *EventTicketCategoryHandlerImpl) Create(ctx *gin.Context) {
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
+			case lib.ErrorVenueIdInvalid, lib.ErrorVenueSectorIdInvalid:
+				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorVenueNotFound, lib.ErrorVenueSectorNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "error", err, tixErr.Code, h.Env.App.Debug)
 			default:
 				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 			}
