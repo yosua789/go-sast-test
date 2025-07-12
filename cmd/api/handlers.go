@@ -10,6 +10,7 @@ import (
 type Handler struct {
 	OrganizerHandler           handler.OrganizerHandler
 	VenueHandler               handler.VenueHandler
+	SectorHandler              handler.SectorHandler
 	EventHandler               handler.EventHandler
 	EventTicketCategoryHandler handler.EventTicketCategoryHandler
 }
@@ -22,6 +23,7 @@ func Newhandler(
 	return Handler{
 		OrganizerHandler:           handler.NewOrganizerHandler(env, s.OrganizerService, validator),
 		VenueHandler:               handler.NewVenueHandler(env, s.VenueService, validator),
+		SectorHandler:              handler.NewSectorHandler(env, s.VenueService, validator),
 		EventHandler:               handler.NewEventHandler(env, s.EventService, validator),
 		EventTicketCategoryHandler: handler.NewEventTicketCategoryHandler(env, s.EventTicketCategoryService, validator),
 	}

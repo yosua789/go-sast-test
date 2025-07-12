@@ -56,6 +56,7 @@ definitions:
   dto.CreateVenueRequest:
     properties:
       capacity:
+        minimum: 0
         type: integer
       city:
         maxLength: 255
@@ -66,8 +67,6 @@ definitions:
       name:
         maxLength: 255
         type: string
-      status:
-        type: boolean
       venue_type:
         enum:
         - STADIUM
@@ -79,7 +78,6 @@ definitions:
     - city
     - country
     - name
-    - status
     - venue_type
     type: object
   dto.DetailEventPublicTicketCategoryResponse:
@@ -301,6 +299,7 @@ definitions:
   dto.UpdateVenueRequest:
     properties:
       capacity:
+        minimum: 0
         type: integer
       city:
         maxLength: 255
@@ -308,11 +307,11 @@ definitions:
       country:
         maxLength: 255
         type: string
+      is_active:
+        type: boolean
       name:
         maxLength: 255
         type: string
-      status:
-        type: boolean
       venue_type:
         enum:
         - STADIUM
@@ -323,8 +322,8 @@ definitions:
     required:
     - city
     - country
+    - is_active
     - name
-    - status
     - venue_type
     type: object
   dto.VenueEventTicketCategoryResponse:
@@ -348,11 +347,38 @@ definitions:
         type: string
       id:
         type: string
+      is_active:
+        type: boolean
       name:
         type: string
       updated_at:
         type: string
       venue_type:
+        type: string
+    type: object
+  dto.VenueSectorResponse:
+    properties:
+      area_code:
+        type: string
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      has_seatmap:
+        type: boolean
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      sector_color:
+        type: string
+      sector_column:
+        type: integer
+      sector_row:
+        type: integer
+      updated_at:
         type: string
     type: object
   lib.APIResponse:
@@ -1027,6 +1053,43 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Edit venue
+      tags:
+      - venue
+  /venues/{venueId}/sectors:
+    get:
+      consumes:
+      - application/json
+      description: venue sectors
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venueId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue sectors by venue id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VenueSectorResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get venue sectors
       tags:
       - venue
 securityDefinitions:

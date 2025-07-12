@@ -30,6 +30,8 @@ func VenueRouter(h Handler, rg *gin.RouterGroup) {
 	r.GET("/:venueId", h.VenueHandler.GetById)
 	r.PUT("/:venueId", h.VenueHandler.Update)
 	r.DELETE("/:venueId", h.VenueHandler.Delete)
+
+	r.GET("/:venueId/sectors", h.SectorHandler.GetByVenueId)
 }
 
 func EventRouter(h Handler, rg *gin.RouterGroup) {

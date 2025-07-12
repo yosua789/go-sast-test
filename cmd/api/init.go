@@ -3,6 +3,7 @@ package api
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/lib"
 	"assist-tix/middleware"
 	"assist-tix/router"
 
@@ -26,6 +27,7 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	service := Newservice(env, repository, wrapDB)
 
 	validate := validator.New()
+	validate.RegisterValidation("not_blank", lib.NotBlank)
 
 	handler := Newhandler(env, service, validate)
 
@@ -35,6 +37,7 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 		Env:                        env,
 		OrganizerHandler:           handler.OrganizerHandler,
 		VenueHandler:               handler.VenueHandler,
+		SectorHandler:              handler.SectorHandler,
 		EventHandler:               handler.EventHandler,
 		EventTicketCategoryHandler: handler.EventTicketCategoryHandler,
 		Middleware:                 middleware,
