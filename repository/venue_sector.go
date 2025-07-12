@@ -13,6 +13,7 @@ import (
 )
 
 type VenueSectorRepository interface {
+	FindByVenueId(ctx context.Context, tx pgx.Tx, venueId string) (sectors []model.VenueSector, err error)
 	FindById(ctx context.Context, tx pgx.Tx, sectorId string) (venue model.VenueSector, err error)
 }
 
@@ -74,6 +75,63 @@ func (r *VenueSectorRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, sec
 			return venueSector, &lib.ErrorVenueNotFound
 		}
 		return venueSector, err
+	}
+
+	return
+}
+
+func (r *VenueSectorRepositoryImpl) FindByVenueId(ctx context.Context, tx pgx.Tx, venueId string) (sectors []model.VenueSector, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := `SELECT 
+		id, 
+		venue_id, 
+		name, 
+		sector_row, 
+		sector_column, 
+		capacity, 
+		is_active, 
+		has_seatmap, 
+		sector_color, 
+		area_code, 
+		created_at, 
+		updated_at
+	FROM venue_sectors 
+	WHERE venue_id = $1`
+
+	var rows pgx.Rows
+
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, venueId)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, venueId)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var sector model.VenueSector
+		rows.Scan(
+			&sector.ID,
+			&sector.VenueID,
+			&sector.Name,
+			&sector.SectorRow,
+			&sector.SectorColumn,
+			&sector.Capacity,
+			&sector.IsActive,
+			&sector.HasSeatmap,
+			&sector.SectorColor,
+			&sector.AreaCode,
+			&sector.CreatedAt,
+			&sector.UpdatedAt,
+		)
+
+		sectors = append(sectors, sector)
 	}
 
 	return

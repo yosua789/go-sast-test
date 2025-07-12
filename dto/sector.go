@@ -1,5 +1,21 @@
 package dto
 
+import "time"
+
+type VenueSectorResponse struct {
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	IsActive     bool       `json:"is_active"`
+	HasSeatmap   bool       `json:"has_seatmap"`
+	SectorRow    int        `json:"sector_row"`
+	SectorColumn int        `json:"sector_column"`
+	Capacity     int        `json:"capacity"`
+	SectorColor  string     `json:"sector_color"`
+	AreaCode     string     `json:"area_code"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    *time.Time `json:"updated_at"`
+}
+
 type TicketCategorySectorResponse struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`

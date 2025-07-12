@@ -138,22 +138,20 @@ func (h *VenueHandlerImpl) GetById(ctx *gin.Context) {
 
 	res, err := h.VenueService.GetVenueById(ctx, uriParams.VenueID)
 	if err != nil {
-		if err != nil {
-			var tixErr *lib.TIXError
-			if errors.As(err, &tixErr) {
-				switch *tixErr {
-				case lib.ErrorVenueNotFound:
-					lib.RespondError(ctx, http.StatusNotFound, "failed to find venue", err, lib.ErrorVenueNotFound.Code, h.Env.App.Debug)
-				case lib.ErrorVenueIdInvalid:
-					lib.RespondError(ctx, http.StatusBadRequest, "failed to find venue", err, lib.ErrorVenueIdInvalid.Code, h.Env.App.Debug)
-				default:
-					lib.RespondError(ctx, http.StatusInternalServerError, "failed to find venue", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
-				}
-			} else {
+		var tixErr *lib.TIXError
+		if errors.As(err, &tixErr) {
+			switch *tixErr {
+			case lib.ErrorVenueNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "failed to find venue", err, lib.ErrorVenueNotFound.Code, h.Env.App.Debug)
+			case lib.ErrorVenueIdInvalid:
+				lib.RespondError(ctx, http.StatusBadRequest, "failed to find venue", err, lib.ErrorVenueIdInvalid.Code, h.Env.App.Debug)
+			default:
 				lib.RespondError(ctx, http.StatusInternalServerError, "failed to find venue", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 			}
-			return
+		} else {
+			lib.RespondError(ctx, http.StatusInternalServerError, "failed to find venue", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 		}
+		return
 	}
 
 	lib.RespondSuccess(ctx, http.StatusOK, "success", res)

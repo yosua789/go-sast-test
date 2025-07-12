@@ -19,7 +19,7 @@ func Newservice(
 	db *database.WrapDB,
 ) Service {
 	organizerService := service.NewOrganizerService(db, env, r.OrganizerRepo)
-	venueService := service.NewVenueService(db, env, r.VenueRepo)
+	venueService := service.NewVenueService(db, env, r.VenueRepo, r.VenueSectorRepo)
 	eventService := service.NewEventService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.OrganizerRepo, r.VenueRepo)
 	eventTicketCategoryService := service.NewEventTicketCategoryService(db, env, r.VenueRepo, r.VenueSectorRepo, r.EventRepo, r.EventTicketCategoryRepo)
 	return Service{

@@ -48,14 +48,32 @@ func NewEventTicketCategoryService(
 
 func (s *EventTicketCategoryServiceImpl) Create(ctx context.Context, eventId string, req dto.CreateEventTicketCategoryRequest) (err error) {
 
-	// Validate event id
-	_, err = s.EventRepository.FindById(ctx, nil, eventId)
+	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// Validate event id
+	event, err := s.EventRepository.FindById(ctx, tx, eventId)
+	if err != nil {
+		return
+	}
+
+	// Validate Sector is same venue with event
+	sector, err := s.VenueSectorRepository.FindById(ctx, tx, req.SectorID)
+	if err != nil {
+		return
+	}
+
+	if sector.VenueID != event.ID {
+		err = &lib.ErrorVenueSectorNotFound
 		return
 	}
 
 	createEventTicketCategory := model.EventTicketCategory{
 		EventID:              eventId,
+		VenueSectorId:        req.SectorID,
 		Name:                 req.Name,
 		Description:          req.Description,
 		Price:                req.Price,

@@ -1070,6 +1070,67 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/venues/{venueId}/sectors": {
+            "get": {
+                "description": "venue sectors",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "venue"
+                ],
+                "summary": "Get venue sectors",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Venue ID",
+                        "name": "venueId",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Get venue sectors by venue id",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.VenueSectorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1146,12 +1207,12 @@ const docTemplate = `{
                 "city",
                 "country",
                 "name",
-                "status",
                 "venue_type"
             ],
             "properties": {
                 "capacity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "city": {
                     "type": "string",
@@ -1164,9 +1225,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 255
-                },
-                "status": {
-                    "type": "boolean"
                 },
                 "venue_type": {
                     "type": "string",
@@ -1514,13 +1572,14 @@ const docTemplate = `{
             "required": [
                 "city",
                 "country",
+                "is_active",
                 "name",
-                "status",
                 "venue_type"
             ],
             "properties": {
                 "capacity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "city": {
                     "type": "string",
@@ -1530,12 +1589,12 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255
                 },
+                "is_active": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 255
-                },
-                "status": {
-                    "type": "boolean"
                 },
                 "venue_type": {
                     "type": "string",
@@ -1580,6 +1639,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "is_active": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1587,6 +1649,44 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "venue_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VenueSectorResponse": {
+            "type": "object",
+            "properties": {
+                "area_code": {
+                    "type": "string"
+                },
+                "capacity": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "has_seatmap": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sector_color": {
+                    "type": "string"
+                },
+                "sector_column": {
+                    "type": "integer"
+                },
+                "sector_row": {
+                    "type": "integer"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
