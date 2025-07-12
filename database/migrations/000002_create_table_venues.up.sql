@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create location type enum
 CREATE TYPE location_type AS ENUM ('STADIUM', 'VENUE', 'HALL', 'OTHER');
 
-CREATE TYPE venue_status AS ENUM ('ACTIVE', 'INACTIVE', 'DISABLE');
+-- CREATE TYPE venue_status AS ENUM ('ACTIVE', 'INACTIVE', 'DISABLE');
 
 CREATE TABLE IF NOT EXISTS venues (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS venues (
     name varchar(255) not null,
     country varchar(255) not null,
     city varchar(255) not null,
-    status venue_status not null,
+    is_active boolean default false,
     capacity int,
     created_at timestamptz not null default CURRENT_TIMESTAMP,
     updated_at timestamptz,
@@ -26,7 +26,7 @@ INSERT INTO
         name,
         country,
         city,
-        status,
+        is_active,
         capacity,
         created_at,
         updated_at,
@@ -39,7 +39,7 @@ VALUES
         'Gelora Bungkarno - Test',
         'Indonesia',
         'Jakarta',
-        'ACTIVE',
+        true,
         70000,
         NOW(),
         NOW(), 

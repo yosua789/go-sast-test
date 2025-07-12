@@ -59,8 +59,6 @@ func (r *EventRepositoryImpl) Create(ctx context.Context, tx pgx.Tx, event model
 	return
 }
 
-// func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, filter)
-
 func (r *EventRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []model.Event, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
@@ -384,14 +382,10 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 
 	additionalParam := ""
 	if param.Search != "" {
-		additionalParam = fmt.Sprintf("e.name LIKE '%%%s%%'", param.Search)
+		additionalParam = fmt.Sprintf("e.name ILIKE '%%%s%%' AND", param.Search)
 	}
 
 	if param.Status != "" {
-		if additionalParam != "" {
-			additionalParam += " AND "
-		}
-
 		additionalParam += fmt.Sprintf("e.status = '%s' AND", param.Status)
 	}
 
@@ -419,7 +413,7 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 		v.country as venue_country,
 		v.city as venue_city,
 		v.capacity as venue_capacity
-	FROM events e
+	FROM events AS e
 		INNER JOIN organizers o ON e.organizer_id = o.id
 		INNER JOIN venues v ON e.venue_id = v.id
 	WHERE %s e.deleted_at IS NULL 
@@ -456,9 +450,9 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 	}
 
 	if tx != nil {
-		rows, err = tx.Query(ctx, query, pagination.Order, pagination.TargetPage, offsetParam)
+		rows, err = tx.Query(ctx, query, pagination.Order, lib.PaginationPerPage, offsetParam)
 	} else {
-		rows, err = r.WrapDB.Postgres.Query(ctx, query, pagination.Order, pagination.TargetPage, offsetParam)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, pagination.Order, lib.PaginationPerPage, offsetParam)
 	}
 
 	if err != nil {

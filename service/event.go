@@ -29,6 +29,7 @@ type EventServiceImpl struct {
 	EventTicketCategoryRepo repository.EventTicketCategoryRepository
 	OrganizerRepo           repository.OrganizerRepository
 	VenueRepo               repository.VenueRepository
+	VenueSectorRepo         repository.VenueSectorRepository
 }
 
 func NewEventService(

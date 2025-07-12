@@ -19,6 +19,7 @@ type EventTicketCategoryRepository interface {
 	FindTicketSectorsByEventId(ctx context.Context, tx pgx.Tx, eventId string) (ticketCategories []entity.TicketCategory, err error)
 	FindByEventId(ctx context.Context, tx pgx.Tx, eventId string) (ticketCategories []model.EventTicketCategory, err error)
 	FindByIdAndEventId(ctx context.Context, tx pgx.Tx, eventId string, ticketCategoryId string) (res model.EventTicketCategory, err error)
+	FindSeatmapByEventSectorId(ctx context.Context, tx pgx.Tx, eventId, tsectorId string) (seats []entity.EventVenueSector, err error)
 	SoftDelete(ctx context.Context, tx pgx.Tx, ticketCategoryId string) (err error)
 }
 
@@ -100,6 +101,7 @@ func (r *EventTicketCategoryRepositoryImpl) FindTicketSectorsByEventId(ctx conte
 
 		vs.id as sector_id,
 		vs.name as sector_name,
+		vs.has_seatmap as sector_has_seatmap,
 		vs.sector_color as sector_color,
 		vs.area_code as sector_area_code
 
@@ -139,6 +141,7 @@ func (r *EventTicketCategoryRepositoryImpl) FindTicketSectorsByEventId(ctx conte
 
 			&ticketCategory.Sector.ID,
 			&ticketCategory.Sector.Name,
+			&ticketCategory.Sector.HasSeatmap,
 			&ticketCategory.Sector.Color,
 			&ticketCategory.Sector.AreaCode,
 		)
@@ -224,6 +227,7 @@ func (r *EventTicketCategoryRepositoryImpl) FindByIdAndEventId(ctx context.Conte
 
 	query := `SELECT 
 		id,
+		venue_sector_id,
 		name, 
 		description,
 		price, 
@@ -242,6 +246,7 @@ func (r *EventTicketCategoryRepositoryImpl) FindByIdAndEventId(ctx context.Conte
 	if tx != nil {
 		err = tx.QueryRow(ctx, query, eventId, ticketCategoryId).Scan(
 			&res.ID,
+			&res.VenueSectorId,
 			&res.Name,
 			&res.Description,
 			&res.Price,
@@ -258,6 +263,7 @@ func (r *EventTicketCategoryRepositoryImpl) FindByIdAndEventId(ctx context.Conte
 	} else {
 		err = r.WrapDB.Postgres.QueryRow(ctx, query, eventId, ticketCategoryId).Scan(
 			&res.ID,
+			&res.VenueSectorId,
 			&res.Name,
 			&res.Description,
 			&res.Price,
@@ -297,6 +303,65 @@ func (r *EventTicketCategoryRepositoryImpl) SoftDelete(ctx context.Context, tx p
 		_, err = tx.Exec(ctx, query, ticketCategoryId)
 	} else {
 		_, err = r.WrapDB.Postgres.Exec(ctx, query, ticketCategoryId)
+	}
+
+	return
+}
+
+func (r *EventTicketCategoryRepositoryImpl) FindSeatmapByEventSectorId(ctx context.Context, tx pgx.Tx, eventId, sectorId string) (seats []entity.EventVenueSector, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := `SELECT 
+		vssm.id, 
+		vssm.seat_row, 
+		vssm.seat_column, 
+		CASE 
+			WHEN vssm.label != evssm.label THEN evssm.label
+			ELSE vssm.label
+		END AS seat_final_label,
+		CASE 
+			WHEN vssm.status != evssm.status THEN 
+				CASE 
+					WHEN evssm.status IN ('PREBOOK', 'COMPLIMENT') THEN 'UNAVAILABLE'
+					ELSE evssm.status
+				END 
+			ELSE vssm.status
+		END AS seat_final_status
+	FROM venue_sector_seatmap_matrix vssm 
+	LEFT JOIN event_venue_sector_seatmap_matrix evssm 
+		ON vssm.sector_id = evssm.sector_id 
+		AND vssm.seat_row = evssm.seat_row 
+		AND vssm.seat_column = evssm.seat_column
+		AND evssm.event_id = $1
+	WHERE vssm.sector_id = $2
+	ORDER BY vssm.seat_row ASC, vssm.seat_column ASC`
+
+	var rows pgx.Rows
+
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, eventId, sectorId)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, eventId, sectorId)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var sectorSeatmap entity.EventVenueSector
+		rows.Scan(
+			&sectorSeatmap.ID,
+			&sectorSeatmap.SeatRow,
+			&sectorSeatmap.SeatColumn,
+			&sectorSeatmap.Label,
+			&sectorSeatmap.Status,
+		)
+
+		seats = append(seats, sectorSeatmap)
 	}
 
 	return

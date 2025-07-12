@@ -14,10 +14,12 @@ type WrapDB struct {
 func InitDB(env *config.EnvironmentVariable) *WrapDB {
 	postgresDB := postgres.NewDBConnection(env)
 
-	// Init migrations
-	err := postgres.InitMigrations(env)
-	if err != nil {
-		return nil
+	if env.Database.Postgres.UseMigration {
+		// Init migrations
+		err := postgres.InitMigrations(env)
+		if err != nil {
+			return nil
+		}
 	}
 
 	return &WrapDB{

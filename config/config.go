@@ -44,13 +44,13 @@ type EnvironmentVariable struct {
 	} `mapstructure:"API"`
 	Database struct {
 		Postgres struct {
-			Scheme            string `mapstructure:"SCHEME"`
-			Host              string `mapstructure:"HOST"`
-			Port              string `mapstructure:"PORT"`
-			User              string `mapstructure:"USER"`
-			Password          string `mapstructure:"PASSWORD"`
-			Name              string `mapstructure:"NAME"`
-			MigrationLocation string `mapstructure:"MIGRATION_LOCATION"`
+			UseMigration bool   `mapstructure:"USE_MIGRATION"`
+			Scheme       string `mapstructure:"SCHEME"`
+			Host         string `mapstructure:"HOST"`
+			Port         string `mapstructure:"PORT"`
+			User         string `mapstructure:"USER"`
+			Password     string `mapstructure:"PASSWORD"`
+			Name         string `mapstructure:"NAME"`
 		} `mapstructure:"POSTGRES"`
 		Timeout struct {
 			Ping  time.Duration `mapstructure:"PING"`

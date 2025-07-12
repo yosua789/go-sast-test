@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS event_venue_sector_seatmap_matrix;

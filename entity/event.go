@@ -33,3 +33,11 @@ type PaginatedEvents struct {
 	Events     []Event
 	Pagination Pagination
 }
+
+type EventVenueSector struct {
+	ID         int
+	SeatRow    int
+	SeatColumn int
+	Label      string
+	Status     string
+}

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS venue_sectors (
     capacity int not null,
 
     is_active boolean default false,
-    is_have_seatmap boolean default false,
+    has_seatmap boolean default false,
 
     sector_color varchar(10),
     area_code varchar(255),
@@ -30,7 +30,7 @@ INSERT INTO venue_sectors (
     capacity,
 
     is_active,
-    is_have_seatmap,
+    has_seatmap,
 
     sector_color,
     area_code,

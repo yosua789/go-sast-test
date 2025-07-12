@@ -399,6 +399,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap": {
+            "get": {
+                "description": "Get seatmap by event and ticket category id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get seatmap by event and ticket category id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ticket Category ID",
+                        "name": "ticketCategoryId",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success get seatmap",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.EventSectorSeatmapResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/organizers": {
             "get": {
                 "description": "Get all organizer",
@@ -1099,12 +1166,7 @@ const docTemplate = `{
                     "maxLength": 255
                 },
                 "status": {
-                    "type": "string",
-                    "enum": [
-                        "ACTIVE",
-                        "INACTIVE",
-                        "DISABLE"
-                    ]
+                    "type": "boolean"
                 },
                 "venue_type": {
                     "type": "string",
@@ -1240,6 +1302,29 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.EventSectorSeatmapResponse": {
+            "type": "object",
+            "properties": {
+                "area_code": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "seatmap": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SectorSeatmapRowResponse"
+                    }
+                }
+            }
+        },
         "dto.EventSettings": {
             "type": "object",
             "properties": {
@@ -1322,6 +1407,34 @@ const docTemplate = `{
                 },
                 "total_records": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.SectorSeatmapResponse": {
+            "type": "object",
+            "properties": {
+                "column": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SectorSeatmapRowResponse": {
+            "type": "object",
+            "properties": {
+                "row": {
+                    "type": "integer"
+                },
+                "seats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SectorSeatmapResponse"
+                    }
                 }
             }
         },
@@ -1422,12 +1535,7 @@ const docTemplate = `{
                     "maxLength": 255
                 },
                 "status": {
-                    "type": "string",
-                    "enum": [
-                        "ACTIVE",
-                        "INACTIVE",
-                        "DISABLE"
-                    ]
+                    "type": "boolean"
                 },
                 "venue_type": {
                     "type": "string",
