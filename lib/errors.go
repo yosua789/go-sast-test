@@ -91,6 +91,10 @@ var (
 		Code: 40405,
 		Err:  errors.New("ticket category not found"),
 	}
+	ErrorTicketCategoryInvalid = TIXError{
+		Code: 40408,
+		Err:  errors.New("ticket category invalid"),
+	}
 )
 
 var (
