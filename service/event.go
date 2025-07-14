@@ -150,7 +150,7 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 		return
 	}
 
-	eventResponse := lib.MapEventSettingEntityToEventSettingResponse(eventSettings)
+	eventSettingsResponse := lib.MapEventSettingEntityToEventSettingResponse(eventSettings)
 
 	ticketCategories, err := s.EventTicketCategoryRepo.FindByEventId(ctx, nil, eventId)
 	if err != nil {
@@ -175,7 +175,7 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 
 		AdditionalInformation: event.AdditionalInformation,
 
-		ActiveSettings: eventResponse,
+		ActiveSettings: eventSettingsResponse,
 
 		TicketCategories: ticketCategoriesResponse,
 

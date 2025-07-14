@@ -40,6 +40,7 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 		SectorHandler:              handler.SectorHandler,
 		EventHandler:               handler.EventHandler,
 		EventTicketCategoryHandler: handler.EventTicketCategoryHandler,
+		EventTransaction:           handler.EventTransactionHandler,
 		Middleware:                 middleware,
 	}
 

@@ -23,6 +23,7 @@ type Handler struct {
 	SectorHandler              handler.SectorHandler
 	EventHandler               handler.EventHandler
 	EventTicketCategoryHandler handler.EventTicketCategoryHandler
+	EventTransaction           handler.EventTransactionHandler
 	Middleware                 middleware.Middleware
 }
 

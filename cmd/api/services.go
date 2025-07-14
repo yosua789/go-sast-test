@@ -11,6 +11,7 @@ type Service struct {
 	VenueService               service.VenueService
 	EventService               service.EventService
 	EventTicketCategoryService service.EventTicketCategoryService
+	EventTransactionService    service.EventTransactionService
 }
 
 func Newservice(
@@ -22,10 +23,13 @@ func Newservice(
 	venueService := service.NewVenueService(db, env, r.VenueRepo, r.VenueSectorRepo)
 	eventService := service.NewEventService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.OrganizerRepo, r.VenueRepo)
 	eventTicketCategoryService := service.NewEventTicketCategoryService(db, env, r.VenueRepo, r.VenueSectorRepo, r.EventRepo, r.EventTicketCategoryRepo)
+	eventTransactionService := service.NewEventTransactionService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.EventTransactionRepo, r.EventTransactionItemRepo, r.EventSeatmapBookRepo, r.VenueSectorRepo)
+
 	return Service{
 		OrganizerService:           organizerService,
 		VenueService:               venueService,
 		EventService:               eventService,
 		EventTicketCategoryService: eventTicketCategoryService,
+		EventTransactionService:    eventTransactionService,
 	}
 }

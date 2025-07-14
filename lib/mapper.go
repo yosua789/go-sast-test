@@ -90,8 +90,8 @@ func MapEventEntityToEventResponse(
 
 func MapEventSettingEntityToEventSettingResponse(
 	eventSettings []entity.EventSetting,
-) dto.EventSettings {
-	var res dto.EventSettings
+) dto.EventSettingsResponse {
+	var res dto.EventSettingsResponse
 
 	for _, setting := range eventSettings {
 		if setting.Setting.Name == EventGarudaIdVerificationSettingName {

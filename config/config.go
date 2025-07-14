@@ -76,10 +76,14 @@ type EnvironmentVariable struct {
 	FileUpload struct {
 		MaxSize int `mapstructure:"MAX_SIZE"`
 	} `mapstructure:"FILE_UPLOAD"`
+
+	Transaction struct {
+		ExpirationDuration time.Duration `mapstructure:"EXPIRATION_DURATION"`
+	} `mapstructure:"TRANSACTION"`
 }
 
 func (e *EnvironmentVariable) GetDBDSN() string {
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", e.Database.Postgres.Host, e.Database.Postgres.Port, e.Database.Postgres.User, e.Database.Postgres.Password, e.Database.Postgres.Name)
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", e.Database.Postgres.Host, e.Database.Postgres.Port, e.Database.Postgres.User, e.Database.Postgres.Password, e.Database.Postgres.Name)
 }
 
 func (e *EnvironmentVariable) GetDBUrl() string {

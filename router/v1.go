@@ -52,4 +52,6 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 	rg.GET("/:eventId/ticket-categories/:ticketCategoryId", h.EventTicketCategoryHandler.GetById)
 
 	rg.GET("/:eventId/ticket-categories/:ticketCategoryId/seatmap", h.EventTicketCategoryHandler.GetSeatmap)
+
+	rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
 }

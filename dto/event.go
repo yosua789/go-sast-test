@@ -33,7 +33,7 @@ type DetailEventResponse struct {
 
 	AdditionalInformation string `json:"additional_information"`
 
-	ActiveSettings EventSettings `json:"active_settings"`
+	ActiveSettings EventSettingsResponse `json:"active_settings"`
 
 	TicketCategories []EventTicketCategoryResponse `json:"ticket_categories"`
 
@@ -44,9 +44,17 @@ type DetailEventResponse struct {
 	UpdatedAt *time.Time `json:"updated_at"`
 }
 
-type EventSettings struct {
+type EventSettingsResponse struct {
 	GarudaIdVerification         bool `json:"garuda_id_verification,omitempty"`
 	MaxAdultTicketPerTransaction int  `json:"max_adult_ticket_per_transaction,omitempty"`
+}
+
+type EventSettings struct {
+	GarudaIdVerification         bool    `json:"garuda_id_verification,omitempty"`
+	MaxAdultTicketPerTransaction int     `json:"max_adult_ticket_per_transaction,omitempty"`
+	TaxPercentage                float64 `json:"tax_percentage,omitempty"`
+	AdminPercentage              float64 `json:"admin_percentage,omitempty"`
+	AdminFee                     int     `json:"admin_fee,omitempty"`
 }
 
 type PaginatedEvents struct {

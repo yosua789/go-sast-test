@@ -3,14 +3,19 @@ package repository
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/domain"
 	"assist-tix/entity"
+	"assist-tix/helper"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,7 +24,9 @@ type EventTicketCategoryRepository interface {
 	FindTicketSectorsByEventId(ctx context.Context, tx pgx.Tx, eventId string) (ticketCategories []entity.TicketCategory, err error)
 	FindByEventId(ctx context.Context, tx pgx.Tx, eventId string) (ticketCategories []model.EventTicketCategory, err error)
 	FindByIdAndEventId(ctx context.Context, tx pgx.Tx, eventId string, ticketCategoryId string) (res model.EventTicketCategory, err error)
-	FindSeatmapByEventSectorId(ctx context.Context, tx pgx.Tx, eventId, tsectorId string) (seats []entity.EventVenueSector, err error)
+	FindSeatmapByEventSectorId(ctx context.Context, tx pgx.Tx, eventId, sectorId string) (seats []entity.EventVenueSector, err error)
+	FindSeatmapStatusByEventSectorId(ctx context.Context, tx pgx.Tx, eventId, sectorId string, reqs []domain.SeatmapParam) (seatmap map[string]entity.EventVenueSector, err error)
+	BuyPublicTicketById(ctx context.Context, tx pgx.Tx, eventId, ticketCategoryId string, newStock int) (err error)
 	SoftDelete(ctx context.Context, tx pgx.Tx, ticketCategoryId string) (err error)
 }
 
@@ -364,6 +371,114 @@ func (r *EventTicketCategoryRepositoryImpl) FindSeatmapByEventSectorId(ctx conte
 		)
 
 		seats = append(seats, sectorSeatmap)
+	}
+
+	return
+}
+
+func (r *EventTicketCategoryRepositoryImpl) BuyPublicTicketById(ctx context.Context, tx pgx.Tx, eventId, ticketCategoryId string, buyTicket int) (err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
+	defer cancel()
+
+	query := `UPDATE event_ticket_categories 
+		SET public_stock = public_stock - $1, 
+		updated_at = NOW() 
+	WHERE event_id = $2 
+		AND id = $3
+		AND public_stock >= $1
+		AND deleted_at IS NULL`
+
+	var cmdTag pgconn.CommandTag
+	if tx != nil {
+		cmdTag, err = tx.Exec(ctx, query, buyTicket, eventId, ticketCategoryId)
+	} else {
+		cmdTag, err = r.WrapDB.Postgres.Exec(ctx, query, buyTicket, eventId, ticketCategoryId)
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		err = &lib.ErrorTicketIsOutOfStock
+		return
+	}
+
+	return
+}
+
+// Find seatmap by specific event, venue sector and seat row & colum
+func (r *EventTicketCategoryRepositoryImpl) FindSeatmapStatusByEventSectorId(ctx context.Context, tx pgx.Tx, eventId, sectorId string, reqs []domain.SeatmapParam) (seatmap map[string]entity.EventVenueSector, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	seatmap = make(map[string]entity.EventVenueSector)
+
+	query := `SELECT 
+		vssm.id, 
+		vssm.seat_row, 
+		vssm.seat_column, 
+		CASE 
+			WHEN vssm.label != evssm.label THEN evssm.label
+			ELSE vssm.label
+		END AS seat_final_label,
+		CASE 
+			WHEN vssm.status != evssm.status THEN 
+				CASE 
+					WHEN evssm.status IN ('PREBOOK', 'COMPLIMENT') THEN 'UNAVAILABLE'
+					ELSE evssm.status
+				END 
+			ELSE vssm.status
+		END AS seat_final_status
+	FROM venue_sector_seatmap_matrix vssm 
+	LEFT JOIN event_venue_sector_seatmap_matrix evssm 
+		ON vssm.sector_id = evssm.sector_id 
+		AND vssm.seat_row = evssm.seat_row 
+		AND vssm.seat_column = evssm.seat_column
+		AND evssm.event_id = $1
+	WHERE vssm.sector_id = $2
+		AND (vssm.seat_row, vssm.seat_column) IN (`
+
+	var args []interface{}
+	var placeholders []string
+
+	args = append(args, eventId, sectorId)
+
+	for i, req := range reqs {
+		base := (i * 2) + 2
+		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d)",
+			base+1, base+2))
+
+		args = append(args,
+			req.SeatRow,
+			req.SeatColumn,
+		)
+	}
+
+	query += strings.Join(placeholders, ",")
+	query += `) ORDER BY vssm.seat_row ASC, vssm.seat_column ASC`
+
+	var rows pgx.Rows
+
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, args...)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, args...)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var sectorSeatmap entity.EventVenueSector
+		rows.Scan(
+			&sectorSeatmap.ID,
+			&sectorSeatmap.SeatRow,
+			&sectorSeatmap.SeatColumn,
+			&sectorSeatmap.Label,
+			&sectorSeatmap.Status,
+		)
+
+		seatmap[helper.ConvertRowColumnKey(sectorSeatmap.SeatRow, sectorSeatmap.SeatColumn)] = sectorSeatmap
 	}
 
 	return

@@ -53,6 +53,21 @@ definitions:
     - total_stock
     - venue_sector_id
     type: object
+  dto.CreateEventTransaction:
+    properties:
+      email:
+        type: string
+      fullName:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.OrderItemEventTransaction'
+        type: array
+      paymentMethod:
+        type: string
+      phoneNumber:
+        type: string
+    type: object
   dto.CreateVenueRequest:
     properties:
       capacity:
@@ -102,7 +117,7 @@ definitions:
   dto.DetailEventResponse:
     properties:
       active_settings:
-        $ref: '#/definitions/dto.EventSettings'
+        $ref: '#/definitions/dto.EventSettingsResponse'
       additional_information:
         type: string
       banner:
@@ -176,7 +191,7 @@ definitions:
           $ref: '#/definitions/dto.SectorSeatmapRowResponse'
         type: array
     type: object
-  dto.EventSettings:
+  dto.EventSettingsResponse:
     properties:
       garuda_id_verification:
         type: boolean
@@ -192,6 +207,38 @@ definitions:
       name:
         type: string
       price:
+        type: integer
+    type: object
+  dto.EventTransactionResponse:
+    properties:
+      admin_fee_percentage:
+        type: number
+      created_at:
+        type: string
+      grand_total:
+        type: integer
+      invoice_number:
+        type: string
+      payment_expired_at:
+        type: string
+      payment_method:
+        type: string
+      tax_percentage:
+        type: number
+      total_admin_fee:
+        type: integer
+      total_price:
+        type: integer
+      total_tax:
+        type: integer
+    type: object
+  dto.OrderItemEventTransaction:
+    properties:
+      additionalInformation:
+        type: string
+      seatColumn:
+        type: integer
+      seatRow:
         type: integer
     type: object
   dto.OrganizerResponse:
@@ -642,6 +689,55 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Get detail event ticket category by id
+      tags:
+      - events
+  /events/{eventId}/ticket-categories/{ticketCategoryId}/order:
+    post:
+      consumes:
+      - application/json
+      description: Create event ticket transaction
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        required: true
+        type: string
+      - description: Ticket Category ID
+        in: path
+        name: ticketCategoryId
+        required: true
+        type: string
+      - description: Create event ticket transaction
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEventTransaction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Order created
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.EventTransactionResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create event ticket transaction
       tags:
       - events
   /events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap:
