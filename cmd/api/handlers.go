@@ -13,6 +13,7 @@ type Handler struct {
 	SectorHandler              handler.SectorHandler
 	EventHandler               handler.EventHandler
 	EventTicketCategoryHandler handler.EventTicketCategoryHandler
+	EventTransactionHandler    handler.EventTransactionHandler
 }
 
 func Newhandler(
@@ -26,5 +27,6 @@ func Newhandler(
 		SectorHandler:              handler.NewSectorHandler(env, s.VenueService, validator),
 		EventHandler:               handler.NewEventHandler(env, s.EventService, validator),
 		EventTicketCategoryHandler: handler.NewEventTicketCategoryHandler(env, s.EventTicketCategoryService, validator),
+		EventTransactionHandler:    handler.NewEventTransactionHandler(env, s.EventTransactionService, validator),
 	}
 }

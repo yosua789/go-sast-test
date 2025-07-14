@@ -91,6 +91,10 @@ var (
 		Code: 40405,
 		Err:  errors.New("ticket category not found"),
 	}
+	ErrorTicketCategoryInvalid = TIXError{
+		Code: 40408,
+		Err:  errors.New("ticket category invalid"),
+	}
 )
 
 var (
@@ -109,6 +113,13 @@ var (
 	ErrorEventPosterSizeExceeds = TIXError{
 		Code: 41302,
 		Err:  errors.New("event poster size exceeds the limit"),
+	}
+)
+
+var (
+	ErrorEventSettingNotFound = TIXError{
+		Code: 40409,
+		Err:  errors.New("setting not found"),
 	}
 )
 
@@ -132,7 +143,7 @@ var (
 		Err:  errors.New("page invalid"),
 	}
 	ErrorPaginationReachMaxPage = TIXError{
-		Code: 40006,
+		Code: 40007,
 		Err:  errors.New("max reach page"),
 	}
 )
@@ -141,5 +152,35 @@ var (
 	ErrorNotImplemented = TIXError{
 		Code: 50099,
 		Err:  errors.New("internal server error"),
+	}
+)
+
+var (
+	ErrorFailedToCreateTransaction = TIXError{
+		Code: 50002,
+		Err:  errors.New("failed to create transaction, please try again"),
+	}
+	ErrorTicketIsOutOfStock = TIXError{
+		Code: 40008,
+		Err:  errors.New("ticket out of stock"),
+	}
+	ErrorPurchaseQuantityExceedTheLimit = TIXError{
+		Code: 40009,
+		Err:  errors.New("purchased items exceed the purchase limit"),
+	}
+)
+
+var (
+	ErrorBookedSeatNotFound = TIXError{
+		Code: 40410,
+		Err:  errors.New("booked seat not found"),
+	}
+	ErrorSeatIsAlreadyBooked = TIXError{
+		Code: 40905,
+		Err:  errors.New("seat is already booked"),
+	}
+	ErrorFailedToBookSeat = TIXError{
+		Code: 40011,
+		Err:  errors.New("failed to book seat"),
 	}
 )

@@ -399,6 +399,84 @@ const docTemplate = `{
                 }
             }
         },
+        "/events/{eventId}/ticket-categories/{ticketCategoryId}/order": {
+            "post": {
+                "description": "Create event ticket transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Create event ticket transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ticket Category ID",
+                        "name": "ticketCategoryId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create event ticket transaction",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateEventTransaction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.EventTransactionResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap": {
             "get": {
                 "description": "Get seatmap by event and ticket category id",
@@ -1201,6 +1279,29 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateEventTransaction": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "fullName": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.OrderItemEventTransaction"
+                    }
+                },
+                "paymentMethod": {
+                    "type": "string"
+                },
+                "phoneNumber": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateVenueRequest": {
             "type": "object",
             "required": [
@@ -1270,7 +1371,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "active_settings": {
-                    "$ref": "#/definitions/dto.EventSettings"
+                    "$ref": "#/definitions/dto.EventSettingsResponse"
                 },
                 "additional_information": {
                     "type": "string"
@@ -1383,7 +1484,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.EventSettings": {
+        "dto.EventSettingsResponse": {
             "type": "object",
             "properties": {
                 "garuda_id_verification": {
@@ -1407,6 +1508,55 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "price": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.EventTransactionResponse": {
+            "type": "object",
+            "properties": {
+                "admin_fee_percentage": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "grand_total": {
+                    "type": "integer"
+                },
+                "invoice_number": {
+                    "type": "string"
+                },
+                "payment_expired_at": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "type": "string"
+                },
+                "tax_percentage": {
+                    "type": "number"
+                },
+                "total_admin_fee": {
+                    "type": "integer"
+                },
+                "total_price": {
+                    "type": "integer"
+                },
+                "total_tax": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.OrderItemEventTransaction": {
+            "type": "object",
+            "properties": {
+                "additionalInformation": {
+                    "type": "string"
+                },
+                "seatColumn": {
+                    "type": "integer"
+                },
+                "seatRow": {
                     "type": "integer"
                 }
             }
