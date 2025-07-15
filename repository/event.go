@@ -23,7 +23,7 @@ type EventRepository interface {
 	FindAllPaginated(ctx context.Context, tx pgx.Tx, param domain.FilterEventParam, pagination domain.PaginationParam) (res entity.PaginatedEvents, err error)
 	FindById(ctx context.Context, tx pgx.Tx, eventId string) (event model.Event, err error)
 	FindByIdWithVenueAndOrganizer(ctx context.Context, tx pgx.Tx, eventId string) (event entity.Event, err error)
-	Count(ctx context.Context, tx pgx.Tx) (res int64, err error)
+	Count(ctx context.Context, tx pgx.Tx, param *domain.FilterEventParam) (res int64, err error)
 	Update(ctx context.Context, tx pgx.Tx, event model.Event) (err error)
 	SoftDelete(ctx context.Context, tx pgx.Tx, eventId string) (err error)
 }
@@ -335,11 +335,20 @@ func (r *EventRepositoryImpl) SoftDelete(ctx context.Context, tx pgx.Tx, eventId
 	return
 }
 
-func (r *EventRepositoryImpl) Count(ctx context.Context, tx pgx.Tx) (res int64, err error) {
+func (r *EventRepositoryImpl) Count(ctx context.Context, tx pgx.Tx, param *domain.FilterEventParam) (res int64, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
-	query := `SELECT count(id) FROM events WHERE deleted_at IS NULL`
+	additionalParam := ""
+	if param.Search != "" {
+		additionalParam = fmt.Sprintf("name ILIKE '%%%s%%' AND", param.Search)
+	}
+
+	if param.Status != "" {
+		additionalParam += fmt.Sprintf("status = '%s' AND", param.Status)
+	}
+
+	query := fmt.Sprintf(`SELECT count(id) FROM events WHERE %s deleted_at IS NULL`, additionalParam)
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query).Scan(&res)
@@ -354,7 +363,7 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	totalRecords, err := r.Count(ctx, tx)
+	totalRecords, err := r.Count(ctx, tx, &param)
 	if err != nil {
 		return
 	}
@@ -433,10 +442,10 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 
 	var offsetParam int64 = 0
 	if pagination.TargetPage > 1 {
-		offsetParam = pagination.TargetPage * lib.PaginationPerPage
+		offsetParam = (pagination.TargetPage - 1) * lib.PaginationPerPage
 	}
 
-	if pagination.TargetPage+1 >= totalPage {
+	if pagination.TargetPage >= totalPage {
 		resPagination.HasNextPage = false
 		resPagination.NextPage = pagination.TargetPage
 	} else {
