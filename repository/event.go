@@ -368,6 +368,9 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 		totalPage = 1
 	} else {
 		totalPage = int64(totalRecords / lib.PaginationPerPage)
+		if totalRecords%lib.PaginationPerPage > 0 {
+			totalPage += 1
+		}
 	}
 
 	if pagination.TargetPage < 1 {

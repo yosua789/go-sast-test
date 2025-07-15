@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 )
 
 type OrganizerHandler interface {
@@ -70,6 +71,7 @@ func (h *OrganizerHandlerImpl) Create(ctx *gin.Context) {
 	}
 
 	// int64(h.Env.FileUpload.MaxSize)<<20 -> Calculate as MegaBytes
+	log.Info().Msg("Validate max size per upload")
 	if request.Logo.Size > int64(h.Env.FileUpload.MaxSize)<<20 {
 		lib.RespondError(ctx, http.StatusRequestEntityTooLarge, lib.ErrorOrganizerPosterSizeExceeds.Error(), lib.ErrorOrganizerPosterSizeExceeds.Err, lib.ErrorOrganizerPosterSizeExceeds.Code, h.Env.App.Debug)
 		return
@@ -91,6 +93,7 @@ func (h *OrganizerHandlerImpl) Create(ctx *gin.Context) {
 
 	_, err = h.OrganizerService.CreateOrganizer(ctx, request, file)
 	if err != nil {
+		log.Error().Err(err).Msg("error create organizer")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -132,6 +135,7 @@ func (h *OrganizerHandlerImpl) GetByID(ctx *gin.Context) {
 
 	res, err := h.OrganizerService.GetOrganizerById(ctx, uriParams.OrganizerId)
 	if err != nil {
+		log.Error().Err(err).Msg("error get organizer by id")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -163,6 +167,7 @@ func (h *OrganizerHandlerImpl) GetByID(ctx *gin.Context) {
 func (h *OrganizerHandlerImpl) GetAll(ctx *gin.Context) {
 	res, err := h.OrganizerService.GetAllOrganizer(ctx)
 	if err != nil {
+		log.Error().Err(err).Msg("error get organizers")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -224,6 +229,7 @@ func (h *OrganizerHandlerImpl) Update(ctx *gin.Context) {
 
 	err := h.OrganizerService.Update(ctx, uriParams.OrganizerId, request)
 	if err != nil {
+		log.Error().Err(err).Msg("error update organizer")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -270,6 +276,7 @@ func (h *OrganizerHandlerImpl) Delete(ctx *gin.Context) {
 
 	err := h.OrganizerService.Delete(ctx, uriParams.OrganizerId)
 	if err != nil {
+		log.Error().Err(err).Msg("error delete organizer")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
