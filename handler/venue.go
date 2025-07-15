@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 )
 
 type VenueHandler interface {
@@ -70,6 +71,7 @@ func (h *VenueHandlerImpl) Create(ctx *gin.Context) {
 
 	_, err := h.VenueService.CreateVenue(ctx, request)
 	if err != nil {
+		log.Error().Err(err).Msg("error create venue")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -97,6 +99,7 @@ func (h *VenueHandlerImpl) Create(ctx *gin.Context) {
 func (h *VenueHandlerImpl) GetAll(ctx *gin.Context) {
 	res, err := h.VenueService.GetAllVenue(ctx)
 	if err != nil {
+		log.Error().Err(err).Msg("error get venues")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -138,6 +141,7 @@ func (h *VenueHandlerImpl) GetById(ctx *gin.Context) {
 
 	res, err := h.VenueService.GetVenueById(ctx, uriParams.VenueID)
 	if err != nil {
+		log.Error().Err(err).Msg("error get venue by id")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -203,6 +207,7 @@ func (h *VenueHandlerImpl) Update(ctx *gin.Context) {
 
 	err := h.VenueService.Update(ctx, uriParams.VenueID, request)
 	if err != nil {
+		log.Error().Err(err).Msg("error update venue by id")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -249,6 +254,7 @@ func (h *VenueHandlerImpl) Delete(ctx *gin.Context) {
 
 	err := h.VenueService.Delete(ctx, uriParams.VenueID)
 	if err != nil {
+		log.Error().Err(err).Msg("error delete venue by id")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 )
 
 type EventHandler interface {
@@ -126,6 +127,7 @@ func (h *EventHandlerImpl) GetAllPaginated(ctx *gin.Context) {
 
 	res, err := h.EventService.GetAllEventPaginated(ctx, filterEventParam, paginationParam)
 	if err != nil {
+		log.Error().Err(err).Msg("error get paginated events")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -171,22 +173,22 @@ func (h *EventHandlerImpl) GetById(ctx *gin.Context) {
 
 	res, err := h.EventService.GetEventById(ctx, uriParams.EventID)
 	if err != nil {
-		if err != nil {
-			var tixErr *lib.TIXError
-			if errors.As(err, &tixErr) {
-				switch *tixErr {
-				case lib.ErrorEventNotFound:
-					lib.RespondError(ctx, http.StatusNotFound, "error", err, lib.ErrorEventNotFound.Code, h.Env.App.Debug)
-				case lib.ErrorEventIdInvalid:
-					lib.RespondError(ctx, http.StatusBadRequest, "error", err, lib.ErrorEventIdInvalid.Code, h.Env.App.Debug)
-				default:
-					lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
-				}
-			} else {
+		log.Error().Err(err).Msg("error get event by id")
+		var tixErr *lib.TIXError
+		if errors.As(err, &tixErr) {
+			switch *tixErr {
+			case lib.ErrorEventNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "error", err, lib.ErrorEventNotFound.Code, h.Env.App.Debug)
+			case lib.ErrorEventIdInvalid:
+				lib.RespondError(ctx, http.StatusBadRequest, "error", err, lib.ErrorEventIdInvalid.Code, h.Env.App.Debug)
+			default:
 				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 			}
-			return
+		} else {
+			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 		}
+		return
+
 	}
 
 	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
@@ -218,6 +220,7 @@ func (h *EventHandlerImpl) Delete(ctx *gin.Context) {
 
 	err := h.EventService.Delete(ctx, uriParams.EventID)
 	if err != nil {
+		log.Error().Err(err).Msg("error delete event by id")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {

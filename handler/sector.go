@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 )
 
 type SectorHandler interface {
@@ -61,6 +62,7 @@ func (h *SectorHandlerImpl) GetByVenueId(ctx *gin.Context) {
 
 	res, err := h.VenueService.GetSectorsByVenueId(ctx, uriParams.VenueID)
 	if err != nil {
+		log.Error().Err(err).Msg("error get sectors by venue")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {

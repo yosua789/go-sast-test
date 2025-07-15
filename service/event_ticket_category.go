@@ -8,6 +8,8 @@ import (
 	"assist-tix/model"
 	"assist-tix/repository"
 	"context"
+
+	"github.com/rs/zerolog/log"
 )
 
 type EventTicketCategoryService interface {
@@ -48,6 +50,7 @@ func NewEventTicketCategoryService(
 
 func (s *EventTicketCategoryServiceImpl) Create(ctx context.Context, eventId string, req dto.CreateEventTicketCategoryRequest) (err error) {
 
+	log.Info().Str("eventId", eventId).Str("name", req.Name).Msg("create event ticket category")
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
 		return err
@@ -55,17 +58,20 @@ func (s *EventTicketCategoryServiceImpl) Create(ctx context.Context, eventId str
 	defer tx.Rollback(ctx)
 
 	// Validate event id
+	log.Info().Msg("validate and find event by id")
 	event, err := s.EventRepository.FindById(ctx, tx, eventId)
 	if err != nil {
 		return
 	}
 
 	// Validate Sector is same venue with event
+	log.Info().Str("sectorId", req.SectorID).Msg("validate and find venue sector by id")
 	sector, err := s.VenueSectorRepository.FindById(ctx, tx, req.SectorID)
 	if err != nil {
 		return
 	}
 
+	log.Info().Str("sectorId", req.SectorID).Str("venueId", event.VenueID).Msg("validate sector venue is same with event venue")
 	if sector.VenueID != event.VenueID {
 		err = &lib.ErrorVenueSectorNotFound
 		return
@@ -86,21 +92,26 @@ func (s *EventTicketCategoryServiceImpl) Create(ctx context.Context, eventId str
 		Entrance:             req.Entrance,
 	}
 
+	log.Info().Msg("insert data event ticket category")
 	err = s.EventTicketCategoryRepository.Create(ctx, nil, createEventTicketCategory)
 	if err != nil {
 		return
 	}
+
+	log.Info().Msg("success create event ticket category")
 
 	return
 }
 
 func (s *EventTicketCategoryServiceImpl) GetByEventId(ctx context.Context, eventId string) (res []dto.DetailEventTicketCategoryResponse, err error) {
 	// Validate event id
+	log.Info().Str("eventId", eventId).Msg("validate event")
 	_, err = s.EventRepository.FindById(ctx, nil, eventId)
 	if err != nil {
 		return
 	}
 
+	log.Info().Str("eventId", eventId).Msg("get ticket categories by event id")
 	ticketCategories, err := s.EventTicketCategoryRepository.FindByEventId(ctx, nil, eventId)
 	if err != nil {
 		return
@@ -111,21 +122,26 @@ func (s *EventTicketCategoryServiceImpl) GetByEventId(ctx context.Context, event
 		res = append(res, lib.MapEventTicketCategoryModelToDetailEventTicketCategoryResponse(val))
 	}
 
+	log.Info().Int("count", len(res)).Msg("success get ticket categories by event id")
+
 	return
 }
 
 func (s *EventTicketCategoryServiceImpl) GetVenueTicketsByEventId(ctx context.Context, eventId string) (res dto.VenueEventTicketCategoryResponse, err error) {
 	// Validate event id
+	log.Info().Str("eventId", eventId).Msg("validate event")
 	event, err := s.EventRepository.FindById(ctx, nil, eventId)
 	if err != nil {
 		return
 	}
 
+	log.Info().Str("venueId", event.VenueID).Msg("find venue")
 	venue, err := s.VenueRepository.FindById(ctx, nil, event.VenueID)
 	if err != nil {
 		return
 	}
 
+	log.Info().Str("eventId", eventId).Msg("find ticket categories by event id")
 	ticketCategories, err := s.EventTicketCategoryRepository.FindTicketSectorsByEventId(ctx, nil, eventId)
 	if err != nil {
 		return
@@ -136,60 +152,77 @@ func (s *EventTicketCategoryServiceImpl) GetVenueTicketsByEventId(ctx context.Co
 		tickets = append(tickets, lib.MapEntityTicketCategoryToDetailEventPublicTicketCategoryResponse(val))
 	}
 
+	log.Info().Int("count", len(tickets)).Msg("tickets")
+
 	res = dto.VenueEventTicketCategoryResponse{
 		Venue:            lib.MapVenueModelToVenueResponse(venue),
 		TicketCategories: tickets,
 	}
 
+	log.Info().Msg("success get venue tickets by event id")
+
 	return
 }
 
 func (s *EventTicketCategoryServiceImpl) GetById(ctx context.Context, eventId string, ticketCategoryId string) (res dto.DetailEventTicketCategoryResponse, err error) {
+	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Msg("get ticket category by id")
 	ticketCategory, err := s.EventTicketCategoryRepository.FindByIdAndEventId(ctx, nil, eventId, ticketCategoryId)
 	if err != nil {
 		return
 	}
 
 	res = lib.MapEventTicketCategoryModelToDetailEventTicketCategoryResponse(ticketCategory)
+	log.Info().Msg("success get ticket category by id")
 	return
 }
 
 func (s *EventTicketCategoryServiceImpl) Delete(ctx context.Context, eventId, ticketCategoryId string) (err error) {
+	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Msg("validate ticket category")
 	_, err = s.EventTicketCategoryRepository.FindByIdAndEventId(ctx, nil, eventId, ticketCategoryId)
 	if err != nil {
 		return
 	}
 
+	log.Info().Msg("delete ticket category from database")
 	err = s.EventTicketCategoryRepository.SoftDelete(ctx, nil, ticketCategoryId)
 	if err != nil {
 		return
 	}
+
+	log.Info().Msg("success delete ticket category by id")
 
 	return
 }
 
 // TODO: Implement Booked seat, mark seat as unavailable when seat is booked
 func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx context.Context, eventId, ticketCategoryId string) (res dto.EventSectorSeatmapResponse, err error) {
+	log.Info().Msg("get seatmap by ticket category id")
+
+	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Msg("find event ticket category")
 	eventTickets, err := s.EventTicketCategoryRepository.FindByIdAndEventId(ctx, nil, eventId, ticketCategoryId)
 	if err != nil {
 		return
 	}
 
+	log.Info().Str("venueSectorId", eventTickets.VenueSectorId).Msg("find venue sector")
 	sector, err := s.VenueSectorRepository.FindById(ctx, nil, eventTickets.VenueSectorId)
 	if err != nil {
 		return
 	}
 
+	log.Info().Bool("hasSeatmap", sector.HasSeatmap).Msg("check sector has seatmap")
 	if !sector.HasSeatmap {
 		err = &lib.ErrorVenueSectorDoesntHaveSeatmap
 		return
 	}
 
+	log.Info().Str("eventId", eventId).Str("sectorId", sector.ID).Msg("find seatmap by event sector id")
 	seatmapRes, err := s.EventTicketCategoryRepository.FindSeatmapByEventSectorId(ctx, nil, eventId, sector.ID)
 	if err != nil {
 		return
 	}
 
+	log.Info().Msg("mapping seatmap row and column sector")
 	var (
 		currentRow   int = -1
 		currentSeats []dto.SectorSeatmapResponse
@@ -235,6 +268,8 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 	}
 
 	res.Seatmap = seatmap
+
+	log.Info().Msg("success get seatmap by ticket category id")
 
 	return
 }

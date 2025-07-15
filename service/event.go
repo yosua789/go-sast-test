@@ -10,6 +10,8 @@ import (
 	"assist-tix/model"
 	"assist-tix/repository"
 	"context"
+
+	"github.com/rs/zerolog/log"
 )
 
 type EventService interface {
@@ -58,6 +60,7 @@ func (s *EventServiceImpl) CreateEvent(ctx context.Context, req dto.CreateEventR
 }
 
 func (s *EventServiceImpl) GetAllEvent(ctx context.Context) (res []dto.EventResponse, err error) {
+	log.Info().Msg("Get all events")
 	events, err := s.EventRepo.FindAll(ctx, nil)
 	if err != nil {
 		return
@@ -73,11 +76,13 @@ func (s *EventServiceImpl) GetAllEvent(ctx context.Context) (res []dto.EventResp
 	for _, val := range events {
 		organizerIds = append(organizerIds, val.OrganizerID)
 	}
+	log.Info().Any("OrganizerIds", organizerIds).Msg("Mapping organizer ids")
 
 	var venueIds []string = make([]string, 0)
 	for _, val := range events {
 		venueIds = append(venueIds, val.VenueID)
 	}
+	log.Info().Any("VenueIds", venueIds).Msg("Mapping venue ids")
 
 	var organizerMap map[string]model.Organizer = make(map[string]model.Organizer)
 	organizers, err := s.OrganizerRepo.FindByIds(ctx, nil, organizerIds...)
@@ -107,6 +112,7 @@ func (s *EventServiceImpl) GetAllEvent(ctx context.Context) (res []dto.EventResp
 
 	res = make([]dto.EventResponse, 0)
 
+	log.Info().Msg("Mapping events with venue & organizer")
 	for _, val := range events {
 		organizer, ok := organizerMap[val.OrganizerID]
 		if !ok {
@@ -136,15 +142,20 @@ func (s *EventServiceImpl) GetAllEvent(ctx context.Context) (res []dto.EventResp
 		})
 	}
 
+	log.Info().Int("Count", len(events)).Msg("Events success")
+
 	return
 }
 
 func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (res dto.DetailEventResponse, err error) {
+	log.Info().Str("EventID", eventId).Msg("Get event by ID")
+
 	event, err := s.EventRepo.FindByIdWithVenueAndOrganizer(ctx, nil, eventId)
 	if err != nil {
 		return
 	}
 
+	log.Info().Msg("Get event settings by event id")
 	eventSettings, err := s.EventSettingRepo.FindByEventId(ctx, nil, eventId)
 	if err != nil {
 		return
@@ -152,6 +163,7 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 
 	eventSettingsResponse := lib.MapEventSettingEntityToEventSettingResponse(eventSettings)
 
+	log.Info().Msg("Get ticket categories by event id")
 	ticketCategories, err := s.EventTicketCategoryRepo.FindByEventId(ctx, nil, eventId)
 	if err != nil {
 		return
@@ -186,6 +198,8 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 		UpdatedAt: helper.ConvertNullTimeToPointer(event.UpdatedAt),
 	}
 
+	log.Info().Int("TicketCategory", len(ticketCategoriesResponse)).Msg("Get event by id success")
+
 	return
 }
 
@@ -195,6 +209,7 @@ func (s *EventServiceImpl) Update(ctx context.Context, eventId string, req dto.E
 }
 
 func (s *EventServiceImpl) Delete(ctx context.Context, eventId string) (err error) {
+	log.Info().Str("eventId", eventId).Msg("Delete event by id")
 	_, err = s.EventRepo.FindById(ctx, nil, eventId)
 	if err != nil {
 		return
@@ -205,10 +220,13 @@ func (s *EventServiceImpl) Delete(ctx context.Context, eventId string) (err erro
 		return
 	}
 
+	log.Info().Msg("Success delete event")
+
 	return
 }
 
 func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.FilterEventRequest, pagination dto.PaginationParam) (res dto.PaginatedEvents, err error) {
+	log.Info().Str("Search", filter.Search).Str("Status", filter.Status).Int("TargetPage", int(pagination.TargetPage)).Msg("Get paginated events")
 
 	filterDB := domain.FilterEventParam{
 		Search: filter.Search,
@@ -260,6 +278,8 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 			NextPage:     nextPage,
 		},
 	}
+
+	log.Info().Int("totalRecords", int(paginatedEvents.Pagination.TotalRecords)).Int("MaxPage", int(paginatedEvents.Pagination.TotalPage)).Msg("Success get paginated events")
 
 	return
 }

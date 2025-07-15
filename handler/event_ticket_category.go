@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 )
 
 type EventTicketCategoryHandler interface {
@@ -83,6 +84,7 @@ func (h *EventTicketCategoryHandlerImpl) Create(ctx *gin.Context) {
 
 	err := h.EventTicketCategoryService.Create(ctx, uriParams.EventID, request)
 	if err != nil {
+		log.Error().Err(err).Msg("error create ticket category")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -128,6 +130,7 @@ func (h *EventTicketCategoryHandlerImpl) GetByEventId(ctx *gin.Context) {
 
 	res, err := h.EventTicketCategoryService.GetVenueTicketsByEventId(ctx, uriParams.EventID)
 	if err != nil {
+		log.Error().Err(err).Msg("error get event ticket categories")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -175,6 +178,7 @@ func (h *EventTicketCategoryHandlerImpl) GetById(ctx *gin.Context) {
 
 	res, err := h.EventTicketCategoryService.GetById(ctx, uriParams.EventID, uriParams.TicketCategoryId)
 	if err != nil {
+		log.Error().Err(err).Msg("error get event ticket category by ticket category id")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
@@ -222,6 +226,7 @@ func (h *EventTicketCategoryHandlerImpl) GetSeatmap(ctx *gin.Context) {
 
 	res, err := h.EventTicketCategoryService.GetSeatmapByTicketCategoryId(ctx, uriParams.EventID, uriParams.TicketCategoryId)
 	if err != nil {
+		log.Error().Err(err).Msg("error get seatmap")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
