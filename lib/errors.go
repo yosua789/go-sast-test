@@ -184,3 +184,10 @@ var (
 		Err:  errors.New("failed to book seat"),
 	}
 )
+
+var (
+	ErrorGarudaIDNotFound = TIXError{
+		Code: 40411,
+		Err:  errors.New("garuda id not found"),
+	}
+)

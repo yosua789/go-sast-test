@@ -40,6 +40,7 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 	r.GET("", h.EventHandler.GetAllPaginated)
 	r.GET("/:eventId", h.EventHandler.GetById)
 	r.DELETE("/:eventId", h.EventHandler.Delete)
+	r.GET("/:eventID/verify/garuda-id/:garudaID", h.EventHandler.VerifyGarudaID)
 
 	EventTicketCategories(h, r)
 }
