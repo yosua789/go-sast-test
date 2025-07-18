@@ -43,7 +43,7 @@ deploy-job:
   tags:
     - dev-server-new
   script:
-    - cd ~/assist-tix
+    - cd ~/tix
     - docker compose pull api 
     - docker compose up -d 
     - docker image prune -f
