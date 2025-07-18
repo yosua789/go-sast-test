@@ -64,7 +64,6 @@ func NewEventTransactionService(
 	}
 }
 
-// TODO: Validate event pause and event ticket sale
 func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error) {
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Str("paymentMethod", req.PaymentMethod).Msg("create event transaction")
 	tx, err := s.DB.Postgres.Begin(ctx)
@@ -74,8 +73,19 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 	defer tx.Rollback(ctx)
 
 	log.Info().Msg("validate event by id")
-	_, err = s.EventRepo.FindById(ctx, tx, eventId)
+	event, err := s.EventRepo.FindById(ctx, tx, eventId)
 	if err != nil {
+		return
+	}
+
+	if event.IsSaleActive {
+		now := time.Now()
+		if !(now.After(event.StartSaleAt.Time) && now.Before(event.EndSaleAt.Time)) {
+			err = &lib.ErrorEventSaleIsNotStartedYet
+			return
+		}
+	} else {
+		err = &lib.ErrorEventSaleIsPaused
 		return
 	}
 
