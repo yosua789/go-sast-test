@@ -37,4 +37,5 @@ const (
 	EventStatusPostponed = "POSTPONED"
 	EventStatusFinished  = "FINISHED"
 	EventStatusOnGoing   = "ON_GOING"
+	EventStatusAll       = "ALL"
 )

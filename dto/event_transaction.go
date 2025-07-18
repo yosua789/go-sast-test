@@ -3,19 +3,19 @@ package dto
 import "time"
 
 type CreateEventTransaction struct {
-	FullName    string
-	Email       string
-	PhoneNumber string
+	FullName    string `json:"fullname" validate:"required"`
+	Email       string `json:"email" validate:"required,email"`
+	PhoneNumber string `json:"phone_number" validate:"required"`
 
-	Items []OrderItemEventTransaction
+	Items []OrderItemEventTransaction `json:"items" validate:"required"`
 
-	PaymentMethod string
+	PaymentMethod string `json:"payment_method" validate:"required"`
 }
 
 type OrderItemEventTransaction struct {
-	SeatRow               int
-	SeatColumn            int
-	AdditionalInformation string
+	SeatRow               int    `json:"seat_row" validate:"required"`
+	SeatColumn            int    `json:"seat_number" validate:"required"`
+	AdditionalInformation string `json:"additional_information" validate:"required"`
 }
 
 type EventTransactionResponse struct {
