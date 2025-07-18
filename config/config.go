@@ -1,6 +1,9 @@
 package config
 
 import (
+	"assist-tix/dto"
+	"assist-tix/helper"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -22,6 +25,30 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 	if err != nil {
 		log.Error().Err(err).Msg("viper error unmarshal config")
 	}
+
+	var credential dto.GCPServiceAccount
+	err = json.Unmarshal([]byte(env.Storage.GCS.Credential), &credential)
+	if err != nil {
+		log.Warn().Msg("failed convert object GCS credential, checking by filename")
+		if helper.FileExists(env.Storage.GCS.Credential) {
+			text, errFile := helper.ReadFile(env.Storage.GCS.Credential)
+			if errFile != nil {
+				log.Error().Err(errFile).Msg("failed to read file credential")
+				return nil, err
+			}
+
+			errJson := json.Unmarshal([]byte(text), &credential)
+			if errJson != nil {
+				log.Warn().Msg("failed convert object GCS credential by filename")
+				return nil, err
+			}
+
+			err = nil
+		}
+	}
+
+	env.Storage.GCS.CredentialObj = credential
+
 	return
 }
 
@@ -41,6 +68,7 @@ type EnvironmentVariable struct {
 	Api struct {
 		CorsEnable bool   `mapstructure:"CORS_ENABLE"`
 		BasePath   string `mapstructure:"BASE_PATH"`
+		Url        string `mapstructure:"URL"`
 	} `mapstructure:"API"`
 	Database struct {
 		Postgres struct {
@@ -80,6 +108,22 @@ type EnvironmentVariable struct {
 	Transaction struct {
 		ExpirationDuration time.Duration `mapstructure:"EXPIRATION_DURATION"`
 	} `mapstructure:"TRANSACTION"`
+	Paylabs struct {
+		BaseUrl         string `mapstructure:"BASE_URL"`
+		AccountID       string `mapstructure:"ACCOUNT_ID"`
+		PublicKey       string `mapstructure:"PUBLIC_KEY"`       // paylabs public key in PEM format
+		PrivateKey      string `mapstructure:"PRIVATE_KEY"`      // our private key in PEM format
+		PaymentDuration int    `mapstructure:"PAYMENT_DURATION"` // Duration in seconds
+	} `mapstructure:"PAYLABS"`
+	Storage struct {
+		Type string `mapstructure:"TYPE"`
+		GCS  struct {
+			BucketName          string `mapstructure:"BUCKET_NAME"`
+			Credential          string `mapstructure:"CREDENTIAL"`
+			CredentialObj       dto.GCPServiceAccount
+			SignedUrlExpiration time.Duration `mapstructure:"SIGNED_URL_EXPIRATION"`
+		} `mapstructure:"GCS"`
+	} `mapstructure:"STORAGE"`
 }
 
 func (e *EnvironmentVariable) GetDBDSN() string {

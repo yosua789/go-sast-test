@@ -3,13 +3,13 @@ package repository
 import (
 	"assist-tix/config"
 	"assist-tix/database"
-	"assist-tix/helper"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -142,13 +142,21 @@ func (r *OrganizerRepositoryImpl) FindByIds(ctx context.Context, tx pgx.Tx, orga
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT id, name, slug, logo, created_at, updated_at FROM organizers WHERE id IN (%s) AND deleted_at IS NULL`, helper.JoinArrayToQuotedString(organizerIds, ","))
+	placeholders := []string{}
+	args := []interface{}{}
+
+	for i, id := range organizerIds {
+		placeholders = append(placeholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, id)
+	}
+
+	query := fmt.Sprintf(`SELECT id, name, slug, logo, created_at, updated_at FROM organizers WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(placeholders, ","))
 
 	var rows pgx.Rows
 	if tx != nil {
-		rows, err = tx.Query(ctx, query)
+		rows, err = tx.Query(ctx, query, args...)
 	} else {
-		rows, err = r.WrapDB.Postgres.Query(ctx, query)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, args...)
 	}
 
 	if err != nil {

@@ -21,6 +21,7 @@ const (
 	SettingsTypeString  = "STRING"
 	SettingsTypeBoolean = "BOOLEAN"
 	SettingsTypeInteger = "INTEGER"
+	SettingsTypeFlow    = "FLOAT"
 )
 
 const (
@@ -60,6 +61,15 @@ func MapEventSettings(settings []entity.EventSetting) dto.EventSettings {
 				res.AdminFee = defaultAdminFee
 			} else {
 				res.AdminFee = adminFeePrice
+			}
+		case AdminFeePercentageSettingsName:
+			adminFeePercentage, err := strconv.ParseFloat(val.SettingValue, 32)
+			if err != nil {
+				log.Warn().Str("Key", AdminFeePercentageSettingsName).Str("Value", val.SettingValue).Msg("failed to cast settings value")
+				defaultTaxPercentage, _ := strconv.ParseFloat(val.Setting.DefaultValue, 32)
+				res.AdminFeePercentage = defaultTaxPercentage
+			} else {
+				res.AdminFeePercentage = adminFeePercentage
 			}
 		}
 	}

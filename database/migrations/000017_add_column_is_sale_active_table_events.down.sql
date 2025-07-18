@@ -1,0 +1,1 @@
+ALTER TABLE events REMOVE COLUMN is_sale_active;

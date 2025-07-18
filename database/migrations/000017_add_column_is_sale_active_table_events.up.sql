@@ -1,0 +1,1 @@
+ALTER TABLE events ADD COLUMN is_sale_active BOOLEAN DEFAULT false;

@@ -15,6 +15,7 @@ import (
 
 type EventTransactionHandler interface {
 	CreateTransaction(ctx *gin.Context)
+	PaylabsVASnap(ctx *gin.Context)
 }
 
 type EventTransactionHandlerImpl struct {
@@ -102,4 +103,39 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 	}
 
 	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
+}
+
+// @Summary Create VA snap for event ticket transaction
+// @Description Create VA snap for event ticket transaction
+// @Tags events
+// @Produce json
+// @Accept json
+// @Param eventId path string true "Event ID"
+// @Success 200 {object} lib.APIResponse{data=nil} "VA snap created"
+// @Failure 400 {object} lib.HTTPError "Invalid request body"
+// @Failure 404 {object} lib.HTTPError "Not Found"
+// @Failure 500 {object} lib.HTTPError "Internal server error"
+// @Router /events/{eventId}/ticket-categories/{ticketCategoryId}/order/paylabs-vasnap [post]
+func (h *EventTransactionHandlerImpl) PaylabsVASnap(ctx *gin.Context) {
+	// var uriParams dto.GetDetailEventTicketCategoryByIdParams
+
+	// if err := ctx.ShouldBindUri(&uriParams); err != nil {
+	// 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
+	// 		for _, fieldErr := range validationErrors {
+	// 			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+	// 			return
+	// 		}
+	// 	}
+	// 	lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+	// 	return
+	// }
+
+	err := h.EventTransactionService.PaylabsVASnap(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("error creating VA snap")
+		lib.RespondError(ctx, http.StatusInternalServerError, "error creating VA snap", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		return
+	}
+
+	lib.RespondSuccess(ctx, http.StatusOK, "VA snap created successfully", nil)
 }

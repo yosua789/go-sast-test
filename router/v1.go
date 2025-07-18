@@ -40,6 +40,7 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 	r.GET("", h.EventHandler.GetAllPaginated)
 	r.GET("/:eventId", h.EventHandler.GetById)
 	r.DELETE("/:eventId", h.EventHandler.Delete)
+	r.GET("/:eventId/verify/garuda-id/:garudaID", h.EventHandler.VerifyGarudaID)
 
 	EventTicketCategories(h, r)
 }
@@ -54,4 +55,5 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 	rg.GET("/:eventId/ticket-categories/:ticketCategoryId/seatmap", h.EventTicketCategoryHandler.GetSeatmap)
 
 	rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
+	rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/paylabs-vasnap", h.EventTransaction.PaylabsVASnap)
 }

@@ -114,6 +114,14 @@ var (
 		Code: 41302,
 		Err:  errors.New("event poster size exceeds the limit"),
 	}
+	ErrorEventSaleIsPaused = TIXError{
+		Code: 40302,
+		Err:  errors.New("event ticket sale is paused"),
+	}
+	ErrorEventSaleIsNotStartedYet = TIXError{
+		Code: 40303,
+		Err:  errors.New("event sale is not started yet"),
+	}
 )
 
 var (
@@ -125,7 +133,7 @@ var (
 
 var (
 	ErrorForbidden = TIXError{
-		Code: 40302,
+		Code: 40301,
 		Err:  errors.New("resource forbidden"),
 	}
 )
@@ -182,5 +190,12 @@ var (
 	ErrorFailedToBookSeat = TIXError{
 		Code: 40011,
 		Err:  errors.New("failed to book seat"),
+	}
+)
+
+var (
+	ErrorGarudaIDNotFound = TIXError{
+		Code: 40411,
+		Err:  errors.New("garuda id not found"),
 	}
 )

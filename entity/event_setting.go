@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type EventSetting struct {
-	ID           string
+	ID           int
 	Setting      Setting
 	SettingValue string
 

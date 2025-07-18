@@ -4,6 +4,8 @@ import (
 	"assist-tix/config"
 	"assist-tix/database"
 	"assist-tix/repository"
+
+	"cloud.google.com/go/storage"
 )
 
 type Repository struct {
@@ -16,11 +18,15 @@ type Repository struct {
 	EventTransactionRepo     repository.EventTransactionRepository
 	EventTransactionItemRepo repository.EventTransactionItemRepository
 	EventSeatmapBookRepo     repository.EventSeatmapBookRepository
+
+	// Storage Section
+	GcsStorageRepository repository.GCSStorageRepository
 }
 
 func Newrepository(
 	wrapDB *database.WrapDB,
 	env *config.EnvironmentVariable,
+	gcsClient *storage.Client,
 ) Repository {
 	return Repository{
 		OrganizerRepo:            repository.NewOrganizerRepository(wrapDB, env),
@@ -32,5 +38,7 @@ func Newrepository(
 		EventTransactionRepo:     repository.NewEventTransactionRepository(wrapDB, env),
 		EventTransactionItemRepo: repository.NewEventTransactionItemRepository(wrapDB, env),
 		EventSeatmapBookRepo:     repository.NewEventSeatmapBookRepository(wrapDB, env),
+
+		GcsStorageRepository: repository.NewGCSFileRepositoryImpl(gcsClient, env),
 	}
 }

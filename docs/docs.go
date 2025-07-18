@@ -35,13 +35,10 @@ const docTemplate = `{
                     {
                         "enum": [
                             "UPCOMING",
-                            "CANCELED",
-                            "POSTPONED",
-                            "FINISHED",
-                            "ON_GOING"
+                            "FINISHED"
                         ],
                         "type": "string",
-                        "description": "Status event",
+                        "description": "Status sale event",
                         "name": "status",
                         "in": "query"
                     },
@@ -477,6 +474,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/events/{eventId}/ticket-categories/{ticketCategoryId}/order/paylabs-vasnap": {
+            "post": {
+                "description": "Create VA snap for event ticket transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Create VA snap for event ticket transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "VA snap created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap": {
             "get": {
                 "description": "Get seatmap by event and ticket category id",
@@ -527,6 +586,64 @@ const docTemplate = `{
                         "description": "Invalid request body",
                         "schema": {
                             "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{eventId}/verify/garuda-id/{garudaId}": {
+            "get": {
+                "description": "VerifyGarudaID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "VerifyGarudaID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Garuda ID",
+                        "name": "garudaId",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success get garuda id",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DataGarudaIDAPIResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -1338,6 +1455,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.DataGarudaIDAPIResponse": {
+            "type": "object",
+            "properties": {
+                "garuda_id": {
+                    "type": "string"
+                },
+                "is_available": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.DetailEventPublicTicketCategoryResponse": {
             "type": "object",
             "properties": {
@@ -1394,6 +1525,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "is_sale_active": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1401,9 +1535,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.SimpleOrganizerResponse"
                 },
                 "start_sale_at": {
-                    "type": "string"
-                },
-                "status": {
                     "type": "string"
                 },
                 "ticket_categories": {
@@ -1789,8 +1920,8 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "is_active": {
-                    "type": "boolean"
+                "image": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"

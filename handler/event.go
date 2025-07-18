@@ -18,6 +18,7 @@ type EventHandler interface {
 	GetAllPaginated(ctx *gin.Context)
 	GetById(ctx *gin.Context)
 	Delete(ctx *gin.Context)
+	VerifyGarudaID(ctx *gin.Context)
 }
 
 type EventHandlerImpl struct {
@@ -71,7 +72,7 @@ func (h *EventHandlerImpl) GetAll(ctx *gin.Context) {
 // @Tags events
 // @Produce json
 // @Param search query string false "Search event"
-// @Param status query string false "Status event" Enums(UPCOMING, CANCELED, POSTPONED, FINISHED, ON_GOING)
+// @Param status query string false "Status sale event" Enums(UPCOMING, FINISHED)
 // @Param page query string false "page event"
 // @Success 200 {object} lib.APIResponse{data=dto.PaginatedEvents} "Paginated events"
 // @Failure 400 {object} lib.HTTPError "Invalid request body"
@@ -238,4 +239,66 @@ func (h *EventHandlerImpl) Delete(ctx *gin.Context) {
 	}
 
 	lib.RespondSuccess(ctx, http.StatusOK, "success", nil)
+}
+
+// @Summary VerifyGarudaID
+// @Description VerifyGarudaID
+// @Tags events
+// @Produce json
+// @Param garudaId path string false "Garuda ID"
+// @Param eventId path string false "Event ID"
+// @Success 200 {object} lib.APIResponse{data=dto.DataGarudaIDAPIResponse} "Success get garuda id"
+// @Failure 404 {object} lib.HTTPError "Not Found"
+// @Failure 500 {object} lib.HTTPError "Internal server error"
+// @Router /events/{eventId}/verify/garuda-id/{garudaId} [get]
+func (h *EventHandlerImpl) VerifyGarudaID(ctx *gin.Context) {
+	var uriParams dto.GetGarudaIDByIdParams
+
+	if err := ctx.ShouldBindUri(&uriParams); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			for _, fieldErr := range validationErrors {
+				lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+				return
+			}
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	var garudaIDApiResponse dto.DataGarudaIDAPIResponse
+	switch uriParams.GarudaID {
+	case "IDN-GMCA-123456":
+		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
+			GarudaID:    "IDN-GMCA-123456",
+			Name:        "Gemilang Cahyaning Adi",
+			IsAvailable: true,
+		}
+	case "IDN-DAIS-123456":
+		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
+			GarudaID:    "IDN-DAIS-123456",
+			Name:        "Daisuke Nakamura",
+			IsAvailable: true,
+		}
+	case "IDN-ALFI-123456":
+		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
+			GarudaID:    "IDN-ALFI-123456",
+			Name:        "Alfian Pratama",
+			IsAvailable: true,
+		}
+	case "IDN-TEST-123456":
+		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
+			GarudaID:    "IDN-TEST-123456",
+			Name:        "Test User",
+			IsAvailable: true,
+		}
+	default:
+		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
+			GarudaID:    uriParams.GarudaID,
+			Name:        "",
+			IsAvailable: false,
+		}
+		lib.RespondError(ctx, http.StatusNotFound, "garuda id not found", nil, lib.ErrorGarudaIDNotFound.Code, h.Env.App.Debug)
+	}
+
+	lib.RespondSuccess(ctx, http.StatusOK, "success", garudaIDApiResponse)
 }
