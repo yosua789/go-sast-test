@@ -9,14 +9,23 @@ import (
 	"assist-tix/lib"
 	"assist-tix/model"
 	"assist-tix/repository"
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/json"
+	"errors"
+	"fmt"
+	mrand "math/rand"
+	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
 type EventTransactionService interface {
 	CreateEventTransaction(ctx context.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
+	PaylabsVASnap(ctx *gin.Context) (err error)
 }
 
 type EventTransactionServiceImpl struct {
@@ -244,5 +253,119 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 
 	log.Info().Msg("success create transaction")
 
+	return
+}
+
+// static Eventtransaction without any business logic
+func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error) {
+	date := time.Now().Format("2006-01-02T15:04:05.999+07:00")
+	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:]
+	partnerServiceId := s.Env.Paylabs.AccountID[:8]
+	idRequest := fmt.Sprintf("%d", mrand.Intn(9999999-1111)+1111)
+	// Generate a random 20-digit customer number as a string
+	var customerNo string
+	for i := 0; i < 20; i++ {
+		digit := mrand.Intn(10)
+		customerNo += fmt.Sprintf("%d", digit)
+	}
+	privateKeyPEM := s.Env.Paylabs.PrivateKey // Private key in PEM format
+	payload := dto.VirtualAccountSnapRequest{
+		PartnerServiceID:    partnerServiceId,        // 8 characters
+		CustomerNo:          customerNo,              // Fixed 20-digit value
+		VirtualAccountNo:    customerNo + merchantId, // 28-digit composite value
+		VirtualAccountName:  "john doe",              // Payer name
+		VirtualAccountEmail: "john.doe@example.com",
+		VirtualAccountPhone: "6281234567890",    // Mobile phone number in Indonesian format
+		TrxID:               "MERCHANT-TRX-001", // Merchant transaction number
+		TotalAmount: dto.Amount{
+			Value:    "10000.00", // Amount with 2 decimal
+			Currency: "IDR",      // Fixed currency
+		},
+		AdditionalInfo: dto.AdditionalInfo{
+			PaymentType: "MandiriVA", // Payment type
+		},
+		ExpiredDate: "2025-12-31T23:59:59+07:00", // ISO-8601 formatted expiration
+	}
+
+	log.Info().Msgf("Creating event transaction with ID: %s", idRequest)
+	// VA
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		log.Error().Err(err)
+		return
+	}
+	log.Info().Msgf("JSON Payload: %s", jsonData)
+
+	// Hash the JSON body
+	shaJson := sha256.Sum256(jsonData)
+
+	signature := helper.GenerateSnapSignature(shaJson, date, privateKeyPEM)
+	log.Info().Msgf("Payload: %x", shaJson)
+	// Create HTTP headers
+	headers := map[string]string{
+		"X-TIMESTAMP":   date,
+		"X-SIGNATURE":   signature,
+		"X-PARTNER-ID":  merchantId,
+		"X-EXTERNAL-ID": idRequest,
+		"X-IP-ADDRESS":  ctx.ClientIP(),
+		"Content-Type":  "application/json",
+	}
+	log.Info().Msgf("Headers: %v", headers)
+
+	// Send HTTP request
+	url := s.Env.Paylabs.BaseUrl + "/api/v1.0/transfer-va/create-va"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Error().Err(err)
+		return
+	}
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to send request to Paylabs")
+		return
+	}
+	defer resp.Body.Close()
+
+	// Decode response
+	var response map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		log.Error().Err(err)
+		return
+	}
+
+	// Print response
+	log.Info().Msgf("Response: %v", response)
+	return
+}
+
+func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.PaylabsCallbackRequest) (err error) {
+	stringifyPayload, err := json.Marshal(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal callback request")
+		return
+	}
+	isValid := helper.IsValidPaylabsRequest(ctx, string(stringifyPayload), s.Env.Paylabs.PublicKey)
+	if !isValid {
+		return errors.New("invalid signature")
+	}
+	return
+}
+
+func (s *EventTransactionServiceImpl) CallbackVA(ctx *gin.Context, req dto.PaylabsCallbackRequest) (err error) {
+	stringifyPayload, err := json.Marshal(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal callback request")
+		return
+	}
+	isValid := helper.IsValidPaylabsRequest(ctx, string(stringifyPayload), s.Env.Paylabs.PublicKey)
+	if !isValid {
+		return errors.New("invalid signature")
+	}
 	return
 }
