@@ -120,7 +120,11 @@ var (
 	}
 	ErrorEventSaleIsNotStartedYet = TIXError{
 		Code: 40303,
-		Err:  errors.New("event sale is not started yet"),
+		Err:  errors.New("event ticket sale is not started yet"),
+	}
+	ErrorEventSaleAlreadyOver = TIXError{
+		Code: 40304,
+		Err:  errors.New("event ticket sale is already over"),
 	}
 )
 

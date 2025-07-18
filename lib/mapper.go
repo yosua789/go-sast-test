@@ -150,10 +150,11 @@ func MapEntitySectorToTicketCategorySectorResponse(
 	data entity.Sector,
 ) dto.TicketCategorySectorResponse {
 	return dto.TicketCategorySectorResponse{
-		ID:       data.ID,
-		Name:     data.Name,
-		Color:    data.Color,
-		AreaCode: data.AreaCode,
+		ID:         data.ID,
+		Name:       data.Name,
+		Color:      data.Color,
+		AreaCode:   data.AreaCode,
+		HasSeatmap: data.HasSeatmap,
 	}
 }
 

@@ -1398,11 +1398,18 @@ const docTemplate = `{
         },
         "dto.CreateEventTransaction": {
             "type": "object",
+            "required": [
+                "email",
+                "fullname",
+                "items",
+                "payment_method",
+                "phone_number"
+            ],
             "properties": {
                 "email": {
                     "type": "string"
                 },
-                "fullName": {
+                "fullname": {
                     "type": "string"
                 },
                 "items": {
@@ -1411,10 +1418,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/dto.OrderItemEventTransaction"
                     }
                 },
-                "paymentMethod": {
+                "payment_method": {
                     "type": "string"
                 },
-                "phoneNumber": {
+                "phone_number": {
                     "type": "string"
                 }
             }
@@ -1680,14 +1687,19 @@ const docTemplate = `{
         },
         "dto.OrderItemEventTransaction": {
             "type": "object",
+            "required": [
+                "additional_information",
+                "seat_number",
+                "seat_row"
+            ],
             "properties": {
-                "additionalInformation": {
+                "additional_information": {
                     "type": "string"
                 },
-                "seatColumn": {
+                "seat_number": {
                     "type": "integer"
                 },
-                "seatRow": {
+                "seat_row": {
                     "type": "integer"
                 }
             }
@@ -1822,6 +1834,9 @@ const docTemplate = `{
                 },
                 "color": {
                     "type": "string"
+                },
+                "has_seatmap": {
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"

@@ -80,7 +80,10 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 
 	if event.IsSaleActive {
 		now := time.Now()
-		if !(now.After(event.StartSaleAt.Time) && now.Before(event.EndSaleAt.Time)) {
+		if now.After(event.EndSaleAt.Time) {
+			err = &lib.ErrorEventSaleAlreadyOver
+			return
+		} else if !(now.After(event.StartSaleAt.Time) && now.Before(event.EndSaleAt.Time)) {
 			err = &lib.ErrorEventSaleIsNotStartedYet
 			return
 		}

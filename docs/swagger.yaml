@@ -57,16 +57,22 @@ definitions:
     properties:
       email:
         type: string
-      fullName:
+      fullname:
         type: string
       items:
         items:
           $ref: '#/definitions/dto.OrderItemEventTransaction'
         type: array
-      paymentMethod:
+      payment_method:
         type: string
-      phoneNumber:
+      phone_number:
         type: string
+    required:
+    - email
+    - fullname
+    - items
+    - payment_method
+    - phone_number
     type: object
   dto.CreateVenueRequest:
     properties:
@@ -243,12 +249,16 @@ definitions:
     type: object
   dto.OrderItemEventTransaction:
     properties:
-      additionalInformation:
+      additional_information:
         type: string
-      seatColumn:
+      seat_number:
         type: integer
-      seatRow:
+      seat_row:
         type: integer
+    required:
+    - additional_information
+    - seat_number
+    - seat_row
     type: object
   dto.OrganizerResponse:
     properties:
@@ -335,6 +345,8 @@ definitions:
         type: string
       color:
         type: string
+      has_seatmap:
+        type: boolean
       id:
         type: string
       name:
