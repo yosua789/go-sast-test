@@ -53,7 +53,7 @@ type EventSettings struct {
 	GarudaIdVerification         bool    `json:"garuda_id_verification,omitempty"`
 	MaxAdultTicketPerTransaction int     `json:"max_adult_ticket_per_transaction,omitempty"`
 	TaxPercentage                float64 `json:"tax_percentage,omitempty"`
-	AdminPercentage              float64 `json:"admin_percentage,omitempty"`
+	AdminFeePercentage           float64 `json:"admin_percentage,omitempty"`
 	AdminFee                     int     `json:"admin_fee,omitempty"`
 }
 

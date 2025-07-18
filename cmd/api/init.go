@@ -6,9 +6,11 @@ import (
 	"assist-tix/lib"
 	"assist-tix/middleware"
 	"assist-tix/router"
+	"assist-tix/storage"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 )
 
 type Setup struct {
@@ -23,13 +25,17 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	// wrapDB := database.InitDB(env)
 	var wrapDB *database.WrapDB
 
-	repository := Newrepository(wrapDB, env)
+	// Init GCS
+	gcsClient, err := storage.NewGCSClient(env)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to connect gcs")
+		return nil, err
+	}
 
+	repository := Newrepository(wrapDB, env, gcsClient)
 	service := Newservice(env, repository, wrapDB)
-
 	validate := validator.New()
 	validate.RegisterValidation("not_blank", lib.NotBlank)
-
 	handler := Newhandler(env, service, validate)
 
 	middleware := middleware.NewMiddleware(env)

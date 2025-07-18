@@ -13,6 +13,7 @@ type Venue struct {
 	City      string
 	IsActive  bool
 	Capacity  int
+	Image     string
 
 	CreatedAt time.Time
 	UpdatedAt sql.NullTime

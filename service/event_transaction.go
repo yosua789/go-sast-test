@@ -191,13 +191,13 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 	log.Info().Int("TotalPrice", transaction.TotalPrice).Float64("TaxaPerTransaction", taxPerTransaction).Int("TotalTax", transaction.TotalTax).Msg("calculate price")
 
 	var totalAdminFee int
-	if eventSettings.AdminPercentage > 0 {
-		totalAdminFee = int(eventSettings.AdminPercentage/100) * transaction.TotalPrice
+	if eventSettings.AdminFeePercentage > 0 {
+		totalAdminFee = int(eventSettings.AdminFeePercentage/100) * transaction.TotalPrice
 	} else {
 		totalAdminFee = eventSettings.AdminFee
 	}
 
-	transaction.AdminFeePercentage = float32(eventSettings.AdminPercentage)
+	transaction.AdminFeePercentage = float32(eventSettings.AdminFeePercentage)
 	transaction.TotalAdminFee = totalAdminFee
 	log.Info().Int("TotalAdminFee", totalAdminFee).Float32("AdminFeePercentage", transaction.AdminFeePercentage).Msg("calculate admin fee")
 

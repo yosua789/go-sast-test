@@ -9,6 +9,7 @@ type VenueResponse struct {
 	Country   string     `json:"country"`
 	City      string     `json:"city"`
 	IsActive  bool       `json:"is_active"`
+	Image     string     `json:"image"`
 	Capacity  int        `json:"capacity"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt *time.Time `json:"updated_at"`

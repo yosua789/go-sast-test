@@ -21,7 +21,7 @@ func Newservice(
 ) Service {
 	organizerService := service.NewOrganizerService(db, env, r.OrganizerRepo)
 	venueService := service.NewVenueService(db, env, r.VenueRepo, r.VenueSectorRepo)
-	eventService := service.NewEventService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.OrganizerRepo, r.VenueRepo)
+	eventService := service.NewEventService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.OrganizerRepo, r.VenueRepo, r.GcsStorageRepository)
 	eventTicketCategoryService := service.NewEventTicketCategoryService(db, env, r.VenueRepo, r.VenueSectorRepo, r.EventRepo, r.EventTicketCategoryRepo)
 	eventTransactionService := service.NewEventTransactionService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.EventTransactionRepo, r.EventTransactionItemRepo, r.EventSeatmapBookRepo, r.VenueSectorRepo)
 

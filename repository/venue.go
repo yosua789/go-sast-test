@@ -60,7 +60,7 @@ func (r *VenueRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT id, venue_type, name, country, city, is_active, capacity, created_at, updated_at FROM venues WHERE deleted_at IS NULL`
+	query := `SELECT id, venue_type, name, country, city, image_filename, is_active, capacity, created_at, updated_at FROM venues WHERE deleted_at IS NULL`
 
 	var rows pgx.Rows
 
@@ -84,6 +84,7 @@ func (r *VenueRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 			&venue.Name,
 			&venue.Country,
 			&venue.City,
+			&venue.Image,
 			&venue.IsActive,
 			&venue.Capacity,
 			&venue.CreatedAt,
@@ -105,7 +106,7 @@ func (r *VenueRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, venueId s
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT id, venue_type, name, country, city, capacity, is_active, created_at, updated_at FROM venues WHERE id = $1 AND deleted_at IS NULL`
+	query := `SELECT id, venue_type, name, country, city, image_filename, capacity, is_active, created_at, updated_at FROM venues WHERE id = $1 AND deleted_at IS NULL`
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query, venueId).Scan(
@@ -114,6 +115,7 @@ func (r *VenueRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, venueId s
 			&venue.Name,
 			&venue.Country,
 			&venue.City,
+			&venue.Image,
 			&venue.Capacity,
 			&venue.IsActive,
 			&venue.CreatedAt,
@@ -126,6 +128,7 @@ func (r *VenueRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, venueId s
 			&venue.Name,
 			&venue.Country,
 			&venue.City,
+			&venue.Image,
 			&venue.Capacity,
 			&venue.IsActive,
 			&venue.CreatedAt,
@@ -147,7 +150,7 @@ func (r *VenueRepositoryImpl) FindByIds(ctx context.Context, tx pgx.Tx, venueIds
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT id, venue_type, name, country, city, is_active, capacity, created_at, updated_at FROM venues WHERE id IN (%s) AND deleted_at IS NULL`, helper.JoinArrayToQuotedString(venueIds, ","))
+	query := fmt.Sprintf(`SELECT id, venue_type, name, country, city, image_filename, is_active, capacity, created_at, updated_at FROM venues WHERE id IN (%s) AND deleted_at IS NULL`, helper.JoinArrayToQuotedString(venueIds, ","))
 
 	var rows pgx.Rows
 
@@ -171,6 +174,7 @@ func (r *VenueRepositoryImpl) FindByIds(ctx context.Context, tx pgx.Tx, venueIds
 			&venue.Name,
 			&venue.Country,
 			&venue.City,
+			&venue.Image,
 			&venue.IsActive,
 			&venue.Capacity,
 			&venue.CreatedAt,
@@ -199,15 +203,16 @@ func (r *VenueRepositoryImpl) Update(ctx context.Context, tx pgx.Tx, venue model
 		city = COALESCE($4, city),
 		is_active = COALESCE($5, is_active), 
 		capacity = COALESCE($6, capacity), 
+		image_filename = COALESCE($7, image_filename),
 		updated_at = CURRENT_TIMESTAMP
-		WHERE id = $7 AND deleted_at IS NULL`
+		WHERE id = $8 AND deleted_at IS NULL`
 
 	var cmdTag pgconn.CommandTag
 
 	if tx != nil {
-		cmdTag, err = tx.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.IsActive, venue.Capacity, venue.ID)
+		cmdTag, err = tx.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.IsActive, venue.Capacity, venue.Image, venue.ID)
 	} else {
-		cmdTag, err = r.WrapDB.Postgres.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.IsActive, venue.Capacity, venue.ID)
+		cmdTag, err = r.WrapDB.Postgres.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.IsActive, venue.Capacity, venue.Image, venue.ID)
 	}
 
 	if err != nil {

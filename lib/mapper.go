@@ -95,21 +95,18 @@ func MapEventSettingEntityToEventSettingResponse(
 
 	for _, setting := range eventSettings {
 		if setting.Setting.Name == EventGarudaIdVerificationSettingName {
-			if setting.Setting.Type == SettingsTypeBoolean && setting.SettingValue == SettingsValueBooleanTrue {
+			if setting.SettingValue == SettingsValueBooleanTrue {
 				res.GarudaIdVerification = true
 				continue
 			}
 		}
 		if setting.Setting.Name == EventPurchaseAdultTicketPerTransactionSettingName {
-			defaultvalue, _ := strconv.Atoi(setting.Setting.DefaultValue)
-			res.MaxAdultTicketPerTransaction = defaultvalue
-
-			if setting.Setting.Type == SettingsTypeInteger {
-				val, err := strconv.Atoi(setting.SettingValue)
-				if err == nil {
-					res.MaxAdultTicketPerTransaction = val
-				}
+			val, err := strconv.Atoi(setting.SettingValue)
+			if err != nil {
+				defaultvalue, _ := strconv.Atoi(setting.Setting.DefaultValue)
+				res.MaxAdultTicketPerTransaction = defaultvalue
 			}
+			res.MaxAdultTicketPerTransaction = val
 		}
 	}
 

@@ -403,6 +403,8 @@ definitions:
         type: string
       id:
         type: string
+      image:
+        type: string
       is_active:
         type: boolean
       name:
@@ -861,6 +863,41 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Get seatmap by event and ticket category id
+      tags:
+      - events
+  /events/{eventId}/verify/garuda-id/{garudaId}:
+    get:
+      description: VerifyGarudaID
+      parameters:
+      - description: Garuda ID
+        in: path
+        name: garudaId
+        type: string
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success get garuda id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DataGarudaIDAPIResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: VerifyGarudaID
       tags:
       - events
   /organizers:

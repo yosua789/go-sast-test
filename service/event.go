@@ -32,6 +32,8 @@ type EventServiceImpl struct {
 	OrganizerRepo           repository.OrganizerRepository
 	VenueRepo               repository.VenueRepository
 	VenueSectorRepo         repository.VenueSectorRepository
+
+	GCSStorageRepo repository.GCSStorageRepository
 }
 
 func NewEventService(
@@ -42,6 +44,7 @@ func NewEventService(
 	eventTicketCategoryRepo repository.EventTicketCategoryRepository,
 	organizerRepo repository.OrganizerRepository,
 	venueRepo repository.VenueRepository,
+	gcsStorageRepo repository.GCSStorageRepository,
 ) EventService {
 	return &EventServiceImpl{
 		DB:                      db,
@@ -51,6 +54,7 @@ func NewEventService(
 		EventTicketCategoryRepo: eventTicketCategoryRepo,
 		OrganizerRepo:           organizerRepo,
 		VenueRepo:               venueRepo,
+		GCSStorageRepo:          gcsStorageRepo,
 	}
 }
 
@@ -250,6 +254,14 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 
 	for _, val := range paginatedEvents.Events {
 		event := lib.MapEventEntityToEventResponse(val)
+
+		if s.Env.Storage.Type == lib.StorageTypeGCS {
+			signedUrl, err := s.GCSStorageRepo.CreateSignedUrl(event.Banner)
+			if err != nil {
+				continue
+			}
+			event.Banner = signedUrl
+		}
 
 		res.Events = append(res.Events, event)
 	}
