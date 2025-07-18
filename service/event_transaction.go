@@ -64,6 +64,7 @@ func NewEventTransactionService(
 	}
 }
 
+// TODO: Validate event pause and event ticket sale
 func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error) {
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Str("paymentMethod", req.PaymentMethod).Msg("create event transaction")
 	tx, err := s.DB.Postgres.Begin(ctx)

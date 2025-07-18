@@ -3,13 +3,13 @@ package repository
 import (
 	"assist-tix/config"
 	"assist-tix/database"
-	"assist-tix/helper"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -44,13 +44,13 @@ func (r *VenueRepositoryImpl) Create(ctx context.Context, tx pgx.Tx, venue model
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
-	query := `INSERT INTO venues (venue_type, name, country, city, is_active, capacity, created_at, updated_at)
+	query := `INSERT INTO venues (venue_type, name, country, city, capacity, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`
 
 	if tx != nil {
-		_, err = tx.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.IsActive, venue.Capacity)
+		_, err = tx.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Capacity)
 	} else {
-		_, err = r.WrapDB.Postgres.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.IsActive, venue.Capacity)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Capacity)
 	}
 
 	return
@@ -60,7 +60,7 @@ func (r *VenueRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT id, venue_type, name, country, city, image_filename, is_active, capacity, created_at, updated_at FROM venues WHERE deleted_at IS NULL`
+	query := `SELECT id, venue_type, name, country, city, image_filename, capacity, created_at, updated_at FROM venues WHERE deleted_at IS NULL`
 
 	var rows pgx.Rows
 
@@ -85,7 +85,6 @@ func (r *VenueRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 			&venue.Country,
 			&venue.City,
 			&venue.Image,
-			&venue.IsActive,
 			&venue.Capacity,
 			&venue.CreatedAt,
 			&venue.UpdatedAt,
@@ -106,7 +105,7 @@ func (r *VenueRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, venueId s
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT id, venue_type, name, country, city, image_filename, capacity, is_active, created_at, updated_at FROM venues WHERE id = $1 AND deleted_at IS NULL`
+	query := `SELECT id, venue_type, name, country, city, image_filename, capacity, created_at, updated_at FROM venues WHERE id = $1 AND deleted_at IS NULL`
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query, venueId).Scan(
@@ -117,7 +116,6 @@ func (r *VenueRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, venueId s
 			&venue.City,
 			&venue.Image,
 			&venue.Capacity,
-			&venue.IsActive,
 			&venue.CreatedAt,
 			&venue.UpdatedAt,
 		)
@@ -130,7 +128,6 @@ func (r *VenueRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, venueId s
 			&venue.City,
 			&venue.Image,
 			&venue.Capacity,
-			&venue.IsActive,
 			&venue.CreatedAt,
 			&venue.UpdatedAt,
 		)
@@ -150,14 +147,22 @@ func (r *VenueRepositoryImpl) FindByIds(ctx context.Context, tx pgx.Tx, venueIds
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := fmt.Sprintf(`SELECT id, venue_type, name, country, city, image_filename, is_active, capacity, created_at, updated_at FROM venues WHERE id IN (%s) AND deleted_at IS NULL`, helper.JoinArrayToQuotedString(venueIds, ","))
+	placeholders := []string{}
+	args := []interface{}{}
+
+	for i, id := range venueIds {
+		placeholders = append(placeholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, id)
+	}
+
+	query := fmt.Sprintf(`SELECT id, venue_type, name, country, city, image_filename, capacity, created_at, updated_at FROM venues WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(placeholders, ","))
 
 	var rows pgx.Rows
 
 	if tx != nil {
-		rows, err = tx.Query(ctx, query)
+		rows, err = tx.Query(ctx, query, args...)
 	} else {
-		rows, err = r.WrapDB.Postgres.Query(ctx, query)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, args...)
 	}
 
 	if err != nil {
@@ -175,7 +180,6 @@ func (r *VenueRepositoryImpl) FindByIds(ctx context.Context, tx pgx.Tx, venueIds
 			&venue.Country,
 			&venue.City,
 			&venue.Image,
-			&venue.IsActive,
 			&venue.Capacity,
 			&venue.CreatedAt,
 			&venue.UpdatedAt,
@@ -201,18 +205,17 @@ func (r *VenueRepositoryImpl) Update(ctx context.Context, tx pgx.Tx, venue model
 		name = COALESCE($2, name), 
 		country = COALESCE($3, country),
 		city = COALESCE($4, city),
-		is_active = COALESCE($5, is_active), 
-		capacity = COALESCE($6, capacity), 
-		image_filename = COALESCE($7, image_filename),
+		capacity = COALESCE($5, capacity), 
+		image_filename = COALESCE($6, image_filename),
 		updated_at = CURRENT_TIMESTAMP
-		WHERE id = $8 AND deleted_at IS NULL`
+		WHERE id = $7 AND deleted_at IS NULL`
 
 	var cmdTag pgconn.CommandTag
 
 	if tx != nil {
-		cmdTag, err = tx.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.IsActive, venue.Capacity, venue.Image, venue.ID)
+		cmdTag, err = tx.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Capacity, venue.Image, venue.ID)
 	} else {
-		cmdTag, err = r.WrapDB.Postgres.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.IsActive, venue.Capacity, venue.Image, venue.ID)
+		cmdTag, err = r.WrapDB.Postgres.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Capacity, venue.Image, venue.ID)
 	}
 
 	if err != nil {

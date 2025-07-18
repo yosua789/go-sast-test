@@ -35,13 +35,10 @@ const docTemplate = `{
                     {
                         "enum": [
                             "UPCOMING",
-                            "CANCELED",
-                            "POSTPONED",
-                            "FINISHED",
-                            "ON_GOING"
+                            "FINISHED"
                         ],
                         "type": "string",
-                        "description": "Status event",
+                        "description": "Status sale event",
                         "name": "status",
                         "in": "query"
                     },
@@ -75,64 +72,6 @@ const docTemplate = `{
                         "description": "Invalid request body",
                         "schema": {
                             "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
-        "/events/{eventID}/verify/garuda-id/{garudaID}": {
-            "get": {
-                "description": "VerifyGarudaID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "VerifyGarudaID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Garuda ID",
-                        "name": "garudaID",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event ID",
-                        "name": "eventID",
-                        "in": "path"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Delete successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/lib.APIResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/dto.DataGarudaIDAPIResponse"
-                                        }
-                                    }
-                                }
-                            ]
                         }
                     },
                     "404": {
@@ -1586,6 +1525,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "is_sale_active": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1593,9 +1535,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.SimpleOrganizerResponse"
                 },
                 "start_sale_at": {
-                    "type": "string"
-                },
-                "status": {
                     "type": "string"
                 },
                 "ticket_categories": {
@@ -1983,9 +1922,6 @@ const docTemplate = `{
                 },
                 "image": {
                     "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"

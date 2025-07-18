@@ -53,6 +53,7 @@ func MapVenueModelToVenueResponse(
 		Country:   venue.Country,
 		City:      venue.City,
 		CreatedAt: venue.CreatedAt,
+		Image:     venue.Image,
 		UpdatedAt: helper.ConvertNullTimeToPointer(venue.UpdatedAt),
 	}
 }
@@ -80,7 +81,7 @@ func MapEventEntityToEventResponse(
 		Description: event.Description,
 		Banner:      event.Banner,
 		EventTime:   event.EventTime,
-		Status:      event.Status,
+		Status:      event.PublishStatus,
 		StartSaleAt: helper.ConvertNullTimeToPointer(event.StartSaleAt),
 		EndSaleAt:   helper.ConvertNullTimeToPointer(event.EndSaleAt),
 		CreatedAt:   event.CreatedAt,

@@ -28,6 +28,8 @@ type EventTicketCategoryServiceImpl struct {
 	VenueSectorRepository         repository.VenueSectorRepository
 	EventRepository               repository.EventRepository
 	EventTicketCategoryRepository repository.EventTicketCategoryRepository
+
+	GCSStorageRepo repository.GCSStorageRepository
 }
 
 func NewEventTicketCategoryService(
@@ -37,6 +39,7 @@ func NewEventTicketCategoryService(
 	venueSectorRepository repository.VenueSectorRepository,
 	eventRepository repository.EventRepository,
 	eventTicketCategoryRepository repository.EventTicketCategoryRepository,
+	gcsStorageRepo repository.GCSStorageRepository,
 ) EventTicketCategoryService {
 	return &EventTicketCategoryServiceImpl{
 		DB:                            db,
@@ -45,6 +48,7 @@ func NewEventTicketCategoryService(
 		VenueSectorRepository:         venueSectorRepository,
 		EventRepository:               eventRepository,
 		EventTicketCategoryRepository: eventTicketCategoryRepository,
+		GCSStorageRepo:                gcsStorageRepo,
 	}
 }
 
@@ -139,6 +143,16 @@ func (s *EventTicketCategoryServiceImpl) GetVenueTicketsByEventId(ctx context.Co
 	venue, err := s.VenueRepository.FindById(ctx, nil, event.VenueID)
 	if err != nil {
 		return
+	}
+
+	if s.Env.Storage.Type == lib.StorageTypeGCS {
+		signedUrl, errSignedUrl := s.GCSStorageRepo.CreateSignedUrl(venue.Image)
+		if errSignedUrl != nil {
+			err = errSignedUrl
+			return
+		}
+
+		venue.Image = signedUrl
 	}
 
 	log.Info().Str("eventId", eventId).Msg("find ticket categories by event id")

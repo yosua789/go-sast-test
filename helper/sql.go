@@ -72,3 +72,7 @@ func JoinArrayToQuotedString(ids []string, separator string) string {
 	inClause := strings.Join(quotedIds, separator)
 	return inClause
 }
+
+func JoinWithAnd(conditions []string) string {
+	return strings.Join(conditions, " AND ")
+}

@@ -5,12 +5,15 @@ import (
 	"assist-tix/database"
 	"assist-tix/domain"
 	"assist-tix/entity"
+	"assist-tix/helper"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -47,13 +50,13 @@ func (r *EventRepositoryImpl) Create(ctx context.Context, tx pgx.Tx, event model
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
-	query := `INSERT INTO events (organizer_id, name, description, banner, event_time, status, venue_id, is_active, start_sale_at, end_sale_at, craeted_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`
+	query := `INSERT INTO events (organizer_id, name, description, banner_filename, event_time, venue_id, start_sale_at, end_sale_at, craeted_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`
 
 	if tx != nil {
-		_, err = tx.Exec(ctx, query, event.OrganizerID, event.Name, event.Description, event.Banner, event.EventTime, event.Status, event.VenueID, event.IsActive, event.StartSaleAt, event.EndSaleAt)
+		_, err = tx.Exec(ctx, query, event.OrganizerID, event.Name, event.Description, event.Banner, event.EventTime, event.VenueID, event.StartSaleAt, event.EndSaleAt)
 	} else {
-		_, err = r.WrapDB.Postgres.Exec(ctx, query, event.OrganizerID, event.Name, event.Description, event.Banner, event.EventTime, event.Status, event.VenueID, event.IsActive, event.StartSaleAt, event.EndSaleAt)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, event.OrganizerID, event.Name, event.Description, event.Banner, event.EventTime, event.VenueID, event.StartSaleAt, event.EndSaleAt)
 	}
 
 	return
@@ -63,7 +66,7 @@ func (r *EventRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT id, organizer_id, name, description, banner, event_time, status, venue_id, is_active, start_sale_at, end_sale_at, created_at, updated_at FROM events WHERE deleted_at IS NULL`
+	query := `SELECT id, organizer_id, name, description, banner_filename, event_time, venue_id, publish_status, is_sale_active, start_sale_at, end_sale_at, created_at, updated_at FROM events WHERE deleted_at IS NULL`
 
 	var rows pgx.Rows
 
@@ -88,9 +91,9 @@ func (r *EventRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 			&event.Description,
 			&event.Banner,
 			&event.EventTime,
-			&event.Status,
 			&event.VenueID,
-			&event.IsActive,
+			&event.PublishStatus,
+			&event.IsSaleActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
 			&event.CreatedAt,
@@ -112,7 +115,26 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT id, organizer_id, name, description, banner, event_time, status, venue_id, additional_information, is_active, start_sale_at, end_sale_at, created_at, updated_at FROM events WHERE id = $1 AND deleted_at IS NULL LIMIT 1`
+	query := fmt.Sprintf(`SELECT 
+		id, 
+		organizer_id, 
+		name, 
+		description, 
+		banner_filename, 
+		event_time, 
+		venue_id, 
+		is_sale_active, 
+		publish_status, 
+		additional_information, 
+		start_sale_at, 
+		end_sale_at, 
+		created_at, 
+		updated_at 
+	FROM events 
+	WHERE id = $1 
+		AND (publish_status = '%s' OR publish_status = '%s') 
+		AND deleted_at IS NULL
+	LIMIT 1`, lib.EventPublishStatusPublished, lib.EventPublishStatusPaused)
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query, eventId).Scan(
@@ -122,10 +144,10 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 			&event.Description,
 			&event.Banner,
 			&event.EventTime,
-			&event.Status,
 			&event.VenueID,
+			&event.IsSaleActive,
+			&event.PublishStatus,
 			&event.AdditionalInformation,
-			&event.IsActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
 			&event.CreatedAt,
@@ -139,10 +161,10 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 			&event.Description,
 			&event.Banner,
 			&event.EventTime,
-			&event.Status,
 			&event.VenueID,
+			&event.IsSaleActive,
+			&event.PublishStatus,
 			&event.AdditionalInformation,
-			&event.IsActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
 			&event.CreatedAt,
@@ -164,17 +186,17 @@ func (r *EventRepositoryImpl) FindByIdWithVenueAndOrganizer(ctx context.Context,
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	query := `SELECT 
+	query := fmt.Sprintf(`SELECT 
 		e.id, 
 		e.organizer_id, 
 		e.name, 
 		e.description, 
-		e.banner, 
+		e.banner_filename, 
 		e.event_time, 
-		e.status, 
+		e.is_sale_active,
+		e.publish_status, 
 		e.venue_id, 
 		e.additional_information,
-		e.is_active, 
 		e.start_sale_at, 
 		e.end_sale_at, 
 		e.created_at, 
@@ -192,7 +214,10 @@ func (r *EventRepositoryImpl) FindByIdWithVenueAndOrganizer(ctx context.Context,
 	FROM events e
 		INNER JOIN organizers o ON e.organizer_id = o.id
 		INNER JOIN venues v ON e.venue_id = v.id
-	WHERE e.id = $1 AND e.deleted_at IS NULL LIMIT 1`
+	WHERE 
+		e.id = $1 
+		AND (e.publish_status = '%s' OR e.publish_status = '%s')
+		AND e.deleted_at IS NULL LIMIT 1`, lib.EventPublishStatusPublished, lib.EventPublishStatusPaused)
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query, eventId).Scan(
@@ -202,10 +227,10 @@ func (r *EventRepositoryImpl) FindByIdWithVenueAndOrganizer(ctx context.Context,
 			&event.Description,
 			&event.Banner,
 			&event.EventTime,
-			&event.Status,
+			&event.IsSaleActive,
+			&event.PublishStatus,
 			&event.Venue.ID,
 			&event.AdditionalInformation,
-			&event.IsActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
 			&event.CreatedAt,
@@ -229,10 +254,10 @@ func (r *EventRepositoryImpl) FindByIdWithVenueAndOrganizer(ctx context.Context,
 			&event.Description,
 			&event.Banner,
 			&event.EventTime,
-			&event.Status,
+			&event.IsSaleActive,
+			&event.PublishStatus,
 			&event.Venue.ID,
 			&event.AdditionalInformation,
-			&event.IsActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
 			&event.CreatedAt,
@@ -268,11 +293,11 @@ func (r *EventRepositoryImpl) Update(ctx context.Context, tx pgx.Tx, event model
 		organizer_id = COALESCE($1, organizer_id), 
 		name = COALESCE($2, name), 
 		description = COALESCE($3, description), 
-		banner = COALESCE($4, banner), 
+		banner_filename = COALESCE($4, banner_filename), 
 		event_time = COALESCE($5, event_time), 
-		status = COALESCE($6, status), 
-		venue_id = COALESCE($7, venue_id), 
-		is_active = COALESCE($8, is_active), 
+		publish_status = COALESCE($6, publish_status), 
+		is_sale_active = COALESCE($7, is_sale_active),
+		venue_id = COALESCE($8, venue_id), 		
 		start_sale_at = COALESCE($9, start_sale_at), 
 		end_sale_at = COALESCE($10, end_sale_at), 
 		updated_at = CURRENT_TIMESTAMP
@@ -287,9 +312,9 @@ func (r *EventRepositoryImpl) Update(ctx context.Context, tx pgx.Tx, event model
 			event.Description,
 			event.Banner,
 			event.EventTime,
-			event.Status,
+			event.PublishStatus,
+			event.IsSaleActive,
 			event.VenueID,
-			event.IsActive,
 			event.StartSaleAt,
 			event.EndSaleAt,
 			event.ID,
@@ -301,9 +326,9 @@ func (r *EventRepositoryImpl) Update(ctx context.Context, tx pgx.Tx, event model
 			event.Description,
 			event.Banner,
 			event.EventTime,
-			event.Status,
+			event.PublishStatus,
+			event.IsSaleActive,
 			event.VenueID,
-			event.IsActive,
 			event.StartSaleAt,
 			event.EndSaleAt,
 			event.ID,
@@ -336,24 +361,54 @@ func (r *EventRepositoryImpl) SoftDelete(ctx context.Context, tx pgx.Tx, eventId
 }
 
 func (r *EventRepositoryImpl) Count(ctx context.Context, tx pgx.Tx, param *domain.FilterEventParam) (res int64, err error) {
-	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	additionalParam := ""
+	var (
+		args       []interface{}
+		conditions []string
+		argIndex   = 1
+	)
+
 	if param.Search != "" {
-		additionalParam = fmt.Sprintf("name ILIKE '%%%s%%' AND", param.Search)
+		conditions = append(conditions, fmt.Sprintf("name ILIKE $%d", argIndex))
+		args = append(args, "%"+param.Search+"%")
+		argIndex++
 	}
 
-	if param.Status != "" {
-		additionalParam += fmt.Sprintf("status = '%s' AND", param.Status)
+	switch param.Status {
+	case lib.EventStatusUpComing:
+		conditions = append(conditions, fmt.Sprintf("event_time >= $%d", argIndex))
+		args = append(args, time.Now())
+		argIndex++
+	case lib.EventStatusFinished:
+		conditions = append(conditions, fmt.Sprintf("event_time <= $%d", argIndex))
+		args = append(args, time.Now())
+		argIndex++
 	}
 
-	query := fmt.Sprintf(`SELECT count(id) FROM events WHERE %s deleted_at IS NULL`, additionalParam)
+	conditions = append(conditions, fmt.Sprintf("( publish_status = '%s' OR publish_status = '%s' )", lib.EventPublishStatusPublished, lib.EventPublishStatusPaused))
+	conditions = append(conditions, "deleted_at IS NULL")
+
+	whereClause := "WHERE " + helper.JoinWithAnd(conditions)
+
+	query := fmt.Sprintf(`
+		SELECT count(id)
+		FROM events
+		%s
+	`, whereClause)
 
 	if tx != nil {
-		err = tx.QueryRow(ctx, query).Scan(&res)
+		err = tx.QueryRow(ctx, query, args...).Scan(&res)
 	} else {
-		err = r.WrapDB.Postgres.QueryRow(ctx, query).Scan(&res)
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, args...).Scan(&res)
+	}
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, nil
+		}
+		return
 	}
 
 	return
@@ -392,46 +447,82 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 		return
 	}
 
-	additionalParam := ""
+	var (
+		args       []interface{}
+		conditions []string
+		argIndex   = 1
+	)
+
 	if param.Search != "" {
-		additionalParam = fmt.Sprintf("e.name ILIKE '%%%s%%' AND", param.Search)
+		conditions = append(conditions, fmt.Sprintf("e.name ILIKE $%d", argIndex))
+		args = append(args, "%"+param.Search+"%")
+		argIndex++
 	}
 
-	if param.Status != "" {
-		additionalParam += fmt.Sprintf("e.status = '%s' AND", param.Status)
+	switch param.Status {
+	case lib.EventStatusUpComing:
+		conditions = append(conditions, fmt.Sprintf("e.event_time >= $%d", argIndex))
+		args = append(args, time.Now())
+		argIndex++
+	case lib.EventStatusFinished:
+		conditions = append(conditions, fmt.Sprintf("e.event_time <= $%d", argIndex))
+		args = append(args, time.Now())
+		argIndex++
 	}
 
-	query := fmt.Sprintf(`SELECT 
-		e.id, 
-		e.organizer_id, 
-		e.name, 
-		e.description, 
-		e.banner, 
-		e.event_time, 
-		e.status, 
-		e.venue_id, 
-		e.is_active, 
-		e.start_sale_at, 
-		e.end_sale_at, 
-		e.created_at, 
-		e.updated_at,
+	conditions = append(conditions, fmt.Sprintf("( e.publish_status = '%s' OR e.publish_status = '%s' ) ", lib.EventPublishStatusPublished, lib.EventPublishStatusPaused))
+	conditions = append(conditions, "e.deleted_at IS NULL")
 
-		o.name as organizer_name,
-		o.slug as organizer_slug,
-		o.logo as organizer_logo,
+	whereClause := "WHERE " + helper.JoinWithAnd(conditions)
 
-		v.name as venue_name,
-		v.venue_type as venue_type,
-		v.country as venue_country,
-		v.city as venue_city,
-		v.capacity as venue_capacity
-	FROM events AS e
-		INNER JOIN organizers o ON e.organizer_id = o.id
-		INNER JOIN venues v ON e.venue_id = v.id
-	WHERE %s e.deleted_at IS NULL 
-	ORDER BY $1 %s
-	LIMIT $2
-	OFFSET $3`, additionalParam, pagination.Order)
+	allowedOrders := map[string]bool{
+		"ASC":  true,
+		"DESC": true,
+	}
+	orderDirection := "ASC"
+	if allowedOrders[strings.ToUpper(pagination.Order)] {
+		orderDirection = strings.ToUpper(pagination.Order)
+	}
+
+	var offsetParam int64 = 0
+	if pagination.TargetPage > 1 {
+		offsetParam = (pagination.TargetPage - 1) * lib.PaginationPerPage
+	}
+
+	args = append(args, lib.PaginationPerPage)
+	args = append(args, offsetParam)
+
+	query := fmt.Sprintf(`
+		SELECT 
+			e.id, 
+			e.organizer_id, 
+			e.name, 
+			e.description, 
+			e.banner_filename, 
+			e.event_time, 
+			e.venue_id,
+			e.start_sale_at, 
+			e.end_sale_at, 
+			e.created_at, 
+			e.updated_at,
+	
+			o.name as organizer_name, 
+			o.slug as organizer_slug, 
+			o.logo as organizer_logo,
+	
+			v.name as venue_name, 
+			v.venue_type as venue_type, 
+			v.country as venue_country,
+			v.city as venue_city, 
+			v.capacity as venue_capacity
+		FROM events AS e
+			INNER JOIN organizers o ON e.organizer_id = o.id
+			INNER JOIN venues v ON e.venue_id = v.id
+		%s
+		ORDER BY e.created_at %s
+		LIMIT $%d
+		OFFSET $%d
+	`, whereClause, orderDirection, argIndex, argIndex+1)
 
 	var rows pgx.Rows
 	var resPagination entity.Pagination
@@ -439,11 +530,6 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 	resPagination.Page = pagination.TargetPage
 	resPagination.TotalRecords = totalRecords
 	resPagination.TotalPage = totalPage
-
-	var offsetParam int64 = 0
-	if pagination.TargetPage > 1 {
-		offsetParam = (pagination.TargetPage - 1) * lib.PaginationPerPage
-	}
 
 	if pagination.TargetPage >= totalPage {
 		resPagination.HasNextPage = false
@@ -462,9 +548,9 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 	}
 
 	if tx != nil {
-		rows, err = tx.Query(ctx, query, pagination.Order, lib.PaginationPerPage, offsetParam)
+		rows, err = tx.Query(ctx, query, args...)
 	} else {
-		rows, err = r.WrapDB.Postgres.Query(ctx, query, pagination.Order, lib.PaginationPerPage, offsetParam)
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, args...)
 	}
 
 	if err != nil {
@@ -484,9 +570,7 @@ func (r *EventRepositoryImpl) FindAllPaginated(ctx context.Context, tx pgx.Tx, p
 			&event.Description,
 			&event.Banner,
 			&event.EventTime,
-			&event.Status,
 			&event.Venue.ID,
-			&event.IsActive,
 			&event.StartSaleAt,
 			&event.EndSaleAt,
 			&event.CreatedAt,

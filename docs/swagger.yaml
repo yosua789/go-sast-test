@@ -141,13 +141,13 @@ definitions:
         type: string
       id:
         type: string
+      is_sale_active:
+        type: boolean
       name:
         type: string
       organizer:
         $ref: '#/definitions/dto.SimpleOrganizerResponse'
       start_sale_at:
-        type: string
-      status:
         type: string
       ticket_categories:
         items:
@@ -405,8 +405,6 @@ definitions:
         type: string
       image:
         type: string
-      is_active:
-        type: boolean
       name:
         type: string
       updated_at:
@@ -474,13 +472,10 @@ paths:
         in: query
         name: search
         type: string
-      - description: Status event
+      - description: Status sale event
         enum:
         - UPCOMING
-        - CANCELED
-        - POSTPONED
         - FINISHED
-        - ON_GOING
         in: query
         name: status
         type: string
@@ -513,41 +508,6 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Get all paginated event
-      tags:
-      - events
-  /events/{eventID}/verify/garuda-id/{garudaID}:
-    get:
-      description: VerifyGarudaID
-      parameters:
-      - description: Garuda ID
-        in: path
-        name: garudaID
-        type: string
-      - description: Event ID
-        in: path
-        name: eventID
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Delete successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/lib.APIResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.DataGarudaIDAPIResponse'
-              type: object
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-      summary: VerifyGarudaID
       tags:
       - events
   /events/{eventId}:

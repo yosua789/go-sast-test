@@ -23,6 +23,13 @@ const (
 	EventVenueSeatmapStatusDisable     = "DISABLE"
 )
 
+// Event publish status
+const (
+	EventPublishStatusDraft     = "DRAFT"
+	EventPublishStatusPublished = "PUBLISHED"
+	EventPublishStatusPaused    = "PAUSED"
+)
+
 // Event status
 const (
 	EventStatusUpComing  = "UPCOMING"

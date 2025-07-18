@@ -21,9 +21,7 @@ type Setup struct {
 }
 
 func Init(env *config.EnvironmentVariable) (*Setup, error) {
-
-	// wrapDB := database.InitDB(env)
-	var wrapDB *database.WrapDB
+	wrapDB := database.InitDB(env)
 
 	// Init GCS
 	gcsClient, err := storage.NewGCSClient(env)

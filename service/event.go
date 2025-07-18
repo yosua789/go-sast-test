@@ -135,7 +135,6 @@ func (s *EventServiceImpl) GetAllEvent(ctx context.Context) (res []dto.EventResp
 			Description: val.Description,
 			Banner:      val.Banner,
 			EventTime:   val.EventTime,
-			Status:      val.Status,
 			Venue:       lib.MapVenueModelToSimpleResponse(venue),
 
 			StartSaleAt: helper.ConvertNullTimeToPointer(val.StartSaleAt),
@@ -159,6 +158,16 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 		return
 	}
 
+	if s.Env.Storage.Type == lib.StorageTypeGCS {
+		bannerUrl, errBanner := s.GCSStorageRepo.CreateSignedUrl(event.Banner)
+		if errBanner != nil {
+			err = errBanner
+			return
+		}
+
+		event.Banner = bannerUrl
+	}
+
 	log.Info().Msg("Get event settings by event id")
 	eventSettings, err := s.EventSettingRepo.FindByEventId(ctx, nil, eventId)
 	if err != nil {
@@ -180,14 +189,14 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 	}
 
 	res = dto.DetailEventResponse{
-		ID:          event.ID,
-		Organizer:   lib.MapOrganizerEntityToSimpleResponse(event.Organizer),
-		Name:        event.Name,
-		Description: event.Description,
-		Banner:      event.Banner,
-		EventTime:   event.EventTime,
-		Status:      event.Status,
-		Venue:       lib.MapVenueEntityToSimpleResponse(event.Venue),
+		ID:           event.ID,
+		Organizer:    lib.MapOrganizerEntityToSimpleResponse(event.Organizer),
+		Name:         event.Name,
+		Description:  event.Description,
+		Banner:       event.Banner,
+		EventTime:    event.EventTime,
+		Venue:        lib.MapVenueEntityToSimpleResponse(event.Venue),
+		IsSaleActive: event.IsSaleActive,
 
 		AdditionalInformation: event.AdditionalInformation,
 

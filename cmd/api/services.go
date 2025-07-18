@@ -22,7 +22,7 @@ func Newservice(
 	organizerService := service.NewOrganizerService(db, env, r.OrganizerRepo)
 	venueService := service.NewVenueService(db, env, r.VenueRepo, r.VenueSectorRepo)
 	eventService := service.NewEventService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.OrganizerRepo, r.VenueRepo, r.GcsStorageRepository)
-	eventTicketCategoryService := service.NewEventTicketCategoryService(db, env, r.VenueRepo, r.VenueSectorRepo, r.EventRepo, r.EventTicketCategoryRepo)
+	eventTicketCategoryService := service.NewEventTicketCategoryService(db, env, r.VenueRepo, r.VenueSectorRepo, r.EventRepo, r.EventTicketCategoryRepo, r.GcsStorageRepository)
 	eventTransactionService := service.NewEventTransactionService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.EventTransactionRepo, r.EventTransactionItemRepo, r.EventSeatmapBookRepo, r.VenueSectorRepo)
 
 	return Service{

@@ -72,7 +72,7 @@ func (h *EventHandlerImpl) GetAll(ctx *gin.Context) {
 // @Tags events
 // @Produce json
 // @Param search query string false "Search event"
-// @Param status query string false "Status event" Enums(UPCOMING, CANCELED, POSTPONED, FINISHED, ON_GOING)
+// @Param status query string false "Status sale event" Enums(UPCOMING, FINISHED)
 // @Param page query string false "page event"
 // @Success 200 {object} lib.APIResponse{data=dto.PaginatedEvents} "Paginated events"
 // @Failure 400 {object} lib.HTTPError "Invalid request body"

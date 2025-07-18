@@ -11,7 +11,6 @@ type Venue struct {
 	Name      string
 	Country   string
 	City      string
-	IsActive  bool
 	Capacity  int
 	Image     string
 

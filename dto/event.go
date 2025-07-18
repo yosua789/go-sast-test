@@ -28,12 +28,13 @@ type DetailEventResponse struct {
 	Description string                  `json:"description"`
 	Banner      string                  `json:"banner"`
 	EventTime   time.Time               `json:"event_time"`
-	Status      string                  `json:"status"`
 	Venue       SimpleVenueResponse     `json:"venue"`
 
 	AdditionalInformation string `json:"additional_information"`
 
 	ActiveSettings EventSettingsResponse `json:"active_settings"`
+
+	IsSaleActive bool `json:"is_sale_active"`
 
 	TicketCategories []EventTicketCategoryResponse `json:"ticket_categories"`
 
@@ -72,7 +73,7 @@ type CreateEventRequest struct {
 	Status      string    `json:"status" validate:"required,oneof=UPCOMING CANCELED POSTPONED FINISHED ON_GOING"`
 	VenueID     string    `json:"venue_id" validate:"required,uuid"`
 
-	IsActive bool `json:"is_active" validate:"required"`
+	IsSaleActive bool `json:"is_sale_active" validate:"required"`
 
 	StartSaleAt *time.Time `json:"start_sale_at"`
 	EndSaleAt   *time.Time `json:"end_sale_at"`
@@ -88,7 +89,7 @@ type EditEventRequest struct {
 	Status      string    `json:"status" validate:"required,oneof=UPCOMING CANCELED POSTPONED FINISHED ON_GOING"`
 	VenueID     string    `json:"venue_id" validate:"required,uuid"`
 
-	IsActive bool `json:"is_active" validate:"required"`
+	IsSaleActive bool `json:"is_sale_active" validate:"required"`
 
 	StartSaleAt *time.Time `json:"start_sale_at"`
 	EndSaleAt   *time.Time `json:"end_sale_at"`
@@ -100,7 +101,7 @@ type GetEventByIdParams struct {
 
 type FilterEventRequest struct {
 	Search string `form:"search" validate:"omitempty,min=3"`
-	Status string `form:"status" validate:"omitempty,oneof=UPCOMING CANCELED POSTPONED FINISHED ON_GOING"`
+	Status string `form:"status" validate:"omitempty,oneof=UPCOMING FINISHED"`
 }
 
 // ### Ticket category section ###
