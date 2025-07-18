@@ -34,7 +34,7 @@ func main() {
 		panic(err)
 	}
 
-	defer setup.WrapDB.Postgres.Close()
+	// defer setup.WrapDB.Postgres.Close()
 
 	go func() {
 		err = setup.Router.Run(env.App.Host)

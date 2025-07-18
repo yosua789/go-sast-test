@@ -20,7 +20,8 @@ type Setup struct {
 
 func Init(env *config.EnvironmentVariable) (*Setup, error) {
 
-	wrapDB := database.InitDB(env)
+	// wrapDB := database.InitDB(env)
+	var wrapDB *database.WrapDB
 
 	repository := Newrepository(wrapDB, env)
 

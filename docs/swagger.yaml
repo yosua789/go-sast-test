@@ -95,6 +95,15 @@ definitions:
     - name
     - venue_type
     type: object
+  dto.DataGarudaIDAPIResponse:
+    properties:
+      garuda_id:
+        type: string
+      is_available:
+        type: boolean
+      name:
+        type: string
+    type: object
   dto.DetailEventPublicTicketCategoryResponse:
     properties:
       code:
@@ -504,6 +513,41 @@ paths:
       summary: Get all paginated event
       tags:
       - events
+  /events/{eventID}/verify/garuda-id/{garudaID}:
+    get:
+      description: VerifyGarudaID
+      parameters:
+      - description: Garuda ID
+        in: path
+        name: garudaID
+        type: string
+      - description: Event ID
+        in: path
+        name: eventID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DataGarudaIDAPIResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: VerifyGarudaID
+      tags:
+      - events
   /events/{eventId}:
     delete:
       description: Delete event
@@ -738,6 +782,44 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Create event ticket transaction
+      tags:
+      - events
+  /events/{eventId}/ticket-categories/{ticketCategoryId}/order/paylabs-vasnap:
+    post:
+      consumes:
+      - application/json
+      description: Create VA snap for event ticket transaction
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VA snap created
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create VA snap for event ticket transaction
       tags:
       - events
   /events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap:

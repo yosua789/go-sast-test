@@ -41,6 +41,7 @@ type EnvironmentVariable struct {
 	Api struct {
 		CorsEnable bool   `mapstructure:"CORS_ENABLE"`
 		BasePath   string `mapstructure:"BASE_PATH"`
+		Url        string `mapstructure:"URL"`
 	} `mapstructure:"API"`
 	Database struct {
 		Postgres struct {
@@ -80,6 +81,13 @@ type EnvironmentVariable struct {
 	Transaction struct {
 		ExpirationDuration time.Duration `mapstructure:"EXPIRATION_DURATION"`
 	} `mapstructure:"TRANSACTION"`
+	Paylabs struct {
+		BaseUrl         string `mapstructure:"BASE_URL"`
+		AccountID       string `mapstructure:"ACCOUNT_ID"`
+		PublicKey       string `mapstructure:"PUBLIC_KEY"`       // paylabs public key in PEM format
+		PrivateKey      string `mapstructure:"PRIVATE_KEY"`      // our private key in PEM format
+		PaymentDuration int    `mapstructure:"PAYMENT_DURATION"` // Duration in seconds
+	} `mapstructure:"PAYLABS"`
 }
 
 func (e *EnvironmentVariable) GetDBDSN() string {
