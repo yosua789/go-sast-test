@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 type Middleware interface {
@@ -23,6 +24,7 @@ func NewMiddleware(env *config.EnvironmentVariable) Middleware {
 
 func (m *MiddlewareImpl) CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		log.Info().Msg("Using Cors Middleware")
 		c.Header("Content-Type", "application/json")
 		c.Header("Accept", "application/json")
 
@@ -33,6 +35,7 @@ func (m *MiddlewareImpl) CORSMiddleware() gin.HandlerFunc {
 		// c.Header("Access-Control-Allow-Credentials", "true")
 
 		if c.Request.Method == "OPTIONS" {
+			log.Info().Msg("Abort Options")
 			c.Header("Access-Control-Allow-Origin", "*")
 			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
 			c.Header("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Max")
