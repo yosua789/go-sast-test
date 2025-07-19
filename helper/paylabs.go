@@ -14,10 +14,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func IsValidPaylabsRequest(ctx *gin.Context, payload, publicKey string) (res bool) {
+func IsValidPaylabsRequest(ctx *gin.Context, path, payload, publicKey string) (res bool) {
 	timestamp := ctx.GetHeader("X-TIMESTAMP")
 	signature := ctx.GetHeader("X-SIGNATURE")
-	path := ctx.Request.URL.Path
 
 	// Decode base64 signature
 	binarySignature, err := base64.StdEncoding.DecodeString(signature)

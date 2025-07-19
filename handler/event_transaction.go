@@ -16,6 +16,7 @@ import (
 type EventTransactionHandler interface {
 	CreateTransaction(ctx *gin.Context)
 	PaylabsVASnap(ctx *gin.Context)
+	CallbackVASnap(ctx *gin.Context)
 }
 
 type EventTransactionHandlerImpl struct {
@@ -138,4 +139,23 @@ func (h *EventTransactionHandlerImpl) PaylabsVASnap(ctx *gin.Context) {
 	}
 
 	lib.RespondSuccess(ctx, http.StatusOK, "VA snap created successfully", nil)
+}
+
+func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
+	// Implement the callback logic here
+	var req dto.PaylabsVASNAPCallbackRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Error().Err(err).Msg("error binding JSON for callback")
+		lib.RespondError(ctx, http.StatusBadRequest, "invalid request body", err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	// This is a placeholder for the actual implementation
+	err := h.EventTransactionService.CallbackVASnap(ctx, req)
+	if err != nil {
+		log.Error().Err(err).Msg("error processing callback")
+		lib.RespondError(ctx, http.StatusInternalServerError, "error processing callback", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		return
+	}
+	lib.RespondSuccess(ctx, http.StatusOK, "Callback received successfully", nil)
 }

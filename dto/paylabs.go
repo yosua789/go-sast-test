@@ -71,7 +71,27 @@ type ProductInfo struct {
 	Quantity int     `json:"quantity,omitempty"` // Optional, for merchandise or other products
 }
 
-type PaylabsCallbackRequest struct {
+type PaylabsVACallbackRequest struct {
+	RequestID       string      `json:"requestId"`
+	ErrCode         string      `json:"errCode"`
+	ErrCodeDes      string      `json:"errCodeDes"`
+	MerchantID      string      `json:"merchantId"`
+	StoreID         string      `json:"storeId"`
+	PaymentType     string      `json:"paymentType"`
+	Amount          float64     `json:"amount"`
+	MerchantTradeNo string      `json:"merchantTradeNo"`
+	PlatformTradeNo string      `json:"platformTradeNo"`
+	CreateTime      string      `json:"createTime"`
+	SuccessTime     string      `json:"successTime"`
+	ProductName     string      `json:"productName"`
+	ProductInfo     ProductInfo `json:"productInfo,omitempty"` // Optional, for additional product details
+	TransFeeRate    float64     `json:"transFeeRate"`
+	TransFeeAmount  float64     `json:"transFeeAmount"`
+	TotalTransFee   float64     `json:"totalTransFee"`
+	VatFee          float64     `json:"vatFee"`
+}
+
+type PaylabsVASNAPCallbackRequest struct {
 	RequestID       string      `json:"requestId"`
 	ErrCode         string      `json:"errCode"`
 	ErrCodeDes      string      `json:"errCodeDes"`
