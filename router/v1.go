@@ -57,3 +57,9 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 	rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
 	rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/paylabs-vasnap", h.EventTransaction.PaylabsVASnap)
 }
+
+func ExternalRouter(h Handler, rg *gin.RouterGroup) {
+	r := rg.Group("/external")
+
+	r.POST("/paylabs/va-snap/callback", h.EventTransaction.CallbackVASnap)
+}
