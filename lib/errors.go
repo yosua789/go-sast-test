@@ -173,11 +173,11 @@ var (
 		Err:  errors.New("failed to create transaction, please try again"),
 	}
 	ErrorTicketIsOutOfStock = TIXError{
-		Code: 40008,
+		Code: 40906,
 		Err:  errors.New("ticket out of stock"),
 	}
 	ErrorPurchaseQuantityExceedTheLimit = TIXError{
-		Code: 40009,
+		Code: 40907,
 		Err:  errors.New("purchased items exceed the purchase limit"),
 	}
 )

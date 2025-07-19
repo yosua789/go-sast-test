@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -100,6 +101,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 
 	log.Info().Msg("mapping event settings")
 	eventSettings := lib.MapEventSettings(settings)
+	log.Info().Interface("Settings", eventSettings).Msg("Event settings")
 
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Msg("find ticket category by id and event id")
 	ticketCategory, err := s.EventTicketCategoryRepo.FindByIdAndEventId(ctx, tx, eventId, ticketCategoryId)
@@ -234,7 +236,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 			Quantity:              1,
 			SeatRow:               item.SeatRow,
 			SeatColumn:            item.SeatColumn,
-			AdditionalInformation: item.AdditionalInformation,
+			AdditionalInformation: sql.NullString{String: item.AdditionalInformation},
 			TotalPrice:            ticketCategory.Price,
 		})
 	}

@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type EventTransactionItem struct {
 	ID                    int
@@ -9,7 +12,7 @@ type EventTransactionItem struct {
 	Quantity              int
 	SeatRow               int
 	SeatColumn            int
-	AdditionalInformation string
+	AdditionalInformation sql.NullString
 	TotalPrice            int
 
 	CreatedAt time.Time
