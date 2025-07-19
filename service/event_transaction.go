@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -74,8 +75,22 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 	defer tx.Rollback(ctx)
 
 	log.Info().Msg("validate event by id")
-	_, err = s.EventRepo.FindById(ctx, tx, eventId)
+	event, err := s.EventRepo.FindById(ctx, tx, eventId)
 	if err != nil {
+		return
+	}
+
+	if event.IsSaleActive {
+		now := time.Now()
+		if now.After(event.EndSaleAt.Time) {
+			err = &lib.ErrorEventSaleAlreadyOver
+			return
+		} else if !(now.After(event.StartSaleAt.Time) && now.Before(event.EndSaleAt.Time)) {
+			err = &lib.ErrorEventSaleIsNotStartedYet
+			return
+		}
+	} else {
+		err = &lib.ErrorEventSaleIsPaused
 		return
 	}
 
@@ -87,6 +102,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 
 	log.Info().Msg("mapping event settings")
 	eventSettings := lib.MapEventSettings(settings)
+	log.Info().Interface("Settings", eventSettings).Msg("Event settings")
 
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Msg("find ticket category by id and event id")
 	ticketCategory, err := s.EventTicketCategoryRepo.FindByIdAndEventId(ctx, tx, eventId, ticketCategoryId)
@@ -192,13 +208,13 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 	log.Info().Int("TotalPrice", transaction.TotalPrice).Float64("TaxaPerTransaction", taxPerTransaction).Int("TotalTax", transaction.TotalTax).Msg("calculate price")
 
 	var totalAdminFee int
-	if eventSettings.AdminPercentage > 0 {
-		totalAdminFee = int(eventSettings.AdminPercentage/100) * transaction.TotalPrice
+	if eventSettings.AdminFeePercentage > 0 {
+		totalAdminFee = int(eventSettings.AdminFeePercentage/100) * transaction.TotalPrice
 	} else {
 		totalAdminFee = eventSettings.AdminFee
 	}
 
-	transaction.AdminFeePercentage = float32(eventSettings.AdminPercentage)
+	transaction.AdminFeePercentage = float32(eventSettings.AdminFeePercentage)
 	transaction.TotalAdminFee = totalAdminFee
 	log.Info().Int("TotalAdminFee", totalAdminFee).Float32("AdminFeePercentage", transaction.AdminFeePercentage).Msg("calculate admin fee")
 
@@ -221,7 +237,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 			Quantity:              1,
 			SeatRow:               item.SeatRow,
 			SeatColumn:            item.SeatColumn,
-			AdditionalInformation: item.AdditionalInformation,
+			AdditionalInformation: sql.NullString{String: item.AdditionalInformation},
 			TotalPrice:            ticketCategory.Price,
 		})
 	}

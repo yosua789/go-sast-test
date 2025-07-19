@@ -38,7 +38,6 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 		s.id as setting_id,
 		s.name as setting_name,
 		s.default_value as setting_default_value,
-		s.value_type as setting_value_type,
 
 		es.created_at, 
 		es.updated_at 
@@ -69,7 +68,6 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 			&eventSetting.Setting.ID,
 			&eventSetting.Setting.Name,
 			&eventSetting.Setting.DefaultValue,
-			&eventSetting.Setting.Type,
 			&eventSetting.CreatedAt,
 			&eventSetting.UpdatedAt,
 		)

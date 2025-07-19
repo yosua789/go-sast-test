@@ -15,11 +15,11 @@ type Event struct {
 	Description string
 	Banner      string
 	EventTime   time.Time
-	Status      string
+
+	PublishStatus string
+	IsSaleActive  bool
 
 	AdditionalInformation string
-
-	IsActive bool
 
 	StartSaleAt sql.NullTime
 	EndSaleAt   sql.NullTime

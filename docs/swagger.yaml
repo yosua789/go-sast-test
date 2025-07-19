@@ -57,16 +57,22 @@ definitions:
     properties:
       email:
         type: string
-      fullName:
+      fullname:
         type: string
       items:
         items:
           $ref: '#/definitions/dto.OrderItemEventTransaction'
         type: array
-      paymentMethod:
+      payment_method:
         type: string
-      phoneNumber:
+      phone_number:
         type: string
+    required:
+    - email
+    - fullname
+    - items
+    - payment_method
+    - phone_number
     type: object
   dto.CreateVenueRequest:
     properties:
@@ -141,13 +147,13 @@ definitions:
         type: string
       id:
         type: string
+      is_sale_active:
+        type: boolean
       name:
         type: string
       organizer:
         $ref: '#/definitions/dto.SimpleOrganizerResponse'
       start_sale_at:
-        type: string
-      status:
         type: string
       ticket_categories:
         items:
@@ -243,12 +249,16 @@ definitions:
     type: object
   dto.OrderItemEventTransaction:
     properties:
-      additionalInformation:
+      additional_information:
         type: string
-      seatColumn:
+      seat_number:
         type: integer
-      seatRow:
+      seat_row:
         type: integer
+    required:
+    - additional_information
+    - seat_number
+    - seat_row
     type: object
   dto.OrganizerResponse:
     properties:
@@ -335,6 +345,8 @@ definitions:
         type: string
       color:
         type: string
+      has_seatmap:
+        type: boolean
       id:
         type: string
       name:
@@ -403,8 +415,8 @@ definitions:
         type: string
       id:
         type: string
-      is_active:
-        type: boolean
+      image:
+        type: string
       name:
         type: string
       updated_at:
@@ -472,13 +484,10 @@ paths:
         in: query
         name: search
         type: string
-      - description: Status event
+      - description: Status sale event
         enum:
         - UPCOMING
-        - CANCELED
-        - POSTPONED
         - FINISHED
-        - ON_GOING
         in: query
         name: status
         type: string
@@ -511,41 +520,6 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Get all paginated event
-      tags:
-      - events
-  /events/{eventID}/verify/garuda-id/{garudaID}:
-    get:
-      description: VerifyGarudaID
-      parameters:
-      - description: Garuda ID
-        in: path
-        name: garudaID
-        type: string
-      - description: Event ID
-        in: path
-        name: eventID
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Delete successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/lib.APIResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.DataGarudaIDAPIResponse'
-              type: object
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-      summary: VerifyGarudaID
       tags:
       - events
   /events/{eventId}:
@@ -861,6 +835,41 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Get seatmap by event and ticket category id
+      tags:
+      - events
+  /events/{eventId}/verify/garuda-id/{garudaId}:
+    get:
+      description: VerifyGarudaID
+      parameters:
+      - description: Garuda ID
+        in: path
+        name: garudaId
+        type: string
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success get garuda id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DataGarudaIDAPIResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: VerifyGarudaID
       tags:
       - events
   /organizers:

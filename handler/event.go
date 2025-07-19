@@ -72,7 +72,7 @@ func (h *EventHandlerImpl) GetAll(ctx *gin.Context) {
 // @Tags events
 // @Produce json
 // @Param search query string false "Search event"
-// @Param status query string false "Status event" Enums(UPCOMING, CANCELED, POSTPONED, FINISHED, ON_GOING)
+// @Param status query string false "Status sale event" Enums(UPCOMING, FINISHED)
 // @Param page query string false "page event"
 // @Success 200 {object} lib.APIResponse{data=dto.PaginatedEvents} "Paginated events"
 // @Failure 400 {object} lib.HTTPError "Invalid request body"
@@ -245,12 +245,12 @@ func (h *EventHandlerImpl) Delete(ctx *gin.Context) {
 // @Description VerifyGarudaID
 // @Tags events
 // @Produce json
-// @Param garudaID path string false "Garuda ID"
-// @Param eventID path string false "Event ID"
-// @Success 200 {object} lib.APIResponse{data=dto.DataGarudaIDAPIResponse} "Delete successfully"
+// @Param garudaId path string false "Garuda ID"
+// @Param eventId path string false "Event ID"
+// @Success 200 {object} lib.APIResponse{data=dto.DataGarudaIDAPIResponse} "Success get garuda id"
 // @Failure 404 {object} lib.HTTPError "Not Found"
 // @Failure 500 {object} lib.HTTPError "Internal server error"
-// @Router /events/{eventID}/verify/garuda-id/{garudaID} [get]
+// @Router /events/{eventId}/verify/garuda-id/{garudaId} [get]
 func (h *EventHandlerImpl) VerifyGarudaID(ctx *gin.Context) {
 	var uriParams dto.GetGarudaIDByIdParams
 

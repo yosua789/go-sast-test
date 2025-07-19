@@ -35,13 +35,10 @@ const docTemplate = `{
                     {
                         "enum": [
                             "UPCOMING",
-                            "CANCELED",
-                            "POSTPONED",
-                            "FINISHED",
-                            "ON_GOING"
+                            "FINISHED"
                         ],
                         "type": "string",
-                        "description": "Status event",
+                        "description": "Status sale event",
                         "name": "status",
                         "in": "query"
                     },
@@ -75,64 +72,6 @@ const docTemplate = `{
                         "description": "Invalid request body",
                         "schema": {
                             "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
-        "/events/{eventID}/verify/garuda-id/{garudaID}": {
-            "get": {
-                "description": "VerifyGarudaID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "VerifyGarudaID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Garuda ID",
-                        "name": "garudaID",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event ID",
-                        "name": "eventID",
-                        "in": "path"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Delete successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/lib.APIResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/dto.DataGarudaIDAPIResponse"
-                                        }
-                                    }
-                                }
-                            ]
                         }
                     },
                     "404": {
@@ -647,6 +586,64 @@ const docTemplate = `{
                         "description": "Invalid request body",
                         "schema": {
                             "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{eventId}/verify/garuda-id/{garudaId}": {
+            "get": {
+                "description": "VerifyGarudaID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "VerifyGarudaID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Garuda ID",
+                        "name": "garudaId",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success get garuda id",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DataGarudaIDAPIResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -1401,11 +1398,18 @@ const docTemplate = `{
         },
         "dto.CreateEventTransaction": {
             "type": "object",
+            "required": [
+                "email",
+                "fullname",
+                "items",
+                "payment_method",
+                "phone_number"
+            ],
             "properties": {
                 "email": {
                     "type": "string"
                 },
-                "fullName": {
+                "fullname": {
                     "type": "string"
                 },
                 "items": {
@@ -1414,10 +1418,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/dto.OrderItemEventTransaction"
                     }
                 },
-                "paymentMethod": {
+                "payment_method": {
                     "type": "string"
                 },
-                "phoneNumber": {
+                "phone_number": {
                     "type": "string"
                 }
             }
@@ -1528,6 +1532,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "is_sale_active": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1535,9 +1542,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.SimpleOrganizerResponse"
                 },
                 "start_sale_at": {
-                    "type": "string"
-                },
-                "status": {
                     "type": "string"
                 },
                 "ticket_categories": {
@@ -1683,14 +1687,19 @@ const docTemplate = `{
         },
         "dto.OrderItemEventTransaction": {
             "type": "object",
+            "required": [
+                "additional_information",
+                "seat_number",
+                "seat_row"
+            ],
             "properties": {
-                "additionalInformation": {
+                "additional_information": {
                     "type": "string"
                 },
-                "seatColumn": {
+                "seat_number": {
                     "type": "integer"
                 },
-                "seatRow": {
+                "seat_row": {
                     "type": "integer"
                 }
             }
@@ -1826,6 +1835,9 @@ const docTemplate = `{
                 "color": {
                     "type": "string"
                 },
+                "has_seatmap": {
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -1923,8 +1935,8 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "is_active": {
-                    "type": "boolean"
+                "image": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"

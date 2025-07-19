@@ -32,6 +32,8 @@ type EventServiceImpl struct {
 	OrganizerRepo           repository.OrganizerRepository
 	VenueRepo               repository.VenueRepository
 	VenueSectorRepo         repository.VenueSectorRepository
+
+	GCSStorageRepo repository.GCSStorageRepository
 }
 
 func NewEventService(
@@ -42,6 +44,7 @@ func NewEventService(
 	eventTicketCategoryRepo repository.EventTicketCategoryRepository,
 	organizerRepo repository.OrganizerRepository,
 	venueRepo repository.VenueRepository,
+	gcsStorageRepo repository.GCSStorageRepository,
 ) EventService {
 	return &EventServiceImpl{
 		DB:                      db,
@@ -51,6 +54,7 @@ func NewEventService(
 		EventTicketCategoryRepo: eventTicketCategoryRepo,
 		OrganizerRepo:           organizerRepo,
 		VenueRepo:               venueRepo,
+		GCSStorageRepo:          gcsStorageRepo,
 	}
 }
 
@@ -131,7 +135,6 @@ func (s *EventServiceImpl) GetAllEvent(ctx context.Context) (res []dto.EventResp
 			Description: val.Description,
 			Banner:      val.Banner,
 			EventTime:   val.EventTime,
-			Status:      val.Status,
 			Venue:       lib.MapVenueModelToSimpleResponse(venue),
 
 			StartSaleAt: helper.ConvertNullTimeToPointer(val.StartSaleAt),
@@ -155,6 +158,16 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 		return
 	}
 
+	if s.Env.Storage.Type == lib.StorageTypeGCS {
+		bannerUrl, errBanner := s.GCSStorageRepo.CreateSignedUrl(event.Banner)
+		if errBanner != nil {
+			err = errBanner
+			return
+		}
+
+		event.Banner = bannerUrl
+	}
+
 	log.Info().Msg("Get event settings by event id")
 	eventSettings, err := s.EventSettingRepo.FindByEventId(ctx, nil, eventId)
 	if err != nil {
@@ -176,14 +189,14 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 	}
 
 	res = dto.DetailEventResponse{
-		ID:          event.ID,
-		Organizer:   lib.MapOrganizerEntityToSimpleResponse(event.Organizer),
-		Name:        event.Name,
-		Description: event.Description,
-		Banner:      event.Banner,
-		EventTime:   event.EventTime,
-		Status:      event.Status,
-		Venue:       lib.MapVenueEntityToSimpleResponse(event.Venue),
+		ID:           event.ID,
+		Organizer:    lib.MapOrganizerEntityToSimpleResponse(event.Organizer),
+		Name:         event.Name,
+		Description:  event.Description,
+		Banner:       event.Banner,
+		EventTime:    event.EventTime,
+		Venue:        lib.MapVenueEntityToSimpleResponse(event.Venue),
+		IsSaleActive: event.IsSaleActive,
 
 		AdditionalInformation: event.AdditionalInformation,
 
@@ -250,6 +263,14 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 
 	for _, val := range paginatedEvents.Events {
 		event := lib.MapEventEntityToEventResponse(val)
+
+		if s.Env.Storage.Type == lib.StorageTypeGCS {
+			signedUrl, err := s.GCSStorageRepo.CreateSignedUrl(event.Banner)
+			if err != nil {
+				continue
+			}
+			event.Banner = signedUrl
+		}
 
 		res.Events = append(res.Events, event)
 	}

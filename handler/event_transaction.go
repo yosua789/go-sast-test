@@ -88,9 +88,11 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
-			case lib.ErrorSeatIsAlreadyBooked:
+			case lib.ErrorEventSaleIsPaused, lib.ErrorEventSaleIsNotStartedYet, lib.ErrorEventSaleAlreadyOver:
+				lib.RespondError(ctx, http.StatusForbidden, "error", err, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorSeatIsAlreadyBooked, lib.ErrorTicketIsOutOfStock, lib.ErrorPurchaseQuantityExceedTheLimit:
 				lib.RespondError(ctx, http.StatusConflict, "error", err, tixErr.Code, h.Env.App.Debug)
-			case lib.ErrorEventIdInvalid, lib.ErrorTicketCategoryInvalid, lib.ErrorTicketIsOutOfStock, lib.ErrorFailedToBookSeat:
+			case lib.ErrorEventIdInvalid, lib.ErrorTicketCategoryInvalid, lib.ErrorFailedToBookSeat:
 				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventNotFound, lib.ErrorTicketCategoryNotFound:
 				lib.RespondError(ctx, http.StatusNotFound, "error", err, tixErr.Code, h.Env.App.Debug)

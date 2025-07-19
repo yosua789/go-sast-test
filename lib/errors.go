@@ -114,6 +114,18 @@ var (
 		Code: 41302,
 		Err:  errors.New("event poster size exceeds the limit"),
 	}
+	ErrorEventSaleIsPaused = TIXError{
+		Code: 40302,
+		Err:  errors.New("event ticket sale is paused"),
+	}
+	ErrorEventSaleIsNotStartedYet = TIXError{
+		Code: 40303,
+		Err:  errors.New("event ticket sale is not started yet"),
+	}
+	ErrorEventSaleAlreadyOver = TIXError{
+		Code: 40304,
+		Err:  errors.New("event ticket sale is already over"),
+	}
 )
 
 var (
@@ -125,7 +137,7 @@ var (
 
 var (
 	ErrorForbidden = TIXError{
-		Code: 40302,
+		Code: 40301,
 		Err:  errors.New("resource forbidden"),
 	}
 )
@@ -161,11 +173,11 @@ var (
 		Err:  errors.New("failed to create transaction, please try again"),
 	}
 	ErrorTicketIsOutOfStock = TIXError{
-		Code: 40008,
+		Code: 40906,
 		Err:  errors.New("ticket out of stock"),
 	}
 	ErrorPurchaseQuantityExceedTheLimit = TIXError{
-		Code: 40009,
+		Code: 40907,
 		Err:  errors.New("purchased items exceed the purchase limit"),
 	}
 )

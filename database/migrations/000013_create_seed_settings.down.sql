@@ -1,0 +1,3 @@
+DELETE FROM event_settings WHERE (setting_id, event_id) IN (('3ec8a5fa-11fd-4fcd-ab4c-69d5f0ffc96f', '77797e23-a2b7-40bd-b8b0-ef628568f815'), ('8eece242-f1b8-46b9-8e2c-c4c9b28e68c9', '77797e23-a2b7-40bd-b8b0-ef628568f815'), ('8a902407-8c39-446a-930e-c884f29c50a5', '77797e23-a2b7-40bd-b8b0-ef628568f815'));
+
+DELETE FROM settings WHERE id IN ('3ec8a5fa-11fd-4fcd-ab4c-69d5f0ffc96f', '8eece242-f1b8-46b9-8e2c-c4c9b28e68c9', '8a902407-8c39-446a-930e-c884f29c50a5');

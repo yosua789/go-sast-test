@@ -17,10 +17,11 @@ type VenueSectorResponse struct {
 }
 
 type TicketCategorySectorResponse struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Color    string `json:"color"`
-	AreaCode string `json:"area_code"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Color      string `json:"color"`
+	AreaCode   string `json:"area_code"`
+	HasSeatmap bool   `json:"has_seatmap"`
 }
 
 type SectorSeatmapResponse struct {
