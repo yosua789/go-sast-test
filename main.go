@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -23,6 +24,11 @@ func main() {
 	env, err := config.LoadEnv()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to load config")
+		panic(err)
+	}
+	time.Local, err = time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to load time zone")
 		panic(err)
 	}
 	config.InitSwagger(env)
