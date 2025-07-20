@@ -21,10 +21,11 @@ type WrapDatabase struct {
 const MIGRATION_LOCATIONS = "database/migrations"
 
 func NewDBConnection(env *config.EnvironmentVariable) *pgxpool.Pool {
-	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s",
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		env.Database.Postgres.User,
 		env.Database.Postgres.Password,
 		env.Database.Postgres.Host,
+		env.Database.Postgres.Port,
 		env.Database.Postgres.Name,
 	)
 
