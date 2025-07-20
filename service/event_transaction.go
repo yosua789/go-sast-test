@@ -292,8 +292,8 @@ func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error
 		VirtualAccountNo:    customerNo + merchantId, // 28-digit composite value
 		VirtualAccountName:  "john doe",              // Payer name
 		VirtualAccountEmail: "john.doe@example.com",
-		VirtualAccountPhone: "6281234567890",    // Mobile phone number in Indonesian format
-		TrxID:               "MERCHANT-TRX-001", // Merchant transaction number
+		VirtualAccountPhone: "6281234567890", // Mobile phone number in Indonesian format
+		TrxID:               idRequest,       // Merchant transaction number
 		TotalAmount: dto.Amount{
 			Value:    "10000.00", // Amount with 2 decimal
 			Currency: "IDR",      // Fixed currency
