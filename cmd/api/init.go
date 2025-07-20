@@ -3,6 +3,7 @@ package api
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/helper"
 	"assist-tix/lib"
 	"assist-tix/middleware"
 	"assist-tix/router"
@@ -29,6 +30,9 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 		log.Error().Err(err).Msg("failed to connect gcs")
 		return nil, err
 	}
+	env.Paylabs.PrivateKey = helper.GetKeyFileString(env.Paylabs.PrivateKey)
+
+	env.Paylabs.PublicKey = helper.GetKeyFileString(env.Paylabs.PublicKey)
 
 	repository := Newrepository(wrapDB, env, gcsClient)
 	service := Newservice(env, repository, wrapDB)
