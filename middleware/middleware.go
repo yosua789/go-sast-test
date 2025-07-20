@@ -10,6 +10,7 @@ import (
 
 type Middleware interface {
 	CORSMiddleware() gin.HandlerFunc
+	PayloadPasser() gin.HandlerFunc
 }
 
 type MiddlewareImpl struct {

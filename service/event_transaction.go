@@ -27,7 +27,7 @@ import (
 type EventTransactionService interface {
 	CreateEventTransaction(ctx context.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
 	PaylabsVASnap(ctx *gin.Context) (err error)
-	CallbackVASnap(ctx *gin.Context, req dto.PaylabsVASNAPCallbackRequest) (err error)
+	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error)
 }
 
 type EventTransactionServiceImpl struct {
@@ -361,7 +361,7 @@ func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error
 	return
 }
 
-func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.PaylabsVASNAPCallbackRequest) (err error) {
+func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error) {
 	log.Info().Msg("Processing Paylabs VA snap callback")
 	header := map[string]interface{}{}
 	for key, value := range ctx.Request.Header {
@@ -369,13 +369,12 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.P
 	}
 	log.Info().Msgf("Headers: %v", header)
 
-	stringifyPayload, err := json.Marshal(req)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal callback request")
-		return
-	}
-	log.Info().Msgf("Payload: %s", stringifyPayload)
-	isValid := helper.IsValidPaylabsRequest(ctx, "/transfer-va/payment", string(stringifyPayload), s.Env.Paylabs.PublicKey)
+	rawPayload := ctx.GetString("rawPayload")
+	var buf bytes.Buffer
+	json.Compact(&buf, []byte(rawPayload))
+	log.Info().Msgf("Raw Payload: %s", buf.String())
+	log.Info().Msgf("Request URL: %v", req)
+	isValid := helper.IsValidPaylabsRequest(ctx, "/transfer-va/payment", buf.String(), s.Env.Paylabs.PublicKey)
 	if !isValid {
 		return errors.New("invalid signature")
 	}
