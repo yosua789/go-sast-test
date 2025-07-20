@@ -362,11 +362,19 @@ func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error
 }
 
 func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.PaylabsVASNAPCallbackRequest) (err error) {
+	log.Info().Msg("Processing Paylabs VA snap callback")
+	header := map[string]interface{}{}
+	for key, value := range ctx.Request.Header {
+		header[key] = value
+	}
+	log.Info().Msgf("Headers: %v", header)
+
 	stringifyPayload, err := json.Marshal(req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshal callback request")
 		return
 	}
+	log.Info().Msgf("Payload: %s", stringifyPayload)
 	isValid := helper.IsValidPaylabsRequest(ctx, "/transfer-va/payment", string(stringifyPayload), s.Env.Paylabs.PublicKey)
 	if !isValid {
 		return errors.New("invalid signature")
