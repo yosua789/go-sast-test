@@ -146,12 +146,13 @@ func (h *EventTransactionHandlerImpl) PaylabsVASnap(ctx *gin.Context) {
 
 func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 	// Implement the callback logic here
-	var req dto.PaylabsVASNAPCallbackRequest
+	var req dto.SnapCallbackPaymentRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error().Err(err).Msg("error binding JSON for callback")
 		lib.RespondError(ctx, http.StatusBadRequest, "invalid request body", err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
 		return
 	}
+	log.Info().Msgf("Received callback: %+v", req)
 
 	// This is a placeholder for the actual implementation
 	err := h.EventTransactionService.CallbackVASnap(ctx, req)

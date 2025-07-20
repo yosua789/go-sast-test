@@ -62,5 +62,5 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 func ExternalRouter(h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/external")
 
-	r.POST("/paylabs/va-snap/callback", h.EventTransaction.CallbackVASnap)
+	r.POST("/paylabs/va-snap/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackVASnap)
 }
