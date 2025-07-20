@@ -113,6 +113,7 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 // @Tags events
 // @Produce json
 // @Accept json
+// @Param ticketCategoryId path string true "Ticket Category ID"
 // @Param eventId path string true "Event ID"
 // @Success 200 {object} lib.APIResponse{data=nil} "VA snap created"
 // @Failure 400 {object} lib.HTTPError "Invalid request body"

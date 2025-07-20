@@ -490,6 +490,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Ticket Category ID",
+                        "name": "ticketCategoryId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "Event ID",
                         "name": "eventId",
                         "in": "path",
