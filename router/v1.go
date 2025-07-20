@@ -10,6 +10,7 @@ func RouterApiV1(debug bool, h Handler, rg *gin.RouterGroup) {
 	OrganizerRouter(h, r)
 	VenueRouter(h, r)
 	EventRouter(h, r)
+	ExternalRouter(h, r)
 }
 
 func OrganizerRouter(h Handler, rg *gin.RouterGroup) {

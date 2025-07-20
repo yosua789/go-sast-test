@@ -764,6 +764,11 @@ paths:
       - application/json
       description: Create VA snap for event ticket transaction
       parameters:
+      - description: Ticket Category ID
+        in: path
+        name: ticketCategoryId
+        required: true
+        type: string
       - description: Event ID
         in: path
         name: eventId
