@@ -1414,10 +1414,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "fullname": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "items": {
                     "type": "array",
@@ -1429,7 +1431,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 50
                 }
             }
         },
@@ -1696,14 +1699,14 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "additional_information",
-                "seat_number",
+                "seat_column",
                 "seat_row"
             ],
             "properties": {
                 "additional_information": {
                     "type": "string"
                 },
-                "seat_number": {
+                "seat_column": {
                     "type": "integer"
                 },
                 "seat_row": {
