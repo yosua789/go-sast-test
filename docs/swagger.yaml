@@ -56,8 +56,10 @@ definitions:
   dto.CreateEventTransaction:
     properties:
       email:
+        maxLength: 255
         type: string
       fullname:
+        maxLength: 255
         type: string
       items:
         items:
@@ -66,6 +68,7 @@ definitions:
       payment_method:
         type: string
       phone_number:
+        maxLength: 50
         type: string
     required:
     - email
@@ -251,13 +254,13 @@ definitions:
     properties:
       additional_information:
         type: string
-      seat_number:
+      seat_column:
         type: integer
       seat_row:
         type: integer
     required:
     - additional_information
-    - seat_number
+    - seat_column
     - seat_row
     type: object
   dto.OrganizerResponse:
