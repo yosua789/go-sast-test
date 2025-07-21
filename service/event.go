@@ -173,8 +173,10 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 	if err != nil {
 		return
 	}
+	log.Info().Interface("SettingsRaw", eventSettings).Msg("mapping event settings")
 
 	eventSettingsResponse := lib.MapEventSettingEntityToEventSettingResponse(eventSettings)
+	log.Info().Interface("SettingsResponse", eventSettingsResponse).Msg("Event settings")
 
 	log.Info().Msg("Get ticket categories by event id")
 	ticketCategories, err := s.EventTicketCategoryRepo.FindByEventId(ctx, nil, eventId)
