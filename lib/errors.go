@@ -202,4 +202,8 @@ var (
 		Code: 40411,
 		Err:  errors.New("garuda id not found"),
 	}
+	ErrorGarudaIDInvalid = TIXError{
+		Code: 40412,
+		Err:  errors.New("garuda id invalid"),
+	}
 )

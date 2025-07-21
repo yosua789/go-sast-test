@@ -165,5 +165,5 @@ type GetEventTicketCategoryByIdParams struct {
 
 type GetDetailEventTicketCategoryByIdParams struct {
 	EventID          string `uri:"eventId" binding:"required,min=1,uuid"`
-	TicketCategoryId string `uri:"ticketCategoryId" binding:"required,min=1,uuid"`
+	TicketCategoryID string `uri:"ticketCategoryId" binding:"required,min=1,uuid"`
 }

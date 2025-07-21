@@ -45,7 +45,7 @@ func (r *VenueRepositoryImpl) Create(ctx context.Context, tx pgx.Tx, venue model
 	defer cancel()
 
 	query := `INSERT INTO venues (venue_type, name, country, city, capacity, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`
+		VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`
 
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, venue.VenueType, venue.Name, venue.Country, venue.City, venue.Capacity)

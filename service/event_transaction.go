@@ -100,7 +100,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 		return
 	}
 
-	log.Info().Msg("mapping event settings")
+	log.Info().Interface("SettingsRaw", settings).Msg("mapping event settings")
 	eventSettings := lib.MapEventSettings(settings)
 	log.Info().Interface("Settings", eventSettings).Msg("Event settings")
 
