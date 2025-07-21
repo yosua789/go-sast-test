@@ -6,6 +6,8 @@ import (
 	"assist-tix/helper"
 	"assist-tix/model"
 	"strconv"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func MapOrganizerModelToSimpleResponse(
@@ -185,4 +187,47 @@ func MapEntityTicketCategoryToDetailEventPublicTicketCategoryResponse(
 		Code:             data.Code,
 		Entrance:         data.Entrance,
 	}
+}
+
+// Mapping error code
+// - Use camel case
+// - First character is capitalized
+// - Use ID all capitalized not Id
+func MapErrorGetDetailEventTicketCategoryByIdParams(fieldErr validator.FieldError) error {
+	switch {
+	case fieldErr.Field() == "EventID":
+		return &ErrorEventIdInvalid
+	case fieldErr.Field() == "TicketCategoryID":
+		return &ErrorTicketCategoryInvalid
+	}
+	return nil
+}
+
+func MapErrorGetEventByIdParams(fieldErr validator.FieldError) error {
+	switch {
+	case fieldErr.Field() == "EventID":
+		return &ErrorEventIdInvalid
+	}
+
+	return nil
+}
+
+func MapErrorGetGarudaIDByIdParams(fieldErr validator.FieldError) error {
+	switch {
+	case fieldErr.Field() == "GarudaID":
+		return &ErrorGarudaIDInvalid
+	case fieldErr.Field() == "EventID":
+		return &ErrorEventIdInvalid
+	}
+
+	return nil
+}
+
+func MapErrorGetEventTicketCategoryByIdParams(fieldErr validator.FieldError) error {
+	switch {
+	case fieldErr.Field() == "EventID":
+		return &ErrorEventIdInvalid
+	}
+
+	return nil
 }
