@@ -6,6 +6,8 @@ import (
 	"assist-tix/helper"
 	"assist-tix/model"
 	"strconv"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func MapOrganizerModelToSimpleResponse(
@@ -81,7 +83,6 @@ func MapEventEntityToEventResponse(
 		Description: event.Description,
 		Banner:      event.Banner,
 		EventTime:   event.EventTime,
-		Status:      event.PublishStatus,
 		StartSaleAt: helper.ConvertNullTimeToPointer(event.StartSaleAt),
 		EndSaleAt:   helper.ConvertNullTimeToPointer(event.EndSaleAt),
 		CreatedAt:   event.CreatedAt,
@@ -162,13 +163,13 @@ func MapDetailEventPublicTicketCategoryModelToDetailEventPublicTicketCategoryRes
 	data model.EventTicketCategory,
 ) dto.DetailEventPublicTicketCategoryResponse {
 	return dto.DetailEventPublicTicketCategoryResponse{
-		ID:               data.ID,
-		Name:             data.Name,
-		Description:      data.Description,
-		Price:            data.Price,
-		TotalPublicStock: data.TotalPublicStock,
-		Code:             data.Code,
-		Entrance:         data.Entrance,
+		ID:          data.ID,
+		Name:        data.Name,
+		Description: data.Description,
+		Price:       data.Price,
+		PublicStock: data.PublicStock,
+		Code:        data.Code,
+		Entrance:    data.Entrance,
 	}
 }
 
@@ -176,13 +177,56 @@ func MapEntityTicketCategoryToDetailEventPublicTicketCategoryResponse(
 	data entity.TicketCategory,
 ) dto.DetailEventPublicTicketCategoryResponse {
 	return dto.DetailEventPublicTicketCategoryResponse{
-		ID:               data.ID,
-		Name:             data.Name,
-		Sector:           MapEntitySectorToTicketCategorySectorResponse(data.Sector),
-		Description:      data.Description,
-		Price:            data.Price,
-		TotalPublicStock: data.TotalPublicStock,
-		Code:             data.Code,
-		Entrance:         data.Entrance,
+		ID:          data.ID,
+		Name:        data.Name,
+		Sector:      MapEntitySectorToTicketCategorySectorResponse(data.Sector),
+		Description: data.Description,
+		Price:       data.Price,
+		PublicStock: data.PublicStock,
+		Code:        data.Code,
+		Entrance:    data.Entrance,
 	}
+}
+
+// Mapping error code
+// - Use camel case
+// - First character is capitalized
+// - Use ID all capitalized not Id
+func MapErrorGetDetailEventTicketCategoryByIdParams(fieldErr validator.FieldError) error {
+	switch {
+	case fieldErr.Field() == "EventID":
+		return &ErrorEventIdInvalid
+	case fieldErr.Field() == "TicketCategoryID":
+		return &ErrorTicketCategoryInvalid
+	}
+	return nil
+}
+
+func MapErrorGetEventByIdParams(fieldErr validator.FieldError) error {
+	switch {
+	case fieldErr.Field() == "EventID":
+		return &ErrorEventIdInvalid
+	}
+
+	return nil
+}
+
+func MapErrorGetGarudaIDByIdParams(fieldErr validator.FieldError) error {
+	switch {
+	case fieldErr.Field() == "GarudaID":
+		return &ErrorGarudaIDInvalid
+	case fieldErr.Field() == "EventID":
+		return &ErrorEventIdInvalid
+	}
+
+	return nil
+}
+
+func MapErrorGetEventTicketCategoryByIdParams(fieldErr validator.FieldError) error {
+	switch {
+	case fieldErr.Field() == "EventID":
+		return &ErrorEventIdInvalid
+	}
+
+	return nil
 }

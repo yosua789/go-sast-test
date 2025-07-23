@@ -80,6 +80,11 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 		return
 	}
 
+	if event.PublishStatus != lib.EventPublishStatusPublished {
+		err = &lib.ErrorEventNotFound
+		return
+	}
+
 	if event.IsSaleActive {
 		now := time.Now()
 		if now.After(event.EndSaleAt.Time) {
@@ -100,7 +105,13 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 		return
 	}
 
-	log.Info().Msg("mapping event settings")
+	log.Info().Str("eventId", eventId).Msg("validate email is booked in the event")
+	_, err = s.EventTransactionRepo.IsEmailAlreadyBookEvent(ctx, tx, eventId, req.Email)
+	if err != nil {
+		return
+	}
+
+	log.Info().Interface("SettingsRaw", settings).Msg("mapping event settings")
 	eventSettings := lib.MapEventSettings(settings)
 	log.Info().Interface("Settings", eventSettings).Msg("Event settings")
 
@@ -141,9 +152,9 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 	log.Info().Str("InvoiceNumber", invoiceNumber).Msg("generated invoice number")
 
 	transaction := model.EventTransaction{
-		FullName:    req.FullName,
-		Email:       req.FullName,
-		PhoneNumber: req.PhoneNumber,
+		// FullName:    req.FullName,
+		// PhoneNumber: req.PhoneNumber,
+		Email: req.Email,
 
 		InvoiceNumber: invoiceNumber,
 		Status:        lib.PaymentStatusPending,
@@ -222,23 +233,40 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 	log.Info().Int("GrandTotal", transaction.GrandTotal).Msg("got grand total price")
 
 	log.Info().Msg("create transaction to database")
-	transactionRes, err := s.EventTransactionRepo.CreateTransaction(ctx, tx, transaction)
+	transactionRes, err := s.EventTransactionRepo.CreateTransaction(ctx, tx, eventId, ticketCategoryId, transaction)
 	if err != nil {
 		return
 	}
 
 	transaction.ID = transactionRes.ID
+	transaction.CreatedAt = transactionRes.CreatedAt
 
 	var transactionItems []model.EventTransactionItem
 	for _, item := range req.Items {
+		var garudaId sql.NullString = helper.ToSQLString(item.GarudaID)
+
+		var fullName sql.NullString = helper.ToSQLString(item.FullName)
+		var email sql.NullString = helper.ToSQLString(item.Email)
+		var phoneNumber sql.NullString = helper.ToSQLString(item.PhoneNumber)
+
 		transactionItems = append(transactionItems, model.EventTransactionItem{
-			TransactionID:         transaction.ID,
-			TicketCategoryID:      ticketCategoryId,
-			Quantity:              1,
-			SeatRow:               item.SeatRow,
-			SeatColumn:            item.SeatColumn,
+			TransactionID: transaction.ID,
+			// TicketCategoryID:      ticketCategoryId,
+
+			Quantity: 1,
+
+			SeatRow:    item.SeatRow,
+			SeatColumn: item.SeatColumn,
+
+			GarudaID:    garudaId,
+			Fullname:    fullName,
+			Email:       email,
+			PhoneNumber: phoneNumber,
+
 			AdditionalInformation: sql.NullString{String: item.AdditionalInformation},
 			TotalPrice:            ticketCategory.Price,
+
+			CreatedAt: transaction.CreatedAt,
 		})
 	}
 	log.Info().Str("transactionId", transaction.ID).Int("count", len(transactionItems)).Msg("create transaction item")

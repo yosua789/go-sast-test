@@ -14,7 +14,9 @@ const (
 	EventPurchaseAdultTicketPerTransactionSettingName = "MAX_ADULT_TICKET_PURCHASE_PER_TRANSACTION"
 	TaxPercentageSettingsName                         = "TAX_PERCENTAGE"
 	AdminFeePercentageSettingsName                    = "ADMIN_FEE_PERCENTAGE"
-	AdminFeePriceSettingsName                         = "ADMIN_FEE_PRICE"
+
+	// Not implemented yet in phase 1
+	AdminFeePriceSettingsName = "ADMIN_FEE_PRICE"
 )
 
 const (

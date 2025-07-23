@@ -163,10 +163,20 @@ func (h *EventHandlerImpl) GetById(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindUri(&uriParams); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
-			for _, fieldErr := range validationErrors {
-				lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
-				return
+			// Find first error
+			fieldErr := validationErrors[0]
+
+			mappedError := lib.MapErrorGetEventByIdParams(fieldErr)
+			if mappedError != nil {
+				var tixErr *lib.TIXError
+				if errors.As(mappedError, &tixErr) {
+					lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), tixErr, tixErr.Code, h.Env.App.Debug)
+					return
+				}
 			}
+
+			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+			return
 		}
 		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
 		return
@@ -256,10 +266,20 @@ func (h *EventHandlerImpl) VerifyGarudaID(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindUri(&uriParams); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
-			for _, fieldErr := range validationErrors {
-				lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
-				return
+			// Find first error
+			fieldErr := validationErrors[0]
+
+			mappedError := lib.MapErrorGetGarudaIDByIdParams(fieldErr)
+			if mappedError != nil {
+				var tixErr *lib.TIXError
+				if errors.As(mappedError, &tixErr) {
+					lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), tixErr, tixErr.Code, h.Env.App.Debug)
+					return
+				}
 			}
+
+			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+			return
 		}
 		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
 		return

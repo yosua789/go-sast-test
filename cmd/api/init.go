@@ -4,10 +4,10 @@ import (
 	"assist-tix/config"
 	"assist-tix/database"
 	"assist-tix/helper"
-	"assist-tix/lib"
 	"assist-tix/middleware"
 	"assist-tix/router"
 	"assist-tix/storage"
+	custValidator "assist-tix/validator"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -31,13 +31,13 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 		return nil, err
 	}
 	env.Paylabs.PrivateKey = helper.GetKeyFileString(env.Paylabs.PrivateKey)
-
 	env.Paylabs.PublicKey = helper.GetKeyFileString(env.Paylabs.PublicKey)
+
+	validate := validator.New()
+	custValidator.InitCustomValidator(validate)
 
 	repository := Newrepository(wrapDB, env, gcsClient)
 	service := Newservice(env, repository, wrapDB)
-	validate := validator.New()
-	validate.RegisterValidation("not_blank", lib.NotBlank)
 	handler := Newhandler(env, service, validate)
 
 	middleware := middleware.NewMiddleware(env)

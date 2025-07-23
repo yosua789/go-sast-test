@@ -39,3 +39,11 @@ const (
 	EventStatusOnGoing   = "ON_GOING"
 	EventStatusAll       = "ALL"
 )
+
+// Event Transaction status
+const (
+	EventTransactionStatusPending = "PENDING"
+	EventTransactionStatusSuccess = "SUCCESS"
+	EventTransactionStatusExpired = "EXPIRED"
+	EventTransactionStatusFailed  = "FAILED"
+)

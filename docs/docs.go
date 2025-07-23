@@ -1407,17 +1407,14 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "email",
-                "fullname",
                 "items",
-                "payment_method",
-                "phone_number"
+                "payment_method"
             ],
             "properties": {
                 "email": {
-                    "type": "string"
-                },
-                "fullname": {
-                    "type": "string"
+                    "description": "FullName    string ` + "`" + `json:\"fullname\" validate:\"required,alphaunicodespaces,max=255\"` + "`" + `\nPhoneNumber string ` + "`" + `json:\"phone_number\" validate:\"required,custom_phone_number,max=50\"` + "`" + `",
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "items": {
                     "type": "array",
@@ -1426,9 +1423,6 @@ const docTemplate = `{
                     }
                 },
                 "payment_method": {
-                    "type": "string"
-                },
-                "phone_number": {
                     "type": "string"
                 }
             }
@@ -1504,11 +1498,11 @@ const docTemplate = `{
                 "price": {
                     "type": "integer"
                 },
+                "public_stock": {
+                    "type": "integer"
+                },
                 "sector": {
                     "$ref": "#/definitions/dto.TicketCategorySectorResponse"
-                },
-                "total_public_stock": {
-                    "type": "integer"
                 }
             }
         },
@@ -1593,9 +1587,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.SimpleOrganizerResponse"
                 },
                 "start_sale_at": {
-                    "type": "string"
-                },
-                "status": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -1694,20 +1685,33 @@ const docTemplate = `{
         },
         "dto.OrderItemEventTransaction": {
             "type": "object",
-            "required": [
-                "additional_information",
-                "seat_number",
-                "seat_row"
-            ],
             "properties": {
                 "additional_information": {
                     "type": "string"
                 },
-                "seat_number": {
-                    "type": "integer"
+                "email": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "fullname": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "garuda_id": {
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "phone_number": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "seat_column": {
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "seat_row": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },

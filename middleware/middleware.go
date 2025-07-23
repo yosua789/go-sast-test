@@ -25,7 +25,6 @@ func NewMiddleware(env *config.EnvironmentVariable) Middleware {
 
 func (m *MiddlewareImpl) CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		log.Info().Msg("Using Cors Middleware")
 		c.Header("Content-Type", "application/json")
 		c.Header("Accept", "application/json")
 

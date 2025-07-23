@@ -180,6 +180,10 @@ var (
 		Code: 40907,
 		Err:  errors.New("purchased items exceed the purchase limit"),
 	}
+	ErrorEmailIsAlreadyBooked = TIXError{
+		Code: 40908,
+		Err:  errors.New("email is already booked for this event"),
+	}
 )
 
 var (
@@ -201,5 +205,9 @@ var (
 	ErrorGarudaIDNotFound = TIXError{
 		Code: 40411,
 		Err:  errors.New("garuda id not found"),
+	}
+	ErrorGarudaIDInvalid = TIXError{
+		Code: 40909,
+		Err:  errors.New("garuda id invalid"),
 	}
 )

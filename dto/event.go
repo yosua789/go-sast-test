@@ -11,7 +11,6 @@ type EventResponse struct {
 	Description string                  `json:"description"`
 	Banner      string                  `json:"banner"`
 	EventTime   time.Time               `json:"event_time"`
-	Status      string                  `json:"status"`
 	Venue       SimpleVenueResponse     `json:"venue"`
 
 	StartSaleAt *time.Time `json:"start_sale_at"`
@@ -120,7 +119,7 @@ type DetailEventPublicTicketCategoryResponse struct {
 
 	Sector TicketCategorySectorResponse `json:"sector"`
 
-	TotalPublicStock int `json:"total_public_stock"`
+	PublicStock int `json:"public_stock"`
 
 	Code     string `json:"code"`
 	Entrance string `json:"entrance"`
@@ -165,5 +164,5 @@ type GetEventTicketCategoryByIdParams struct {
 
 type GetDetailEventTicketCategoryByIdParams struct {
 	EventID          string `uri:"eventId" binding:"required,min=1,uuid"`
-	TicketCategoryId string `uri:"ticketCategoryId" binding:"required,min=1,uuid"`
+	TicketCategoryID string `uri:"ticketCategoryId" binding:"required,min=1,uuid"`
 }

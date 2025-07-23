@@ -4,6 +4,7 @@ import (
 	"assist-tix/config"
 	"assist-tix/database"
 	"assist-tix/dto"
+	"assist-tix/helper"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"assist-tix/repository"
@@ -28,6 +29,7 @@ type EventTicketCategoryServiceImpl struct {
 	VenueSectorRepository         repository.VenueSectorRepository
 	EventRepository               repository.EventRepository
 	EventTicketCategoryRepository repository.EventTicketCategoryRepository
+	EventSeatmapBookRepository    repository.EventSeatmapBookRepository
 
 	GCSStorageRepo repository.GCSStorageRepository
 }
@@ -39,6 +41,7 @@ func NewEventTicketCategoryService(
 	venueSectorRepository repository.VenueSectorRepository,
 	eventRepository repository.EventRepository,
 	eventTicketCategoryRepository repository.EventTicketCategoryRepository,
+	eventSeatmapBookRepository repository.EventSeatmapBookRepository,
 	gcsStorageRepo repository.GCSStorageRepository,
 ) EventTicketCategoryService {
 	return &EventTicketCategoryServiceImpl{
@@ -48,6 +51,7 @@ func NewEventTicketCategoryService(
 		VenueSectorRepository:         venueSectorRepository,
 		EventRepository:               eventRepository,
 		EventTicketCategoryRepository: eventTicketCategoryRepository,
+		EventSeatmapBookRepository:    eventSeatmapBookRepository,
 		GCSStorageRepo:                gcsStorageRepo,
 	}
 }
@@ -100,6 +104,11 @@ func (s *EventTicketCategoryServiceImpl) Create(ctx context.Context, eventId str
 	err = s.EventTicketCategoryRepository.Create(ctx, nil, createEventTicketCategory)
 	if err != nil {
 		return
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
 	}
 
 	log.Info().Msg("success create event ticket category")
@@ -208,18 +217,23 @@ func (s *EventTicketCategoryServiceImpl) Delete(ctx context.Context, eventId, ti
 	return
 }
 
-// TODO: Implement Booked seat, mark seat as unavailable when seat is booked
 func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx context.Context, eventId, ticketCategoryId string) (res dto.EventSectorSeatmapResponse, err error) {
 	log.Info().Msg("get seatmap by ticket category id")
 
+	tx, err := s.DB.Postgres.Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer tx.Rollback(ctx)
+
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Msg("find event ticket category")
-	eventTickets, err := s.EventTicketCategoryRepository.FindByIdAndEventId(ctx, nil, eventId, ticketCategoryId)
+	eventTickets, err := s.EventTicketCategoryRepository.FindByIdAndEventId(ctx, tx, eventId, ticketCategoryId)
 	if err != nil {
 		return
 	}
 
 	log.Info().Str("venueSectorId", eventTickets.VenueSectorId).Msg("find venue sector")
-	sector, err := s.VenueSectorRepository.FindById(ctx, nil, eventTickets.VenueSectorId)
+	sector, err := s.VenueSectorRepository.FindById(ctx, tx, eventTickets.VenueSectorId)
 	if err != nil {
 		return
 	}
@@ -231,7 +245,13 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 	}
 
 	log.Info().Str("eventId", eventId).Str("sectorId", sector.ID).Msg("find seatmap by event sector id")
-	seatmapRes, err := s.EventTicketCategoryRepository.FindSeatmapByEventSectorId(ctx, nil, eventId, sector.ID)
+	seatmapRes, err := s.EventTicketCategoryRepository.FindSeatmapByEventSectorId(ctx, tx, eventId, sector.ID)
+	if err != nil {
+		return
+	}
+
+	log.Info().Str("eventId", eventId).Str("sectorId", sector.ID).Msg("find seatmap book by event sector id")
+	eventSeatmapBooks, err := s.EventSeatmapBookRepository.FindSeatBooksByEventSectorId(ctx, tx, eventId, sector.ID)
 	if err != nil {
 		return
 	}
@@ -254,6 +274,11 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 	for i, val := range seatmapRes {
 		if currentRow == -1 {
 			currentRow = val.SeatRow
+		}
+
+		_, ok := eventSeatmapBooks[helper.ConvertRowColumnKey(val.SeatRow, val.SeatColumn)]
+		if ok {
+			val.Status = lib.SeatmapStatusUnavailable
 		}
 
 		seat := dto.SectorSeatmapResponse{
@@ -279,6 +304,11 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 				Seats: currentSeats,
 			})
 		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return
 	}
 
 	res.Seatmap = seatmap
