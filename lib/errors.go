@@ -180,6 +180,10 @@ var (
 		Code: 40907,
 		Err:  errors.New("purchased items exceed the purchase limit"),
 	}
+	ErrorEmailIsAlreadyBooked = TIXError{
+		Code: 40908,
+		Err:  errors.New("email is already booked for this event"),
+	}
 )
 
 var (

@@ -6,12 +6,20 @@ import (
 )
 
 type EventTransactionItem struct {
-	ID                    int
-	TransactionID         string
-	TicketCategoryID      string
-	Quantity              int
-	SeatRow               int
-	SeatColumn            int
+	ID            int
+	TransactionID string
+
+	Quantity int
+
+	SeatRow    int
+	SeatColumn int
+
+	GarudaID sql.NullString
+
+	Fullname    sql.NullString
+	Email       sql.NullString
+	PhoneNumber sql.NullString
+
 	AdditionalInformation sql.NullString
 	TotalPrice            int
 

@@ -1,1 +1,1 @@
-ALTER TABLE events REMOVE COLUMN is_sale_active;
+ALTER TABLE events DROP COLUMN is_sale_active;

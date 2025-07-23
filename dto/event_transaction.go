@@ -3,19 +3,25 @@ package dto
 import "time"
 
 type CreateEventTransaction struct {
-	FullName    string `json:"fullname" validate:"required,alphaunicodespaces,max=255"`
-	Email       string `json:"email" validate:"required,custom_email,max=255"`
-	PhoneNumber string `json:"phone_number" validate:"required,custom_phone_number,max=50"`
+	// FullName    string `json:"fullname" validate:"required,alphaunicodespaces,max=255"`
+	// PhoneNumber string `json:"phone_number" validate:"required,custom_phone_number,max=50"`
+	Email string `json:"email" validate:"required,custom_email,max=255"`
 
-	Items []OrderItemEventTransaction `json:"items" validate:"required"`
+	Items []OrderItemEventTransaction `json:"items" validate:"required,dive"`
 
 	PaymentMethod string `json:"payment_method" validate:"required"`
 }
 
 type OrderItemEventTransaction struct {
-	SeatRow               int    `json:"seat_row" validate:"required"`
-	SeatColumn            int    `json:"seat_column" validate:"required"`
-	AdditionalInformation string `json:"additional_information" validate:"required"`
+	SeatRow    int `json:"seat_row" validate:"omitempty,min=1"`
+	SeatColumn int `json:"seat_column" validate:"omitempty,min=1"`
+
+	FullName    string `json:"fullname" validate:"omitempty,alphaunicodespaces,max=255"`
+	Email       string `json:"email" validate:"omitempty,custom_email,max=255"`
+	PhoneNumber string `json:"phone_number" validate:"omitempty,custom_phone_number,max=50"`
+
+	GarudaID              string `json:"garuda_id" validate:"omitempty,max=20"`
+	AdditionalInformation string `json:"additional_information" validate:""`
 }
 
 type EventTransactionResponse struct {

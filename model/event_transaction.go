@@ -19,9 +19,9 @@ type EventTransaction struct {
 	TotalAdminFee      int
 	GrandTotal         int
 
-	FullName    string
-	Email       string
-	PhoneNumber string
+	// FullName    string
+	Email string
+	// PhoneNumber string
 
 	IsCompliment bool
 
