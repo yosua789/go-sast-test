@@ -56,7 +56,7 @@ func (r *EventTransactionItemRepositoryImpl) CreateTransactionItems(ctx context.
 	var placeholders []string
 
 	for i, req := range reqs {
-		base := i * 7
+		base := i * 10
 		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, NOW())",
 			base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
 
