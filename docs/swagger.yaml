@@ -56,9 +56,9 @@ definitions:
   dto.CreateEventTransaction:
     properties:
       email:
-        maxLength: 255
-        type: string
-      fullname:
+        description: |-
+          FullName    string `json:"fullname" validate:"required,alphaunicodespaces,max=255"`
+          PhoneNumber string `json:"phone_number" validate:"required,custom_phone_number,max=50"`
         maxLength: 255
         type: string
       items:
@@ -67,15 +67,10 @@ definitions:
         type: array
       payment_method:
         type: string
-      phone_number:
-        maxLength: 50
-        type: string
     required:
     - email
-    - fullname
     - items
     - payment_method
-    - phone_number
     type: object
   dto.CreateVenueRequest:
     properties:
@@ -127,10 +122,10 @@ definitions:
         type: string
       price:
         type: integer
+      public_stock:
+        type: integer
       sector:
         $ref: '#/definitions/dto.TicketCategorySectorResponse'
-      total_public_stock:
-        type: integer
     type: object
   dto.DetailEventResponse:
     properties:
@@ -186,8 +181,6 @@ definitions:
       organizer:
         $ref: '#/definitions/dto.SimpleOrganizerResponse'
       start_sale_at:
-        type: string
-      status:
         type: string
       updated_at:
         type: string
@@ -254,14 +247,24 @@ definitions:
     properties:
       additional_information:
         type: string
+      email:
+        maxLength: 255
+        type: string
+      fullname:
+        maxLength: 255
+        type: string
+      garuda_id:
+        maxLength: 20
+        type: string
+      phone_number:
+        maxLength: 50
+        type: string
       seat_column:
+        minimum: 1
         type: integer
       seat_row:
+        minimum: 1
         type: integer
-    required:
-    - additional_information
-    - seat_column
-    - seat_row
     type: object
   dto.OrganizerResponse:
     properties:

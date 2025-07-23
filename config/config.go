@@ -2,9 +2,10 @@ package config
 
 import (
 	"assist-tix/dto"
-	"assist-tix/helper"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -26,18 +27,26 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 		log.Error().Err(err).Msg("viper error unmarshal config")
 	}
 
+	// Check credential is filename
 	var credential dto.GCPServiceAccount
 	err = json.Unmarshal([]byte(env.Storage.GCS.Credential), &credential)
 	if err != nil {
 		log.Warn().Msg("failed convert object GCS credential, checking by filename")
-		if helper.FileExists(env.Storage.GCS.Credential) {
-			text, errFile := helper.ReadFile(env.Storage.GCS.Credential)
-			if errFile != nil {
-				log.Error().Err(errFile).Msg("failed to read file credential")
+		_, err := os.Stat(env.Storage.GCS.Credential)
+		if err == nil || !os.IsNotExist(err) {
+			file, err := os.Open(env.Storage.GCS.Credential)
+			if err != nil {
+				return nil, err
+			}
+			defer file.Close()
+
+			bytes, err := io.ReadAll(file)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to read file credential")
 				return nil, err
 			}
 
-			errJson := json.Unmarshal([]byte(text), &credential)
+			errJson := json.Unmarshal(bytes, &credential)
 			if errJson != nil {
 				log.Warn().Msg("failed convert object GCS credential by filename")
 				return nil, err
@@ -91,7 +100,8 @@ type EnvironmentVariable struct {
 		Port   int    `mapstructure:"PORT"`
 		Token  string `mapstructure:"TOKEN"`
 		Stream struct {
-			Mailer string `mapstructutre:"MAILER"`
+			Mailer             string `mapstructutre:"MAILER"`
+			ReleaseTransaction string `mapstructutre:"RELEASE_TRANSACTION"`
 		} `mapstructure:"STREAM"`
 	} `mapstructure:"NATS"`
 	Mailer struct {

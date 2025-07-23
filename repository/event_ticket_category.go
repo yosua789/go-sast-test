@@ -395,6 +395,10 @@ func (r *EventTicketCategoryRepositoryImpl) BuyPublicTicketById(ctx context.Cont
 		cmdTag, err = r.WrapDB.Postgres.Exec(ctx, query, buyTicket, eventId, ticketCategoryId)
 	}
 
+	if err != nil {
+		return
+	}
+
 	if cmdTag.RowsAffected() == 0 {
 		err = &lib.ErrorTicketIsOutOfStock
 		return

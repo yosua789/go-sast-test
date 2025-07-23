@@ -20,8 +20,18 @@ func notBlank(fl validator.FieldLevel) bool {
 
 func validateEmail(fl validator.FieldLevel) bool {
 	// Regular expression for email validation
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	return emailRegex.MatchString(fl.Field().String())
+	var re = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	var email = fl.Field().String()
+
+	if !re.MatchString(email) {
+		return false
+	}
+
+	if strings.Contains(email, "..") {
+		return false
+	}
+
+	return true
 }
 
 func validatePhoneNumber(fl validator.FieldLevel) bool {

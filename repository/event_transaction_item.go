@@ -36,12 +36,20 @@ func (r *EventTransactionItemRepositoryImpl) CreateTransactionItems(ctx context.
 
 	query := `INSERT INTO event_transaction_items (
 		transaction_id,
-		event_ticket_category_id,
+		garuda_id,
+
 		quantity,
+
+		full_name,
+		email,
+		phone_number,
+
 		seat_row,
 		seat_column,
+
 		additional_information,
 		total_price,
+		
 		created_at
 	) VALUES `
 	var args []interface{}
@@ -49,13 +57,17 @@ func (r *EventTransactionItemRepositoryImpl) CreateTransactionItems(ctx context.
 
 	for i, req := range reqs {
 		base := i * 7
-		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, NOW())",
-			base+1, base+2, base+3, base+4, base+5, base+6, base+7))
+		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, NOW())",
+			base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
 
 		args = append(args,
 			req.TransactionID,
-			req.TicketCategoryID,
+			req.GarudaID,
 			req.Quantity,
+			req.Fullname,
+			req.Email,
+			req.PhoneNumber,
+			// req.TicketCategoryID,
 			req.SeatRow,
 			req.SeatColumn,
 			req.AdditionalInformation,

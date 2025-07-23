@@ -83,7 +83,6 @@ func MapEventEntityToEventResponse(
 		Description: event.Description,
 		Banner:      event.Banner,
 		EventTime:   event.EventTime,
-		Status:      event.PublishStatus,
 		StartSaleAt: helper.ConvertNullTimeToPointer(event.StartSaleAt),
 		EndSaleAt:   helper.ConvertNullTimeToPointer(event.EndSaleAt),
 		CreatedAt:   event.CreatedAt,
@@ -164,13 +163,13 @@ func MapDetailEventPublicTicketCategoryModelToDetailEventPublicTicketCategoryRes
 	data model.EventTicketCategory,
 ) dto.DetailEventPublicTicketCategoryResponse {
 	return dto.DetailEventPublicTicketCategoryResponse{
-		ID:               data.ID,
-		Name:             data.Name,
-		Description:      data.Description,
-		Price:            data.Price,
-		TotalPublicStock: data.TotalPublicStock,
-		Code:             data.Code,
-		Entrance:         data.Entrance,
+		ID:          data.ID,
+		Name:        data.Name,
+		Description: data.Description,
+		Price:       data.Price,
+		PublicStock: data.PublicStock,
+		Code:        data.Code,
+		Entrance:    data.Entrance,
 	}
 }
 
@@ -178,14 +177,14 @@ func MapEntityTicketCategoryToDetailEventPublicTicketCategoryResponse(
 	data entity.TicketCategory,
 ) dto.DetailEventPublicTicketCategoryResponse {
 	return dto.DetailEventPublicTicketCategoryResponse{
-		ID:               data.ID,
-		Name:             data.Name,
-		Sector:           MapEntitySectorToTicketCategorySectorResponse(data.Sector),
-		Description:      data.Description,
-		Price:            data.Price,
-		TotalPublicStock: data.TotalPublicStock,
-		Code:             data.Code,
-		Entrance:         data.Entrance,
+		ID:          data.ID,
+		Name:        data.Name,
+		Sector:      MapEntitySectorToTicketCategorySectorResponse(data.Sector),
+		Description: data.Description,
+		Price:       data.Price,
+		PublicStock: data.PublicStock,
+		Code:        data.Code,
+		Entrance:    data.Entrance,
 	}
 }
 
