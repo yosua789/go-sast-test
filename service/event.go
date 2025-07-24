@@ -21,17 +21,19 @@ type EventService interface {
 	GetEventById(ctx context.Context, eventId string) (res dto.DetailEventResponse, err error)
 	Update(ctx context.Context, eventId string, req dto.EventResponse) (err error)
 	Delete(ctx context.Context, eventId string) (err error)
+	FindByGarudaID(ctx context.Context, eventID, garudaID string) (dto.VerifyGarudaIDResponse, error)
 }
 
 type EventServiceImpl struct {
-	DB                      *database.WrapDB
-	Env                     *config.EnvironmentVariable
-	EventRepo               repository.EventRepository
-	EventSettingRepo        repository.EventSettingsRepository
-	EventTicketCategoryRepo repository.EventTicketCategoryRepository
-	OrganizerRepo           repository.OrganizerRepository
-	VenueRepo               repository.VenueRepository
-	VenueSectorRepo         repository.VenueSectorRepository
+	DB                           *database.WrapDB
+	Env                          *config.EnvironmentVariable
+	EventRepo                    repository.EventRepository
+	EventSettingRepo             repository.EventSettingsRepository
+	EventTicketCategoryRepo      repository.EventTicketCategoryRepository
+	OrganizerRepo                repository.OrganizerRepository
+	VenueRepo                    repository.VenueRepository
+	VenueSectorRepo              repository.VenueSectorRepository
+	EventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository
 
 	GCSStorageRepo repository.GCSStorageRepository
 }
@@ -44,17 +46,19 @@ func NewEventService(
 	eventTicketCategoryRepo repository.EventTicketCategoryRepository,
 	organizerRepo repository.OrganizerRepository,
 	venueRepo repository.VenueRepository,
+	eventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository,
 	gcsStorageRepo repository.GCSStorageRepository,
 ) EventService {
 	return &EventServiceImpl{
-		DB:                      db,
-		Env:                     env,
-		EventRepo:               eventRepo,
-		EventSettingRepo:        eventSettingRepo,
-		EventTicketCategoryRepo: eventTicketCategoryRepo,
-		OrganizerRepo:           organizerRepo,
-		VenueRepo:               venueRepo,
-		GCSStorageRepo:          gcsStorageRepo,
+		DB:                           db,
+		Env:                          env,
+		EventRepo:                    eventRepo,
+		EventSettingRepo:             eventSettingRepo,
+		EventTicketCategoryRepo:      eventTicketCategoryRepo,
+		OrganizerRepo:                organizerRepo,
+		VenueRepo:                    venueRepo,
+		EventTransactionGarudaIDRepo: eventTransactionGarudaIDRepo,
+		GCSStorageRepo:               gcsStorageRepo,
 	}
 }
 
@@ -305,4 +309,42 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 	log.Info().Int("totalRecords", int(paginatedEvents.Pagination.TotalRecords)).Int("MaxPage", int(paginatedEvents.Pagination.TotalPage)).Msg("Success get paginated events")
 
 	return
+}
+
+func (r *EventServiceImpl) FindByGarudaID(ctx context.Context, eventID, garudaID string) (dto.VerifyGarudaIDResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
+	defer cancel()
+	resp := dto.VerifyGarudaIDResponse{
+		GarudaID:    garudaID,
+		IsAvailable: false,
+	}
+	err := r.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, eventID, garudaID)
+	if err != nil {
+		if err == &lib.ErrorGarudaIDAlreadyUsed {
+			return resp, &lib.ErrorGarudaIDAlreadyUsed
+		}
+		return resp, &lib.ErrorInternalServer
+	}
+
+	externalResp, err := helper.VerifyUserGarudaIDByID(r.Env.GarudaID.BaseUrl, garudaID)
+	if err != nil {
+		return resp, &lib.ErrorGetGarudaID
+	}
+
+	if externalResp != nil && !externalResp.Success {
+		switch externalResp.ErrorCode {
+		case 40401:
+			return resp, &lib.ErrorGarudaIDNotFound
+		case 42205:
+			return resp, &lib.ErrorGarudaIDBlacklisted
+		case 40909:
+			return resp, &lib.ErrorGarudaIDInvalid
+		case 40910:
+			return resp, &lib.ErrorGarudaIDRejected
+		case 50001:
+			return resp, &lib.ErrorGetGarudaID
+		}
+	}
+	resp.IsAvailable = true
+	return resp, nil
 }

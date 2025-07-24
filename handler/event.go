@@ -257,7 +257,7 @@ func (h *EventHandlerImpl) Delete(ctx *gin.Context) {
 // @Produce json
 // @Param garudaId path string false "Garuda ID"
 // @Param eventId path string false "Event ID"
-// @Success 200 {object} lib.APIResponse{data=dto.DataGarudaIDAPIResponse} "Success get garuda id"
+// @Success 200 {object} lib.APIResponse{data=dto.VerifyGarudaIDResponse} "Success get garuda id"
 // @Failure 404 {object} lib.HTTPError "Not Found"
 // @Failure 500 {object} lib.HTTPError "Internal server error"
 // @Router /events/{eventId}/verify/garuda-id/{garudaId} [get]
@@ -284,41 +284,23 @@ func (h *EventHandlerImpl) VerifyGarudaID(ctx *gin.Context) {
 		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
 		return
 	}
-
-	var garudaIDApiResponse dto.DataGarudaIDAPIResponse
-	switch uriParams.GarudaID {
-	case "IDN-GMCA-123456":
-		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
-			GarudaID:    "IDN-GMCA-123456",
-			Name:        "Gemilang Cahyaning Adi",
-			IsAvailable: true,
+	res, err := h.EventService.FindByGarudaID(ctx, uriParams.GarudaID, uriParams.EventID)
+	if err != nil {
+		log.Error().Err(err).Msg("error verify garuda id")
+		var tixErr *lib.TIXError
+		if errors.As(err, &tixErr) {
+			switch *tixErr {
+			case lib.ErrorGarudaIDNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "error", err, lib.ErrorGarudaIDNotFound.Code, h.Env.App.Debug)
+			case lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed:
+				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
+			default:
+				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			}
+		} else {
+			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 		}
-	case "IDN-DAIS-123456":
-		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
-			GarudaID:    "IDN-DAIS-123456",
-			Name:        "Daisuke Nakamura",
-			IsAvailable: true,
-		}
-	case "IDN-ALFI-123456":
-		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
-			GarudaID:    "IDN-ALFI-123456",
-			Name:        "Alfian Pratama",
-			IsAvailable: true,
-		}
-	case "IDN-TEST-123456":
-		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
-			GarudaID:    "IDN-TEST-123456",
-			Name:        "Test User",
-			IsAvailable: true,
-		}
-	default:
-		garudaIDApiResponse = dto.DataGarudaIDAPIResponse{
-			GarudaID:    uriParams.GarudaID,
-			Name:        "",
-			IsAvailable: false,
-		}
-		lib.RespondError(ctx, http.StatusNotFound, "garuda id not found", nil, lib.ErrorGarudaIDNotFound.Code, h.Env.App.Debug)
+		return
 	}
-
-	lib.RespondSuccess(ctx, http.StatusOK, "success", garudaIDApiResponse)
+	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
 }

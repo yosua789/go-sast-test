@@ -134,6 +134,11 @@ type EnvironmentVariable struct {
 			SignedUrlExpiration time.Duration `mapstructure:"SIGNED_URL_EXPIRATION"`
 		} `mapstructure:"GCS"`
 	} `mapstructure:"STORAGE"`
+	GarudaID struct {
+		BaseUrl string `mapstructure:"BASE_URL"`
+		ApiKey  string `mapstructure:"API_KEY"`
+		// IsMock?  bool   `mapstructure:"IS_MOCK"`
+	} `mapstructure:"GARUDA_ID"`
 }
 
 func (e *EnvironmentVariable) GetDBDSN() string {

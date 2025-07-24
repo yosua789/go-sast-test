@@ -184,6 +184,10 @@ var (
 		Code: 40908,
 		Err:  errors.New("email is already booked for this event"),
 	}
+	ErrorTransactionPaylabs = TIXError{
+		Code: 50004,
+		Err:  errors.New("failed to create transaction on paylabs, please try again"),
+	}
 )
 
 var (
@@ -206,8 +210,49 @@ var (
 		Code: 40411,
 		Err:  errors.New("garuda id not found"),
 	}
+
+	// garuda id under review
 	ErrorGarudaIDInvalid = TIXError{
 		Code: 40909,
-		Err:  errors.New("garuda id invalid"),
+		Err:  errors.New("garuda id under review"),
+	}
+	// garuda id is rejected
+	ErrorGarudaIDRejected = TIXError{
+		Code: 40910,
+		Err:  errors.New("garuda id is rejected"),
+	}
+	// garuda id is blacklisted
+	ErrorGarudaIDBlacklisted = TIXError{
+		Code: 40911,
+		Err:  errors.New("garuda id is blacklisted"),
+	}
+	// Garuda ID Already used
+	ErrorGarudaIDAlreadyUsed = TIXError{
+		Code: 40912,
+		Err:  errors.New("garuda id already used on this event"),
+	}
+	ErrorGetGarudaID = TIXError{
+		Code: 50003,
+		Err:  errors.New("failed to get garuda id, please try again"),
+	}
+)
+
+// callback
+var (
+	ErrorCallbackSignatureInvalid = TIXError{
+		Code: 40008,
+		Err:  errors.New("callback signature is invalid"),
+	}
+	ErrorInvoiceIDNotFound = TIXError{
+		Code: 40412,
+		Err:  errors.New("invoice id not found"),
+	}
+	ErrorFailedToMarkTransactionAsSuccess = TIXError{
+		Code: 50005,
+		Err:  errors.New("failed to mark transaction as success, please try again"),
+	}
+	ErrorFailedToUpdateVANo = TIXError{
+		Code: 50006,
+		Err:  errors.New("failed to update va no, please try again"),
 	}
 )

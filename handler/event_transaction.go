@@ -109,12 +109,14 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 			switch *tixErr {
 			case lib.ErrorEventSaleIsPaused, lib.ErrorEventSaleIsNotStartedYet, lib.ErrorEventSaleAlreadyOver:
 				lib.RespondError(ctx, http.StatusForbidden, "error", err, tixErr.Code, h.Env.App.Debug)
-			case lib.ErrorSeatIsAlreadyBooked, lib.ErrorTicketIsOutOfStock, lib.ErrorPurchaseQuantityExceedTheLimit, lib.ErrorEmailIsAlreadyBooked:
+			case lib.ErrorSeatIsAlreadyBooked, lib.ErrorTicketIsOutOfStock, lib.ErrorPurchaseQuantityExceedTheLimit, lib.ErrorEmailIsAlreadyBooked, lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed:
 				lib.RespondError(ctx, http.StatusConflict, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventIdInvalid, lib.ErrorTicketCategoryInvalid, lib.ErrorFailedToBookSeat:
 				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventNotFound, lib.ErrorTicketCategoryNotFound, lib.ErrorBookedSeatNotFound:
 				lib.RespondError(ctx, http.StatusNotFound, "error", err, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorGarudaIDNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "error", err, lib.ErrorGarudaIDNotFound.Code, h.Env.App.Debug)
 			default:
 				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 			}
@@ -140,18 +142,6 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 // @Failure 500 {object} lib.HTTPError "Internal server error"
 // @Router /events/{eventId}/ticket-categories/{ticketCategoryId}/order/paylabs-vasnap [post]
 func (h *EventTransactionHandlerImpl) PaylabsVASnap(ctx *gin.Context) {
-	// var uriParams dto.GetDetailEventTicketCategoryByIdParams
-
-	// if err := ctx.ShouldBindUri(&uriParams); err != nil {
-	// 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
-	// 		for _, fieldErr := range validationErrors {
-	// 			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
-	// 			return
-	// 		}
-	// 	}
-	// 	lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
-	// 	return
-	// }
 
 	err := h.EventTransactionService.PaylabsVASnap(ctx)
 	if err != nil {
@@ -175,10 +165,16 @@ func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 
 	// This is a placeholder for the actual implementation
 	err := h.EventTransactionService.CallbackVASnap(ctx, req)
-	if err != nil {
-		log.Error().Err(err).Msg("error processing callback")
-		lib.RespondError(ctx, http.StatusInternalServerError, "error processing callback", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
-		return
+	var tixErr *lib.TIXError
+	if errors.As(err, &tixErr) {
+		switch *tixErr {
+		case lib.ErrorInvoiceIDNotFound:
+			lib.RespondError(ctx, http.StatusNotFound, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
+		default:
+			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		}
+	} else {
+		lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 	}
 	lib.RespondSuccess(ctx, http.StatusOK, "Callback received successfully", nil)
 }

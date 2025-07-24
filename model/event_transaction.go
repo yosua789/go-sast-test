@@ -27,4 +27,7 @@ type EventTransaction struct {
 
 	CreatedAt time.Time
 	UpdatedAt *time.Time
+
+	VANumber             string // Virtual Account Number
+	ChannelTransactionID string // For lookup purposes
 }
