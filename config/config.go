@@ -56,6 +56,7 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 		}
 	}
 
+	env.Redis.Host = fmt.Sprintf("%s:%s", env.Redis.Address, env.Redis.Port)
 	env.Storage.GCS.CredentialObj = credential
 
 	return
@@ -79,6 +80,13 @@ type EnvironmentVariable struct {
 		BasePath   string `mapstructure:"BASE_PATH"`
 		Url        string `mapstructure:"URL"`
 	} `mapstructure:"API"`
+	Redis struct {
+		Address  string `mapstructure:"ADDRESS"`
+		Port     string `mapstructure:"PORT"`
+		Username string `mapstructure:"USERNAME"`
+		Password string `mapstructure:"PASSWORD"`
+		Host     string
+	} `mapstructure:"REDIS"`
 	Database struct {
 		Postgres struct {
 			UseMigration bool   `mapstructure:"USE_MIGRATION"`

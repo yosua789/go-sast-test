@@ -6,6 +6,7 @@ import (
 	"assist-tix/domain"
 	"assist-tix/dto"
 	"assist-tix/helper"
+	"assist-tix/internal/job"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"assist-tix/repository"
@@ -41,6 +42,8 @@ type EventTransactionServiceImpl struct {
 	EventSeatmapBookRepo         repository.EventSeatmapBookRepository
 	EventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository
 	VenueSectorRepo              repository.VenueSectorRepository
+
+	CheckStatusTransactionJob job.CheckStatusTransactionJob
 }
 
 func NewEventTransactionService(
@@ -54,6 +57,8 @@ func NewEventTransactionService(
 	eventSeatmapBookRepo repository.EventSeatmapBookRepository,
 	venueSectorRepo repository.VenueSectorRepository,
 	eventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository,
+
+	checkStatusTransactionJob job.CheckStatusTransactionJob,
 ) EventTransactionService {
 	return &EventTransactionServiceImpl{
 		DB:                           db,
@@ -66,6 +71,8 @@ func NewEventTransactionService(
 		EventSeatmapBookRepo:         eventSeatmapBookRepo,
 		VenueSectorRepo:              venueSectorRepo,
 		EventTransactionGarudaIDRepo: eventTransactionGarudaIDRepo,
+
+		CheckStatusTransactionJob: checkStatusTransactionJob,
 	}
 }
 
@@ -195,7 +202,8 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 					err = &lib.ErrorSeatIsAlreadyBooked
 					return
 				case lib.SeatmapStatusDisable:
-					err = &lib.ErrorFailedToBookSeat
+					// err = &lib.ErrorFailedToBookSeat
+					err = &lib.ErrorBookedSeatNotFound
 					return
 				}
 			}
@@ -421,10 +429,19 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		// tx.Rollback(ctx)
 		return
 	}
+
 	err = tx.Commit(ctx)
 	if err != nil {
 		return
 	}
+
+	// Kickin check status transaction
+	err = s.CheckStatusTransactionJob.EnqueueCheckTransaction(ctx, transaction.ID, s.Env.Transaction.ExpirationDuration)
+	if err != nil {
+		log.Error().Err(err).Str("TransactionId", transaction.ID).Msg("failed to kick job check status transaction")
+		return
+	}
+
 	// TODO ADD JWT
 	res = dto.EventTransactionResponse{
 		InvoiceNumber:      invoiceNumber,

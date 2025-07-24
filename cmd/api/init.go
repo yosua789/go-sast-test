@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,8 +37,16 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	validate := validator.New()
 	custValidator.InitCustomValidator(validate)
 
+	// Init asynq
+	asynqClient := asynq.NewClient(asynq.RedisClientOpt{Addr: env.Redis.Host, Username: env.Redis.Username, Password: env.Redis.Password})
+	err = asynqClient.Ping()
+	if err != nil {
+		log.Fatal().Err(err).Msg("asynq didn't respond")
+	}
+	job := NewJob(env, asynqClient)
+
 	repository := Newrepository(wrapDB, env, gcsClient)
-	service := Newservice(env, repository, wrapDB)
+	service := Newservice(env, repository, wrapDB, job)
 	handler := Newhandler(env, service, validate)
 
 	middleware := middleware.NewMiddleware(env)
