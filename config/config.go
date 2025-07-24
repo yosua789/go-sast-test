@@ -32,7 +32,7 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 	err = json.Unmarshal([]byte(env.Storage.GCS.Credential), &credential)
 	if err != nil {
 		log.Warn().Msg("failed convert object GCS credential, checking by filename")
-		_, err := os.Stat(env.Storage.GCS.Credential)
+		_, err = os.Stat(env.Storage.GCS.Credential)
 		if err == nil || !os.IsNotExist(err) {
 			file, err := os.Open(env.Storage.GCS.Credential)
 			if err != nil {
