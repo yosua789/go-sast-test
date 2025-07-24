@@ -99,15 +99,6 @@ definitions:
     - name
     - venue_type
     type: object
-  dto.DataGarudaIDAPIResponse:
-    properties:
-      garuda_id:
-        type: string
-      is_available:
-        type: boolean
-      name:
-        type: string
-    type: object
   dto.DetailEventPublicTicketCategoryResponse:
     properties:
       code:
@@ -454,6 +445,13 @@ definitions:
         type: integer
       updated_at:
         type: string
+    type: object
+  dto.VerifyGarudaIDResponse:
+    properties:
+      garuda_id:
+        type: string
+      is_available:
+        type: boolean
     type: object
   lib.APIResponse:
     properties:
@@ -870,7 +868,7 @@ paths:
             - $ref: '#/definitions/lib.APIResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/dto.DataGarudaIDAPIResponse'
+                  $ref: '#/definitions/dto.VerifyGarudaIDResponse'
               type: object
         "404":
           description: Not Found
