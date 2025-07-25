@@ -6,6 +6,8 @@ import (
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/rs/zerolog/log"
 )
@@ -33,8 +35,8 @@ func NewEventTransactionGarudaIDRepository(
 func (r *EventTransactionGarudaIDRepositoryImpl) GetEventGarudaID(ctx context.Context, eventID string, garudaID string) error {
 	query := `SELECT * FROM event_transaction_garuda_id WHERE event_id = $1 AND garuda_id = $2`
 	rows, err := r.WrapDB.Postgres.Query(ctx, query, eventID, garudaID)
-	if err != nil {
-		return &lib.ErrorInternalServer
+	if errors.Is(err, sql.ErrNoRows) {
+		return &lib.ErrorEventNotFound
 	}
 	defer rows.Close()
 

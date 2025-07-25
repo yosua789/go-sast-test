@@ -16,12 +16,31 @@ type HTTPError struct {
 	Code    int    `json:"code,omitempty"`
 	Error   error  `json:"error,omitempty"`
 }
+type HTTPErrorWithData struct {
+	Success bool        `json:"success" default:"false" `
+	Message string      `json:"message,omitempty"`
+	Code    int         `json:"code,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   error       `json:"error,omitempty"`
+}
 
 func RespondError(ctx *gin.Context, code int, message string, err error, errCode int, debug bool) {
 	res := HTTPError{
 		Success: false,
 		Message: message,
 		Code:    errCode,
+	}
+	if debug {
+		res.Error = err
+	}
+	ctx.JSON(code, res)
+}
+func RespondErrorWithData(ctx *gin.Context, code int, message string, data interface{}, err error, errCode int, debug bool) {
+	res := HTTPErrorWithData{
+		Success: false,
+		Message: message,
+		Code:    errCode,
+		Data:    data,
 	}
 	if debug {
 		res.Error = err

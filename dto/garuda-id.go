@@ -16,7 +16,7 @@ type DataGarudaIDAPIResponse struct {
 }
 
 type GetGarudaIDByIdParams struct {
-	GarudaID string `uri:"garudaId" binding:"required,min=1,uuid"`
+	GarudaID string `uri:"garudaId" binding:"required,min=1"`
 	EventID  string `uri:"eventId" binding:"required,min=1,uuid"`
 }
 type VerifyGarudaIDResponse struct {

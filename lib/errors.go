@@ -235,6 +235,10 @@ var (
 		Code: 50003,
 		Err:  errors.New("failed to get garuda id, please try again"),
 	}
+	ErrorEventNonGarudaID = TIXError{
+		Code: 40305,
+		Err:  errors.New("event does not require garuda id verification"),
+	}
 )
 
 // callback

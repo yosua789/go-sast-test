@@ -311,27 +311,46 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 	return
 }
 
-func (r *EventServiceImpl) FindByGarudaID(ctx context.Context, eventID, garudaID string) (dto.VerifyGarudaIDResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
+func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID string) (resp dto.VerifyGarudaIDResponse, err error) {
+
+	ctx, cancel := context.WithTimeout(ctx, s.Env.Database.Timeout.Write)
 	defer cancel()
-	resp := dto.VerifyGarudaIDResponse{
-		GarudaID:    garudaID,
-		IsAvailable: false,
-	}
-	err := r.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, eventID, garudaID)
+
+	_, err = s.EventRepo.FindById(ctx, nil, eventID)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to find event by id")
+		// return resp, &lib.ErrorEventNotFound if event not found
+		return
+	}
+
+	settings, err := s.EventSettingRepo.FindByEventId(ctx, nil, eventID)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get event settings")
+		return
+	}
+	log.Info().Interface("SettingsRaw", settings).Msg("mapping event settings")
+	eventSettings := lib.MapEventSettings(settings)
+	log.Info().Interface("Settings", eventSettings).Msg("Event settings")
+	if !eventSettings.GarudaIdVerification {
+		log.Info().Msg("Garuda ID verification is not enabled for this event")
+		return dto.VerifyGarudaIDResponse{IsAvailable: false}, &lib.ErrorEventNonGarudaID
+	}
+	err = s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, eventID, garudaID)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get event garuda id")
 		if err == &lib.ErrorGarudaIDAlreadyUsed {
 			return resp, &lib.ErrorGarudaIDAlreadyUsed
 		}
 		return resp, &lib.ErrorInternalServer
 	}
 
-	externalResp, err := helper.VerifyUserGarudaIDByID(r.Env.GarudaID.BaseUrl, garudaID)
+	externalResp, err := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, garudaID)
 	if err != nil {
 		return resp, &lib.ErrorGetGarudaID
 	}
 
 	if externalResp != nil && !externalResp.Success {
+		log.Info().Int("ErrorCode", externalResp.ErrorCode).Msg("Garuda ID verification failed")
 		switch externalResp.ErrorCode {
 		case 40401:
 			return resp, &lib.ErrorGarudaIDNotFound
@@ -346,5 +365,6 @@ func (r *EventServiceImpl) FindByGarudaID(ctx context.Context, eventID, garudaID
 		}
 	}
 	resp.IsAvailable = true
+	resp.GarudaID = garudaID
 	return resp, nil
 }

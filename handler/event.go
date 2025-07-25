@@ -263,10 +263,10 @@ func (h *EventHandlerImpl) Delete(ctx *gin.Context) {
 // @Router /events/{eventId}/verify/garuda-id/{garudaId} [get]
 func (h *EventHandlerImpl) VerifyGarudaID(ctx *gin.Context) {
 	var uriParams dto.GetGarudaIDByIdParams
-
 	if err := ctx.ShouldBindUri(&uriParams); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
 			// Find first error
+			log.Error().Err(err).Msg("error binding uri params")
 			fieldErr := validationErrors[0]
 
 			mappedError := lib.MapErrorGetGarudaIDByIdParams(fieldErr)
@@ -284,21 +284,24 @@ func (h *EventHandlerImpl) VerifyGarudaID(ctx *gin.Context) {
 		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
 		return
 	}
+
 	res, err := h.EventService.FindByGarudaID(ctx, uriParams.GarudaID, uriParams.EventID)
 	if err != nil {
 		log.Error().Err(err).Msg("error verify garuda id")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
-			case lib.ErrorGarudaIDNotFound:
-				lib.RespondError(ctx, http.StatusNotFound, "error", err, lib.ErrorGarudaIDNotFound.Code, h.Env.App.Debug)
+			case lib.ErrorGarudaIDNotFound, lib.ErrorEventNotFound:
+				lib.RespondErrorWithData(ctx, http.StatusNotFound, "error", res, err, lib.ErrorGarudaIDNotFound.Code, h.Env.App.Debug)
 			case lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed:
-				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
+				lib.RespondErrorWithData(ctx, http.StatusBadRequest, "error", res, err, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorEventNonGarudaID:
+				lib.RespondErrorWithData(ctx, http.StatusForbidden, "error", res, err, lib.ErrorEventNonGarudaID.Code, h.Env.App.Debug)
 			default:
-				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+				lib.RespondErrorWithData(ctx, http.StatusInternalServerError, "error", res, err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 			}
 		} else {
-			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			lib.RespondErrorWithData(ctx, http.StatusInternalServerError, "error", res, err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 		}
 		return
 	}
