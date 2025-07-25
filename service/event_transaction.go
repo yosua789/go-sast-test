@@ -223,50 +223,58 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		for i, item := range req.Items {
 
 			// check internal database whether garuda id is hold
-			err = s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, eventId, item.GarudaID)
-			if err != nil {
-				if err == &lib.ErrorGarudaIDAlreadyUsed {
-					err = &lib.ErrorGarudaIDAlreadyUsed
-					return
-				}
-				log.Error().Err(err).Msg("failed to get garuda id")
-				err = &lib.ErrorInternalServer
-				return
-			}
-			// 			Verify garuda id Validity  by external service
-			externalResp, errExternal := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, item.GarudaID)
-			if errExternal != nil {
-				log.Error().Err(errExternal).Msg("failed to verify garuda id")
-				err = &lib.ErrorGetGarudaID
-				return
+			_, garudaIdErr := s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, tx, eventId, item.GarudaID)
+			log.Info().Err(garudaIdErr).Msg("garuda id error")
+			if garudaIdErr == nil {
+				return res, &lib.ErrorGarudaIDAlreadyUsed
 			}
 
-			if externalResp != nil && !externalResp.Success {
-				switch externalResp.ErrorCode {
-				case 40401:
-					err = &lib.ErrorGarudaIDNotFound
-					return
-				case 42205:
-					err = &lib.ErrorGarudaIDBlacklisted
-					return
-				case 40909:
-					err = &lib.ErrorGarudaIDInvalid
-					return
-				case 40910:
-					err = &lib.ErrorGarudaIDRejected
-					return
-				case 50001:
+			// When error isn't TixError
+			var tixErr *lib.TIXError
+			if !errors.As(garudaIdErr, &tixErr) {
+				log.Error().Err(err).Msg("error validate hold garuda id")
+				err = garudaIdErr
+				return res, err
+			}
+
+			// When garuda id not found in event books
+			if tixErr == &lib.ErrorGarudaIDNotFound {
+
+				// Verify garuda id Validity  by external service
+				externalResp, errExternal := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, item.GarudaID)
+				if errExternal != nil {
+					log.Error().Err(errExternal).Msg("failed to verify garuda id")
 					err = &lib.ErrorGetGarudaID
 					return
 				}
-			}
-			//  append garuda id to transaction item
-			req.Items[i].GarudaID = item.GarudaID
-			req.Items[i].FullName = externalResp.Data.Name
-			req.Items[i].Email = externalResp.Data.Email
-			req.Items[i].PhoneNumber = externalResp.Data.PhoneNumber
 
-			log.Info().Interface("externalResp", externalResp).Msg("garuda id validation response")
+				if externalResp != nil && !externalResp.Success {
+					switch externalResp.ErrorCode {
+					case 40401:
+						err = &lib.ErrorGarudaIDNotFound
+						return
+					case 42205:
+						err = &lib.ErrorGarudaIDBlacklisted
+						return
+					case 40909:
+						err = &lib.ErrorGarudaIDInvalid
+						return
+					case 40910:
+						err = &lib.ErrorGarudaIDRejected
+						return
+					case 50001:
+						err = &lib.ErrorGetGarudaID
+						return
+					}
+				}
+				//  append garuda id to transaction item
+				req.Items[i].GarudaID = item.GarudaID
+				req.Items[i].FullName = externalResp.Data.Name
+				req.Items[i].Email = externalResp.Data.Email
+				req.Items[i].PhoneNumber = externalResp.Data.PhoneNumber
+
+				log.Info().Interface("externalResp", externalResp).Msg("garuda id validation response")
+			}
 		}
 	}
 
@@ -335,8 +343,9 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	if err != nil {
 		return
 	}
+
 	//  VA SNAP Init
-	date := expiryInvoice.Format("2006-01-02T15:04:05.999+07:00")
+	date := expiryInvoice.Format("2006-01-02T15:04:05+07:00")
 	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:]
 	partnerServiceId := s.Env.Paylabs.AccountID[:8]
 	idRequest := transaction.ID
@@ -346,7 +355,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	totalPriceStr := strconv.Itoa(transaction.GrandTotal) + ".00" // Amount with 2 decimal
 	payload := dto.VirtualAccountSnapRequest{
 		PartnerServiceID:    partnerServiceId,                 // 8 characters
-		CustomerNo:          transaction.ID,                   // Fixed 20-digit value
+		CustomerNo:          transaction.ID[:20],              // Fixed 20-digit value
 		VirtualAccountNo:    transaction.ID[:20] + merchantId, // 28-digit composite value
 		VirtualAccountName:  req.Items[0].FullName,            // Payer name
 		VirtualAccountEmail: req.Items[0].Email,
@@ -364,8 +373,8 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	log.Info().Msgf("Creating event transaction with ID: %s", idRequest)
-	// VA
 
+	// VA
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		log.Error().Err(err)
@@ -395,7 +404,6 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	if err != nil {
 		log.Error().Err(err)
 		err = &lib.ErrorTransactionPaylabs
-		// tx.Rollback(ctx)
 		return
 	}
 	for key, value := range headers {
@@ -406,7 +414,6 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to send request to Paylabs")
 		err = &lib.ErrorTransactionPaylabs
-		// tx.Rollback(ctx)
 		return
 	}
 	defer resp.Body.Close()
@@ -417,16 +424,18 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to decode response from Paylabs")
 		err = &lib.ErrorTransactionPaylabs
-		// tx.Rollback(ctx)
 		return
 	}
-	paylabsVaNumber := responsePaylabs["virtualAccountNo"].(string)
-	log.Info().Msgf("Response: %v", responsePaylabs)
-	_, err = s.EventTransactionRepo.UpdateVANo(ctx, tx, transaction.ID, paylabsVaNumber)
+
+	var virtualAccountData = responsePaylabs["virtualAccountData"].(map[string]interface{})
+	paylabsVaNumber, _ := virtualAccountData["virtualAccountNo"].(string)
+
+	log.Info().Interface("Resp", responsePaylabs).Msgf("response from paylabs")
+
+	err = s.EventTransactionRepo.UpdateVANo(ctx, tx, transaction.ID, paylabsVaNumber)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to update VA number")
 		err = &lib.ErrorTransactionPaylabs
-		// tx.Rollback(ctx)
 		return
 	}
 

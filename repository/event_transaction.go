@@ -18,7 +18,7 @@ type EventTransactionRepository interface {
 	IsEmailAlreadyBookEvent(ctx context.Context, tx pgx.Tx, eventId, email string) (id string, err error)
 	FindByInvoiceNumber(ctx context.Context, tx pgx.Tx, invoiceNumber string) (res model.EventTransaction, err error)
 	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error)
-	UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (res model.EventTransaction, err error)
+	UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
 }
 
 type EventTransactionRepositoryImpl struct {
@@ -198,15 +198,15 @@ func (r *EventTransactionRepositoryImpl) MarkTransactionAsSuccess(ctx context.Co
 	return
 }
 
-func (r *EventTransactionRepositoryImpl) UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (res model.EventTransaction, err error) {
+func (r *EventTransactionRepositoryImpl) UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
-	query := `UPDATE event_transactions SET va_no = $1 WHERE id = $2 RETURNING *`
+	query := `UPDATE event_transactions SET virtual_account_number = $1 WHERE id = $2`
 	if tx != nil {
-		err = tx.QueryRow(ctx, query, vaNo, transactionID).Scan(&res.ID, &res.CreatedAt)
+		_, err = tx.Exec(ctx, query, vaNo, transactionID)
 	} else {
-		err = r.WrapDB.Postgres.QueryRow(ctx, query, vaNo, transactionID).Scan(&res.ID, &res.CreatedAt)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, vaNo, transactionID)
 	}
 
 	if err != nil {

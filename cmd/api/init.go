@@ -43,6 +43,15 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	if err != nil {
 		log.Fatal().Err(err).Msg("asynq didn't respond")
 	}
+
+	// Init Nats
+	// natsClient, err := helper.CreateNatsConnection(env)
+	// if err != nil {
+	// 	log.Fatal().Err(err).Msg("failed to start nats")
+	// }
+
+	// js, _ := jetstream.New(natsClient)
+
 	job := NewJob(env, asynqClient)
 
 	repository := Newrepository(wrapDB, env, gcsClient)

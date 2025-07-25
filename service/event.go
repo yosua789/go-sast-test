@@ -335,7 +335,7 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 		log.Info().Msg("Garuda ID verification is not enabled for this event")
 		return dto.VerifyGarudaIDResponse{IsAvailable: false}, &lib.ErrorEventNonGarudaID
 	}
-	err = s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, eventID, garudaID)
+	_, err = s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, nil, eventID, garudaID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get event garuda id")
 		if err == &lib.ErrorGarudaIDAlreadyUsed {
