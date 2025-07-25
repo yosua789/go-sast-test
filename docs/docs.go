@@ -646,7 +646,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.DataGarudaIDAPIResponse"
+                                            "$ref": "#/definitions/dto.VerifyGarudaIDResponse"
                                         }
                                     }
                                 }
@@ -1463,20 +1463,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.DataGarudaIDAPIResponse": {
-            "type": "object",
-            "properties": {
-                "garuda_id": {
-                    "type": "string"
-                },
-                "is_available": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.DetailEventPublicTicketCategoryResponse": {
             "type": "object",
             "properties": {
@@ -1995,6 +1981,17 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.VerifyGarudaIDResponse": {
+            "type": "object",
+            "properties": {
+                "garuda_id": {
+                    "type": "string"
+                },
+                "is_available": {
+                    "type": "boolean"
                 }
             }
         },

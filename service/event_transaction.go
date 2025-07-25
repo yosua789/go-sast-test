@@ -6,11 +6,11 @@ import (
 	"assist-tix/domain"
 	"assist-tix/dto"
 	"assist-tix/helper"
+	"assist-tix/internal/job"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"assist-tix/repository"
 	"bytes"
-	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
@@ -18,6 +18,7 @@ import (
 	"fmt"
 	mrand "math/rand"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,21 +26,24 @@ import (
 )
 
 type EventTransactionService interface {
-	CreateEventTransaction(ctx context.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
+	CreateEventTransaction(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
 	PaylabsVASnap(ctx *gin.Context) (err error)
 	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error)
 }
 
 type EventTransactionServiceImpl struct {
-	DB                       *database.WrapDB
-	Env                      *config.EnvironmentVariable
-	EventRepo                repository.EventRepository
-	EventSettingRepo         repository.EventSettingsRepository
-	EventTicketCategoryRepo  repository.EventTicketCategoryRepository
-	EventTransactionRepo     repository.EventTransactionRepository
-	EventTransactionItemRepo repository.EventTransactionItemRepository
-	EventSeatmapBookRepo     repository.EventSeatmapBookRepository
-	VenueSectorRepo          repository.VenueSectorRepository
+	DB                           *database.WrapDB
+	Env                          *config.EnvironmentVariable
+	EventRepo                    repository.EventRepository
+	EventSettingRepo             repository.EventSettingsRepository
+	EventTicketCategoryRepo      repository.EventTicketCategoryRepository
+	EventTransactionRepo         repository.EventTransactionRepository
+	EventTransactionItemRepo     repository.EventTransactionItemRepository
+	EventSeatmapBookRepo         repository.EventSeatmapBookRepository
+	EventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository
+	VenueSectorRepo              repository.VenueSectorRepository
+
+	CheckStatusTransactionJob job.CheckStatusTransactionJob
 }
 
 func NewEventTransactionService(
@@ -52,21 +56,27 @@ func NewEventTransactionService(
 	eventTransactionItemRepo repository.EventTransactionItemRepository,
 	eventSeatmapBookRepo repository.EventSeatmapBookRepository,
 	venueSectorRepo repository.VenueSectorRepository,
+	eventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository,
+
+	checkStatusTransactionJob job.CheckStatusTransactionJob,
 ) EventTransactionService {
 	return &EventTransactionServiceImpl{
-		DB:                       db,
-		Env:                      env,
-		EventRepo:                eventRepo,
-		EventSettingRepo:         eventSettingRepo,
-		EventTicketCategoryRepo:  eventTicketCategoryRepo,
-		EventTransactionRepo:     eventTransactionRepo,
-		EventTransactionItemRepo: eventTransactionItemRepo,
-		EventSeatmapBookRepo:     eventSeatmapBookRepo,
-		VenueSectorRepo:          venueSectorRepo,
+		DB:                           db,
+		Env:                          env,
+		EventRepo:                    eventRepo,
+		EventSettingRepo:             eventSettingRepo,
+		EventTicketCategoryRepo:      eventTicketCategoryRepo,
+		EventTransactionRepo:         eventTransactionRepo,
+		EventTransactionItemRepo:     eventTransactionItemRepo,
+		EventSeatmapBookRepo:         eventSeatmapBookRepo,
+		VenueSectorRepo:              venueSectorRepo,
+		EventTransactionGarudaIDRepo: eventTransactionGarudaIDRepo,
+
+		CheckStatusTransactionJob: checkStatusTransactionJob,
 	}
 }
 
-func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error) {
+func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error) {
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Str("paymentMethod", req.PaymentMethod).Msg("create event transaction")
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
@@ -152,8 +162,8 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 	log.Info().Str("InvoiceNumber", invoiceNumber).Msg("generated invoice number")
 
 	transaction := model.EventTransaction{
-		// FullName:    req.FullName,
-		// PhoneNumber: req.PhoneNumber,
+		// FullName:    req.FullName, // request fullname ?
+		// PhoneNumber: req.PhoneNumber, // request phone number ?
 		Email: req.Email,
 
 		InvoiceNumber: invoiceNumber,
@@ -192,7 +202,8 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 					err = &lib.ErrorSeatIsAlreadyBooked
 					return
 				case lib.SeatmapStatusDisable:
-					err = &lib.ErrorFailedToBookSeat
+					// err = &lib.ErrorFailedToBookSeat
+					err = &lib.ErrorBookedSeatNotFound
 					return
 				}
 			}
@@ -208,8 +219,55 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 
 	// TODO: Checking bulk garuda id
 	if eventSettings.GarudaIdVerification {
-		log.Info().Msg("validation garuda id")
 		// Verify garuda id
+		for i, item := range req.Items {
+
+			// check internal database whether garuda id is hold
+			err = s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, eventId, item.GarudaID)
+			if err != nil {
+				if err == &lib.ErrorGarudaIDAlreadyUsed {
+					err = &lib.ErrorGarudaIDAlreadyUsed
+					return
+				}
+				log.Error().Err(err).Msg("failed to get garuda id")
+				err = &lib.ErrorInternalServer
+				return
+			}
+			// 			Verify garuda id Validity  by external service
+			externalResp, errExternal := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, item.GarudaID)
+			if errExternal != nil {
+				log.Error().Err(errExternal).Msg("failed to verify garuda id")
+				err = &lib.ErrorGetGarudaID
+				return
+			}
+
+			if externalResp != nil && !externalResp.Success {
+				switch externalResp.ErrorCode {
+				case 40401:
+					err = &lib.ErrorGarudaIDNotFound
+					return
+				case 42205:
+					err = &lib.ErrorGarudaIDBlacklisted
+					return
+				case 40909:
+					err = &lib.ErrorGarudaIDInvalid
+					return
+				case 40910:
+					err = &lib.ErrorGarudaIDRejected
+					return
+				case 50001:
+					err = &lib.ErrorGetGarudaID
+					return
+				}
+			}
+			//  append garuda id to transaction item
+			req.Items[i].GarudaID = item.GarudaID
+			req.Items[i].FullName = externalResp.Data.Name
+			req.Items[i].Email = externalResp.Data.Email
+			req.Items[i].PhoneNumber = externalResp.Data.PhoneNumber
+
+			log.Info().Interface("externalResp", externalResp).Msg("garuda id validation response")
+		}
 	}
 
 	// Calculate price
@@ -271,10 +329,104 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 	}
 	log.Info().Str("transactionId", transaction.ID).Int("count", len(transactionItems)).Msg("create transaction item")
 
-	// TODO: Add item name, email phone number
+	// TODO: Add item name, email phone number ->done on validating garuda id
 	log.Info().Msg("insert transaction item")
 	err = s.EventTransactionItemRepo.CreateTransactionItems(ctx, tx, transactionItems)
 	if err != nil {
+		return
+	}
+	//  VA SNAP Init
+	date := expiryInvoice.Format("2006-01-02T15:04:05.999+07:00")
+	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:]
+	partnerServiceId := s.Env.Paylabs.AccountID[:8]
+	idRequest := transaction.ID
+	// Generate a random 20-digit customer number as a string
+
+	privateKeyPEM := s.Env.Paylabs.PrivateKey                     // Private key in PEM format
+	totalPriceStr := strconv.Itoa(transaction.GrandTotal) + ".00" // Amount with 2 decimal
+	payload := dto.VirtualAccountSnapRequest{
+		PartnerServiceID:    partnerServiceId,                 // 8 characters
+		CustomerNo:          transaction.ID,                   // Fixed 20-digit value
+		VirtualAccountNo:    transaction.ID[:20] + merchantId, // 28-digit composite value
+		VirtualAccountName:  req.Items[0].FullName,            // Payer name
+		VirtualAccountEmail: req.Items[0].Email,
+		VirtualAccountPhone: req.Items[0].PhoneNumber,  // Mobile phone number in Indonesian format
+		TrxID:               transaction.InvoiceNumber, // Merchant transaction number
+		TotalAmount: dto.Amount{
+			Value:    totalPriceStr, // Amount with 2 decimal
+			Currency: "IDR",         // Fixed currency
+		},
+		AdditionalInfo: dto.AdditionalInfo{
+			PaymentType: req.PaymentMethod, // Payment type
+		},
+
+		ExpiredDate: date, // ISO-8601 formatted expiration
+	}
+
+	log.Info().Msgf("Creating event transaction with ID: %s", idRequest)
+	// VA
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		log.Error().Err(err)
+		return
+	}
+	log.Info().Msgf("JSON Payload: %s", jsonData)
+
+	// Hash the JSON body
+	shaJson := sha256.Sum256(jsonData)
+
+	signature := helper.GenerateSnapSignature(shaJson, date, privateKeyPEM)
+	log.Info().Msgf("Payload: %x", shaJson)
+	// Create HTTP headers
+	headers := map[string]string{
+		"X-TIMESTAMP":   date,
+		"X-SIGNATURE":   signature,
+		"X-PARTNER-ID":  merchantId,
+		"X-EXTERNAL-ID": idRequest,
+		"X-IP-ADDRESS":  ctx.ClientIP(),
+		"Content-Type":  "application/json",
+	}
+	log.Info().Msgf("Headers: %v", headers)
+
+	// Send HTTP request
+	url := s.Env.Paylabs.BaseUrl + "/api/v1.0/transfer-va/create-va"
+	paylabsReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Error().Err(err)
+		err = &lib.ErrorTransactionPaylabs
+		// tx.Rollback(ctx)
+		return
+	}
+	for key, value := range headers {
+		paylabsReq.Header.Set(key, value)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(paylabsReq)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to send request to Paylabs")
+		err = &lib.ErrorTransactionPaylabs
+		// tx.Rollback(ctx)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Decode response
+	var responsePaylabs map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&responsePaylabs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to decode response from Paylabs")
+		err = &lib.ErrorTransactionPaylabs
+		// tx.Rollback(ctx)
+		return
+	}
+	paylabsVaNumber := responsePaylabs["virtualAccountNo"].(string)
+	log.Info().Msgf("Response: %v", responsePaylabs)
+	_, err = s.EventTransactionRepo.UpdateVANo(ctx, tx, transaction.ID, paylabsVaNumber)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to update VA number")
+		err = &lib.ErrorTransactionPaylabs
+		// tx.Rollback(ctx)
 		return
 	}
 
@@ -283,6 +435,14 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx context.Context
 		return
 	}
 
+	// Kickin check status transaction
+	err = s.CheckStatusTransactionJob.EnqueueCheckTransaction(ctx, transaction.ID, s.Env.Transaction.ExpirationDuration)
+	if err != nil {
+		log.Error().Err(err).Str("TransactionId", transaction.ID).Msg("failed to kick job check status transaction")
+		return
+	}
+
+	// TODO ADD JWT
 	res = dto.EventTransactionResponse{
 		InvoiceNumber:      invoiceNumber,
 		PaymentMethod:      req.PaymentMethod,
@@ -392,6 +552,12 @@ func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error
 func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error) {
 	log.Info().Msg("Processing Paylabs VA snap callback")
 	header := map[string]interface{}{}
+	tx, err := s.DB.Postgres.Begin(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to begin transaction")
+		return err
+	}
+	defer tx.Rollback(ctx)
 	for key, value := range ctx.Request.Header {
 		header[key] = value
 	}
@@ -406,7 +572,25 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	if !isValid {
 		return errors.New("invalid signature")
 	}
+	//  actual callback processing
+	transactionData, err := s.EventTransactionRepo.FindByInvoiceNumber(ctx, tx, *req.TrxId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to find transaction by invoice number")
+		return
+	}
+	if transactionData.ID == "" {
+		log.Error().Msg("Transaction not found")
+		return &lib.ErrorInvoiceIDNotFound
+	}
+	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to mark transaction as success")
+		return
+	}
+	log.Info().Msgf("Transaction marked as success: %v", markResult)
+
 	return
+
 }
 
 func (s *EventTransactionServiceImpl) CallbackVA(ctx *gin.Context, req dto.PaylabsVACallbackRequest) (err error) {

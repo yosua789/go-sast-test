@@ -32,7 +32,7 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 	err = json.Unmarshal([]byte(env.Storage.GCS.Credential), &credential)
 	if err != nil {
 		log.Warn().Msg("failed convert object GCS credential, checking by filename")
-		_, err := os.Stat(env.Storage.GCS.Credential)
+		_, err = os.Stat(env.Storage.GCS.Credential)
 		if err == nil || !os.IsNotExist(err) {
 			file, err := os.Open(env.Storage.GCS.Credential)
 			if err != nil {
@@ -56,6 +56,7 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 		}
 	}
 
+	env.Redis.Host = fmt.Sprintf("%s:%s", env.Redis.Address, env.Redis.Port)
 	env.Storage.GCS.CredentialObj = credential
 
 	return
@@ -79,6 +80,13 @@ type EnvironmentVariable struct {
 		BasePath   string `mapstructure:"BASE_PATH"`
 		Url        string `mapstructure:"URL"`
 	} `mapstructure:"API"`
+	Redis struct {
+		Address  string `mapstructure:"ADDRESS"`
+		Port     string `mapstructure:"PORT"`
+		Username string `mapstructure:"USERNAME"`
+		Password string `mapstructure:"PASSWORD"`
+		Host     string
+	} `mapstructure:"REDIS"`
 	Database struct {
 		Postgres struct {
 			UseMigration bool   `mapstructure:"USE_MIGRATION"`
@@ -134,6 +142,11 @@ type EnvironmentVariable struct {
 			SignedUrlExpiration time.Duration `mapstructure:"SIGNED_URL_EXPIRATION"`
 		} `mapstructure:"GCS"`
 	} `mapstructure:"STORAGE"`
+	GarudaID struct {
+		BaseUrl string `mapstructure:"BASE_URL"`
+		ApiKey  string `mapstructure:"API_KEY"`
+		// IsMock?  bool   `mapstructure:"IS_MOCK"`
+	} `mapstructure:"GARUDA_ID"`
 }
 
 func (e *EnvironmentVariable) GetDBDSN() string {
