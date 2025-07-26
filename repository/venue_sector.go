@@ -3,6 +3,7 @@ package repository
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/entity"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
@@ -15,6 +16,7 @@ import (
 type VenueSectorRepository interface {
 	FindByVenueId(ctx context.Context, tx pgx.Tx, venueId string) (sectors []model.VenueSector, err error)
 	FindById(ctx context.Context, tx pgx.Tx, sectorId string) (venue model.VenueSector, err error)
+	FindVenueSectorById(ctx context.Context, tx pgx.Tx, sectorId string) (venueSector entity.VenueSector, err error)
 }
 
 type VenueSectorRepositoryImpl struct {
@@ -30,6 +32,78 @@ func NewVenueSectorRepository(
 		WrapDB: wrapDB,
 		Env:    env,
 	}
+}
+
+func (r *VenueSectorRepositoryImpl) FindVenueSectorById(ctx context.Context, tx pgx.Tx, sectorId string) (venueSector entity.VenueSector, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := `SELECT
+		vs.id, 
+		vs.name,
+		vs.sector_row,
+		vs.sector_column,
+		vs.capacity,
+		vs.has_seatmap,
+		vs.sector_color,
+		vs.area_code,
+
+		v.id as venue_id,
+		v.venue_type as venue_type,
+		v.name as venue_name,
+		v.country as venue_country,
+		v.city as venue_city,
+		v.capacity as venue_capacity		
+
+	FROM venue_sectors vs
+	INNER JOIN venues v
+		ON vs.venue_id = v.id
+		AND vs.deleted_at is null
+	WHERE vs.id = $1`
+
+	if tx != nil {
+		err = tx.QueryRow(ctx, query, sectorId).Scan(
+			&venueSector.ID,
+			&venueSector.Name,
+			&venueSector.SectorRow,
+			&venueSector.SectorColumn,
+			&venueSector.Capacity,
+			&venueSector.HasSeatmap,
+			&venueSector.SectorColor,
+			&venueSector.AreaCode,
+			&venueSector.Venue.ID,
+			&venueSector.Venue.VenueType,
+			&venueSector.Venue.Name,
+			&venueSector.Venue.Country,
+			&venueSector.Venue.City,
+			&venueSector.Venue.Capacity,
+		)
+	} else {
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, sectorId).Scan(
+			&venueSector.ID,
+			&venueSector.Name,
+			&venueSector.SectorRow,
+			&venueSector.SectorColumn,
+			&venueSector.Capacity,
+			&venueSector.HasSeatmap,
+			&venueSector.SectorColor,
+			&venueSector.AreaCode,
+			&venueSector.Venue.ID,
+			&venueSector.Venue.VenueType,
+			&venueSector.Venue.Name,
+			&venueSector.Venue.Country,
+			&venueSector.Venue.City,
+			&venueSector.Venue.Capacity,
+		)
+	}
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return venueSector, &lib.ErrorVenueSectorNotFound
+		}
+	}
+
+	return
 }
 
 func (r *VenueSectorRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, sectorId string) (venueSector model.VenueSector, err error) {

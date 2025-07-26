@@ -113,7 +113,7 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 				lib.RespondError(ctx, http.StatusConflict, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventIdInvalid, lib.ErrorTicketCategoryInvalid, lib.ErrorFailedToBookSeat:
 				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
-			case lib.ErrorEventNotFound, lib.ErrorTicketCategoryNotFound, lib.ErrorBookedSeatNotFound, lib.ErrorGarudaIDNotFound:
+			case lib.ErrorEventNotFound, lib.ErrorTicketCategoryNotFound, lib.ErrorBookedSeatNotFound, lib.ErrorGarudaIDNotFound, lib.ErrorVenueSectorNotFound:
 				lib.RespondError(ctx, http.StatusNotFound, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorGetGarudaID:
 				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, tixErr.Code, h.Env.App.Debug)

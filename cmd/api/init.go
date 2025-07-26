@@ -4,6 +4,7 @@ import (
 	"assist-tix/config"
 	"assist-tix/database"
 	"assist-tix/helper"
+	"assist-tix/internal/infra/nats"
 	"assist-tix/middleware"
 	"assist-tix/router"
 	"assist-tix/storage"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/hibiken/asynq"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/rs/zerolog/log"
 )
 
@@ -45,17 +47,20 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	}
 
 	// Init Nats
-	// natsClient, err := helper.CreateNatsConnection(env)
-	// if err != nil {
-	// 	log.Fatal().Err(err).Msg("failed to start nats")
-	// }
+	natsClient, err := helper.CreateNatsConnection(env)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to start nats")
+	}
 
-	// js, _ := jetstream.New(natsClient)
+	js, _ := jetstream.New(natsClient)
 
+	// Publisher
+	natsPublisher := nats.NewPublisher(natsClient, js)
+	useCase := NewUseCase(env, natsPublisher)
 	job := NewJob(env, asynqClient)
 
 	repository := Newrepository(wrapDB, env, gcsClient)
-	service := Newservice(env, repository, wrapDB, job)
+	service := Newservice(env, repository, wrapDB, job, useCase)
 	handler := Newhandler(env, service, validate)
 
 	middleware := middleware.NewMiddleware(env)

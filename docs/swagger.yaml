@@ -56,9 +56,9 @@ definitions:
   dto.CreateEventTransaction:
     properties:
       email:
-        description: |-
-          FullName    string `json:"fullname" validate:"required,alphaunicodespaces,max=255"`
-          PhoneNumber string `json:"phone_number" validate:"required,custom_phone_number,max=50"`
+        maxLength: 255
+        type: string
+      fullname:
         maxLength: 255
         type: string
       items:
@@ -69,6 +69,7 @@ definitions:
         type: string
     required:
     - email
+    - fullname
     - items
     - payment_method
     type: object
