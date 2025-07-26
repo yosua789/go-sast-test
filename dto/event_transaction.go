@@ -3,9 +3,9 @@ package dto
 import "time"
 
 type CreateEventTransaction struct {
-	// FullName    string `json:"fullname" validate:"required,alphaunicodespaces,max=255"`
+	Fullname string `json:"fullname" validate:"required,alphaunicodespaces,max=255"`
+	Email    string `json:"email" validate:"required,custom_email,max=255"`
 	// PhoneNumber string `json:"phone_number" validate:"required,custom_phone_number,max=50"`
-	Email string `json:"email" validate:"required,custom_email,max=255"`
 
 	Items []OrderItemEventTransaction `json:"items" validate:"required,dive"`
 

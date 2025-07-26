@@ -7,6 +7,7 @@ import (
 	"assist-tix/dto"
 	"assist-tix/helper"
 	"assist-tix/internal/job"
+	"assist-tix/internal/usecase"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"assist-tix/repository"
@@ -44,6 +45,8 @@ type EventTransactionServiceImpl struct {
 	VenueSectorRepo              repository.VenueSectorRepository
 
 	CheckStatusTransactionJob job.CheckStatusTransactionJob
+
+	TransactionUseCase usecase.TransactionUsecase
 }
 
 func NewEventTransactionService(
@@ -59,6 +62,8 @@ func NewEventTransactionService(
 	eventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository,
 
 	checkStatusTransactionJob job.CheckStatusTransactionJob,
+
+	transactionUseCase usecase.TransactionUsecase,
 ) EventTransactionService {
 	return &EventTransactionServiceImpl{
 		DB:                           db,
@@ -73,6 +78,8 @@ func NewEventTransactionService(
 		EventTransactionGarudaIDRepo: eventTransactionGarudaIDRepo,
 
 		CheckStatusTransactionJob: checkStatusTransactionJob,
+
+		TransactionUseCase: transactionUseCase,
 	}
 }
 
@@ -132,7 +139,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	log.Info().Str("venueSectorId", ticketCategory.VenueSectorId).Msg("find venue by venue sector id")
-	venueSector, err := s.VenueSectorRepo.FindById(ctx, tx, ticketCategory.VenueSectorId)
+	venueSector, err := s.VenueSectorRepo.FindVenueSectorById(ctx, tx, ticketCategory.VenueSectorId)
 	if err != nil {
 		return
 	}
@@ -162,9 +169,9 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	log.Info().Str("InvoiceNumber", invoiceNumber).Msg("generated invoice number")
 
 	transaction := model.EventTransaction{
-		// FullName:    req.FullName, // request fullname ?
+		Fullname: req.Fullname, // request fullname ?
+		Email:    req.Email,
 		// PhoneNumber: req.PhoneNumber, // request phone number ?
-		Email: req.Email,
 
 		InvoiceNumber: invoiceNumber,
 		Status:        lib.PaymentStatusPending,
@@ -224,7 +231,6 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 			// check internal database whether garuda id is hold
 			_, garudaIdErr := s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, tx, eventId, item.GarudaID)
-			log.Info().Err(garudaIdErr).Msg("garuda id error")
 			if garudaIdErr == nil {
 				return res, &lib.ErrorGarudaIDAlreadyUsed
 			}
@@ -357,10 +363,10 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		PartnerServiceID:    partnerServiceId,                 // 8 characters
 		CustomerNo:          transaction.ID[:20],              // Fixed 20-digit value
 		VirtualAccountNo:    transaction.ID[:20] + merchantId, // 28-digit composite value
-		VirtualAccountName:  req.Items[0].FullName,            // Payer name
-		VirtualAccountEmail: req.Items[0].Email,
-		VirtualAccountPhone: req.Items[0].PhoneNumber,  // Mobile phone number in Indonesian format
-		TrxID:               transaction.InvoiceNumber, // Merchant transaction number
+		VirtualAccountName:  req.Fullname,                     // Payer name
+		VirtualAccountEmail: req.Email,
+		// VirtualAccountPhone: req.Items[0].PhoneNumber,  // Mobile phone number in Indonesian format
+		TrxID: transaction.InvoiceNumber, // Merchant transaction number
 		TotalAmount: dto.Amount{
 			Value:    totalPriceStr, // Amount with 2 decimal
 			Currency: "IDR",         // Fixed currency
@@ -429,6 +435,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	var virtualAccountData = responsePaylabs["virtualAccountData"].(map[string]interface{})
 	paylabsVaNumber, _ := virtualAccountData["virtualAccountNo"].(string)
+	transaction.VANumber = paylabsVaNumber
 
 	log.Info().Interface("Resp", responsePaylabs).Msgf("response from paylabs")
 
@@ -448,6 +455,13 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	err = s.CheckStatusTransactionJob.EnqueueCheckTransaction(ctx, transaction.ID, s.Env.Transaction.ExpirationDuration)
 	if err != nil {
 		log.Error().Err(err).Str("TransactionId", transaction.ID).Msg("failed to kick job check status transaction")
+		return
+	}
+
+	// Send email send bill job
+	err = s.TransactionUseCase.SendBill(ctx, req.Email, req.Fullname, len(transactionItems), event, transaction, ticketCategory, venueSector)
+	if err != nil {
+		log.Warn().Err(err).Msg("error send bill to email")
 		return
 	}
 

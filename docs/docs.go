@@ -1407,12 +1407,16 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "email",
+                "fullname",
                 "items",
                 "payment_method"
             ],
             "properties": {
                 "email": {
-                    "description": "FullName    string ` + "`" + `json:\"fullname\" validate:\"required,alphaunicodespaces,max=255\"` + "`" + `\nPhoneNumber string ` + "`" + `json:\"phone_number\" validate:\"required,custom_phone_number,max=50\"` + "`" + `",
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "fullname": {
                     "type": "string",
                     "maxLength": 255
                 },
