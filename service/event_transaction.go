@@ -438,7 +438,18 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		err = &lib.ErrorTransactionPaylabs
 		return
 	}
-
+	var EventTransactionGarudaID dto.BulkGarudaIDRequest
+	EventTransactionGarudaID.EventID = eventId
+	EventTransactionGarudaID.GarudaIDs = make([]string, 0, len(req.Items))
+	for _, item := range req.Items {
+		EventTransactionGarudaID.GarudaIDs = append(EventTransactionGarudaID.GarudaIDs, item.GarudaID)
+	}
+	err = s.EventTransactionGarudaIDRepo.CreateBatch(ctx, tx, EventTransactionGarudaID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create batch garuda id")
+		err = &lib.ErrorInternalServer
+		return
+	}
 	err = tx.Commit(ctx)
 	if err != nil {
 		return
@@ -596,6 +607,8 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		log.Error().Err(err).Msg("Failed to mark transaction as success")
 		return
 	}
+	// sent email to users
+
 	log.Info().Msgf("Transaction marked as success: %v", markResult)
 
 	return
