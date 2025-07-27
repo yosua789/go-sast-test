@@ -33,16 +33,17 @@ type EventTransactionService interface {
 }
 
 type EventTransactionServiceImpl struct {
-	DB                           *database.WrapDB
-	Env                          *config.EnvironmentVariable
-	EventRepo                    repository.EventRepository
-	EventSettingRepo             repository.EventSettingsRepository
-	EventTicketCategoryRepo      repository.EventTicketCategoryRepository
-	EventTransactionRepo         repository.EventTransactionRepository
-	EventTransactionItemRepo     repository.EventTransactionItemRepository
-	EventSeatmapBookRepo         repository.EventSeatmapBookRepository
-	EventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository
-	VenueSectorRepo              repository.VenueSectorRepository
+	DB                            *database.WrapDB
+	Env                           *config.EnvironmentVariable
+	EventRepo                     repository.EventRepository
+	EventSettingRepo              repository.EventSettingsRepository
+	EventTicketCategoryRepo       repository.EventTicketCategoryRepository
+	EventTransactionRepo          repository.EventTransactionRepository
+	EventTransactionItemRepo      repository.EventTransactionItemRepository
+	EventSeatmapBookRepo          repository.EventSeatmapBookRepository
+	EventTransactionGarudaIDRepo  repository.EventTransactionGarudaIDRepository
+	EventOrderInformationBookRepo repository.EventOrderInformationBookRepository
+	VenueSectorRepo               repository.VenueSectorRepository
 
 	CheckStatusTransactionJob job.CheckStatusTransactionJob
 
@@ -58,6 +59,7 @@ func NewEventTransactionService(
 	eventTransactionRepo repository.EventTransactionRepository,
 	eventTransactionItemRepo repository.EventTransactionItemRepository,
 	eventSeatmapBookRepo repository.EventSeatmapBookRepository,
+	EventOrderInformationBookRepo repository.EventOrderInformationBookRepository,
 	venueSectorRepo repository.VenueSectorRepository,
 	eventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository,
 
@@ -66,16 +68,17 @@ func NewEventTransactionService(
 	transactionUseCase usecase.TransactionUsecase,
 ) EventTransactionService {
 	return &EventTransactionServiceImpl{
-		DB:                           db,
-		Env:                          env,
-		EventRepo:                    eventRepo,
-		EventSettingRepo:             eventSettingRepo,
-		EventTicketCategoryRepo:      eventTicketCategoryRepo,
-		EventTransactionRepo:         eventTransactionRepo,
-		EventTransactionItemRepo:     eventTransactionItemRepo,
-		EventSeatmapBookRepo:         eventSeatmapBookRepo,
-		VenueSectorRepo:              venueSectorRepo,
-		EventTransactionGarudaIDRepo: eventTransactionGarudaIDRepo,
+		DB:                            db,
+		Env:                           env,
+		EventRepo:                     eventRepo,
+		EventSettingRepo:              eventSettingRepo,
+		EventTicketCategoryRepo:       eventTicketCategoryRepo,
+		EventTransactionRepo:          eventTransactionRepo,
+		EventTransactionItemRepo:      eventTransactionItemRepo,
+		EventSeatmapBookRepo:          eventSeatmapBookRepo,
+		EventOrderInformationBookRepo: EventOrderInformationBookRepo,
+		VenueSectorRepo:               venueSectorRepo,
+		EventTransactionGarudaIDRepo:  eventTransactionGarudaIDRepo,
 
 		CheckStatusTransactionJob: checkStatusTransactionJob,
 
@@ -123,7 +126,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	log.Info().Str("eventId", eventId).Msg("validate email is booked in the event")
-	_, err = s.EventTransactionRepo.IsEmailAlreadyBookEvent(ctx, tx, eventId, req.Email)
+	orderInformationBookId, err := s.EventOrderInformationBookRepo.CreateOrderInformation(ctx, tx, eventId, req.Email, req.Fullname)
 	if err != nil {
 		return
 	}
@@ -312,6 +315,12 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	transaction.ID = transactionRes.ID
 	transaction.CreatedAt = transactionRes.CreatedAt
+
+	// Update order information book to set transactionId
+	err = s.EventOrderInformationBookRepo.UpdateTransactionIdByID(ctx, tx, orderInformationBookId, transaction.ID)
+	if err != nil {
+		return
+	}
 
 	var transactionItems []model.EventTransactionItem
 	for _, item := range req.Items {
