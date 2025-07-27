@@ -22,6 +22,7 @@ type EventService interface {
 	Update(ctx context.Context, eventId string, req dto.EventResponse) (err error)
 	Delete(ctx context.Context, eventId string) (err error)
 	FindByGarudaID(ctx context.Context, eventID, garudaID string) (dto.VerifyGarudaIDResponse, error)
+	GetActiveSettingByEventId(ctx context.Context, eventId string) (res dto.EventSettingsResponse, err error)
 }
 
 type EventServiceImpl struct {
@@ -367,4 +368,22 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 	resp.IsAvailable = true
 	resp.GarudaID = garudaID
 	return resp, nil
+}
+
+func (s *EventServiceImpl) GetActiveSettingByEventId(ctx context.Context, eventId string) (res dto.EventSettingsResponse, err error) {
+	_, err = s.EventRepo.FindById(ctx, nil, eventId)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to find event by id")
+		return
+	}
+
+	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, nil, eventId)
+	if err != nil {
+		return
+	}
+
+	eventSettings := lib.MapEventSettingEntityToEventSettingResponse(rawEventSettings)
+
+	res = eventSettings
+	return
 }

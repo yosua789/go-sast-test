@@ -596,6 +596,37 @@ paths:
       summary: Get event By ID
       tags:
       - events
+  /events/{eventId}/active-settings:
+    get:
+      description: Get event active settings
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success get event active settings
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.EventSettingsResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get event active settings
+      tags:
+      - events
   /events/{eventId}/ticket-categories:
     get:
       description: Get event By ID
