@@ -85,7 +85,7 @@ type EnvironmentVariable struct {
 		Port     string `mapstructure:"PORT"`
 		Username string `mapstructure:"USERNAME"`
 		Password string `mapstructure:"PASSWORD"`
-		Host     string
+		Host     string `mapstructure:"HOST"`
 	} `mapstructure:"REDIS"`
 	Database struct {
 		Postgres struct {

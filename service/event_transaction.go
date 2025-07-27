@@ -351,7 +351,8 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	//  VA SNAP Init
-	date := expiryInvoice.Format("2006-01-02T15:04:05+07:00")
+	expiredDate := expiryInvoice.Format("2006-01-02T15:04:05+07:00")
+	date := time.Now().Format("2006-01-02T15:04:05.999+07:00")
 	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:]
 	partnerServiceId := s.Env.Paylabs.AccountID[:8]
 	idRequest := transaction.ID
@@ -375,7 +376,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 			PaymentType: req.PaymentMethod, // Payment type
 		},
 
-		ExpiredDate: date, // ISO-8601 formatted expiration
+		ExpiredDate: expiredDate, // ISO-8601 formatted expiration
 	}
 
 	log.Info().Msgf("Creating event transaction with ID: %s", idRequest)

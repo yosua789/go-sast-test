@@ -39,7 +39,7 @@ func (n *Nats) Publish(subject string, data interface{}, metadata map[string]int
 	}
 
 	n.JS.PublishAsyncPending()
-	n.JS.PublishMsg(ctx, msg)
+	_, err = n.JS.PublishMsg(ctx, msg)
 	if err != nil {
 		return err
 	}

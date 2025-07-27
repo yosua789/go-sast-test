@@ -79,27 +79,26 @@ func (r *EventTransactionGarudaIDRepositoryImpl) Create(ctx context.Context, tx 
 
 	return err
 }
-
-func (r *EventTransactionGarudaIDRepositoryImpl) CreateBatch(ctx context.Context, tx pgx.Tx, payloads dto.BulkGarudaIDRequest) error {
+func (r *EventTransactionGarudaIDRepositoryImpl) CreateBatch(ctx context.Context, tx pgx.Tx, payload dto.BulkGarudaIDRequest) error {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
-	var rows [][]interface{}
-
-	for _, payload := range payloads.GarudaIDs {
-		for _, garudaID := range payload {
-			rows = append(rows, []interface{}{payloads.EventID, garudaID})
-		}
+	if len(payload.GarudaIDs) == 0 {
+		return nil // No data to insert
 	}
 
-	if len(rows) == 0 {
-		return nil // Nothing to insert
+	rows := make([][]interface{}, 0, len(payload.GarudaIDs))
+	for _, garudaID := range payload.GarudaIDs {
+		// Explicit cast to string to avoid COPY encoding error
+		rows = append(rows, []interface{}{string(payload.EventID), string(garudaID)})
 	}
 
 	columns := []string{"event_id", "garuda_id"}
 
-	var copyCount int64
-	var err error
+	var (
+		copyCount int64
+		err       error
+	)
 
 	if tx != nil {
 		copyCount, err = tx.CopyFrom(
@@ -118,11 +117,10 @@ func (r *EventTransactionGarudaIDRepositoryImpl) CreateBatch(ctx context.Context
 	}
 
 	if err != nil {
-		return err
+		return &lib.ErrorInternalServer
 	}
 
-	expected := len(rows)
-	if int(copyCount) != expected {
+	if int(copyCount) != len(rows) {
 		return &lib.ErrorInternalServer
 	}
 
