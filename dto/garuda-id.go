@@ -40,3 +40,7 @@ type RequestFansIDResponse struct {
 	Age         int    `json:"age"`
 	PhoneNumber string `json:"phone_number"`
 }
+type BulkGarudaIDRequest struct {
+	EventID   string   `json:"event_id" validate:"required,uuid"`
+	GarudaIDs []string `json:"garuda_ids" validate:"required,dive,max=20"`
+}

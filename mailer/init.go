@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/rs/zerolog/log"
 )
 
@@ -17,7 +18,7 @@ func Init(env *config.EnvironmentVariable) *Nats {
 	}
 	log.Info().Msgf("[+] Successfully connected to NATS at %s", natsString)
 
-	js, err := nc.JetStream()
+	js, err := jetstream.New(nc)
 	if err != nil {
 		log.Fatal().Err(err).Msg("[x] failed to create jetstream")
 		panic(err)

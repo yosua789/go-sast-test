@@ -1,0 +1,1 @@
+ALTER TABLE event_transactions ADD COLUMN full_name VARCHAR(255) NOT NULL DEFAULT '';
