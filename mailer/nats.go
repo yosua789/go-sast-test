@@ -1,11 +1,13 @@
 package mailer
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"strconv"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 )
 
 var (
@@ -14,14 +16,15 @@ var (
 )
 
 type Nats struct {
-	JS nats.JetStreamContext
+	JS jetstream.JetStream
 }
 
-func NewNats(JS nats.JetStreamContext) *Nats {
+func NewNats(JS jetstream.JetStream) *Nats {
 	return &Nats{JS: JS}
 }
 
 func (n *Nats) Publish(subject string, data interface{}, metadata map[string]interface{}) error {
+	ctx := context.Background()
 	body, err := n.parseData(data)
 
 	header := n.parseMetadata(metadata)
@@ -36,7 +39,7 @@ func (n *Nats) Publish(subject string, data interface{}, metadata map[string]int
 	}
 
 	n.JS.PublishAsyncPending()
-	_, err = n.JS.PublishMsg(msg)
+	n.JS.PublishMsg(ctx, msg)
 	if err != nil {
 		return err
 	}

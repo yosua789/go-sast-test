@@ -18,7 +18,7 @@ type EventTransactionRepository interface {
 	IsEmailAlreadyBookEvent(ctx context.Context, tx pgx.Tx, eventId, email string) (id string, err error)
 	FindByInvoiceNumber(ctx context.Context, tx pgx.Tx, invoiceNumber string) (res model.EventTransaction, err error)
 	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error)
-	UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (res model.EventTransaction, err error)
+	UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
 }
 
 type EventTransactionRepositoryImpl struct {
@@ -85,11 +85,12 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 		grand_total,
 
 		email,		
+		full_name,
 
 		is_compliment,
 
 		created_at
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW()) RETURNING id, created_at`
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW()) RETURNING id, created_at`
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query,
@@ -108,6 +109,7 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 			req.TotalAdminFee,
 			req.GrandTotal,
 			req.Email,
+			req.Fullname,
 			req.IsCompliment,
 		).Scan(&req.ID, &req.CreatedAt)
 	} else {
@@ -127,6 +129,7 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 			req.TotalAdminFee,
 			req.GrandTotal,
 			req.Email,
+			req.Fullname,
 			req.IsCompliment,
 		).Scan(&req.ID, &req.CreatedAt)
 	}
@@ -198,15 +201,15 @@ func (r *EventTransactionRepositoryImpl) MarkTransactionAsSuccess(ctx context.Co
 	return
 }
 
-func (r *EventTransactionRepositoryImpl) UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (res model.EventTransaction, err error) {
+func (r *EventTransactionRepositoryImpl) UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
-	query := `UPDATE event_transactions SET va_no = $1 WHERE id = $2 RETURNING *`
+	query := `UPDATE event_transactions SET virtual_account_number = $1 WHERE id = $2`
 	if tx != nil {
-		err = tx.QueryRow(ctx, query, vaNo, transactionID).Scan(&res.ID, &res.CreatedAt)
+		_, err = tx.Exec(ctx, query, vaNo, transactionID)
 	} else {
-		err = r.WrapDB.Postgres.QueryRow(ctx, query, vaNo, transactionID).Scan(&res.ID, &res.CreatedAt)
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, vaNo, transactionID)
 	}
 
 	if err != nil {

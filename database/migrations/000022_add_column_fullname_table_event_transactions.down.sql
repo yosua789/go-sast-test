@@ -1,0 +1,1 @@
+ALTER TABLE event_transactions DROP COLUMN full_name;
