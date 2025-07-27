@@ -19,6 +19,7 @@ type EventHandler interface {
 	GetById(ctx *gin.Context)
 	Delete(ctx *gin.Context)
 	VerifyGarudaID(ctx *gin.Context)
+	GetActiveSettings(ctx *gin.Context)
 }
 
 type EventHandlerImpl struct {
@@ -297,6 +298,58 @@ func (h *EventHandlerImpl) VerifyGarudaID(ctx *gin.Context) {
 				lib.RespondErrorWithData(ctx, http.StatusBadRequest, "error", res, err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventNonGarudaID:
 				lib.RespondErrorWithData(ctx, http.StatusForbidden, "error", res, err, lib.ErrorEventNonGarudaID.Code, h.Env.App.Debug)
+			default:
+				lib.RespondErrorWithData(ctx, http.StatusInternalServerError, "error", res, err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			}
+		} else {
+			lib.RespondErrorWithData(ctx, http.StatusInternalServerError, "error", res, err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		}
+		return
+	}
+	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
+}
+
+// @Summary Get event active settings
+// @Description Get event active settings
+// @Tags events
+// @Produce json
+// @Param eventId path string false "Event ID"
+// @Success 200 {object} lib.APIResponse{data=dto.EventSettingsResponse} "Success get event active settings"
+// @Failure 404 {object} lib.HTTPError "Not Found"
+// @Failure 500 {object} lib.HTTPError "Internal server error"
+// @Router /events/{eventId}/active-settings [get]
+func (h *EventHandlerImpl) GetActiveSettings(ctx *gin.Context) {
+	var uriParams dto.GetEventByIdParams
+	if err := ctx.ShouldBindUri(&uriParams); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			// Find first error
+			log.Error().Err(err).Msg("error binding uri params")
+			fieldErr := validationErrors[0]
+
+			mappedError := lib.MapErrorGetGarudaIDByIdParams(fieldErr)
+			if mappedError != nil {
+				var tixErr *lib.TIXError
+				if errors.As(mappedError, &tixErr) {
+					lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), tixErr, tixErr.Code, h.Env.App.Debug)
+					return
+				}
+			}
+
+			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+			return
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	res, err := h.EventService.GetActiveSettingByEventId(ctx, uriParams.EventID)
+	if err != nil {
+		log.Error().Err(err).Msg("error get active settings by event id")
+		var tixErr *lib.TIXError
+		if errors.As(err, &tixErr) {
+			switch *tixErr {
+			case lib.ErrorEventNotFound:
+				lib.RespondErrorWithData(ctx, http.StatusNotFound, "error", res, err, tixErr.Code, h.Env.App.Debug)
 			default:
 				lib.RespondErrorWithData(ctx, http.StatusInternalServerError, "error", res, err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
 			}

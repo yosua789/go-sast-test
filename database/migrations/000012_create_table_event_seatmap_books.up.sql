@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS event_seatmap_books (
     id SERIAL PRIMARY KEY,
-    event_id uuid not null references events(id) REFERENCES events(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    event_id uuid not null REFERENCES events(id) ON DELETE CASCADE ON UPDATE CASCADE,
     venue_sector_id uuid not null references venue_sectors(id) ON DELETE CASCADE ON UPDATE CASCADE,
     
     seat_row int not null,

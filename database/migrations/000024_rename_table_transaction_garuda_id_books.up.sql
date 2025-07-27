@@ -1,0 +1,1 @@
+ALTER TABLE transaction_garuda_id_books RENAME TO event_transaction_garuda_id_books;

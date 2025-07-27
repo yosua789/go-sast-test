@@ -35,7 +35,7 @@ func NewEventTransactionGarudaIDRepository(
 }
 
 func (r *EventTransactionGarudaIDRepositoryImpl) GetEventGarudaID(ctx context.Context, tx pgx.Tx, eventID string, garudaID string) (res model.EventTransactionGarudaID, err error) {
-	query := `SELECT id, event_id, garuda_id, created_at FROM transaction_garuda_id_books WHERE event_id = $1 AND garuda_id = $2 LIMIT 1`
+	query := `SELECT id, event_id, garuda_id, created_at FROM event_transaction_garuda_id_books WHERE event_id = $1 AND garuda_id = $2 LIMIT 1`
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query, eventID, garudaID).Scan(
@@ -69,7 +69,7 @@ func (r *EventTransactionGarudaIDRepositoryImpl) Create(ctx context.Context, tx 
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
-	query := `INSERT INTO transaction_garuda_id_books (event_id, garuda_id) VALUES ($1, $2)`
+	query := `INSERT INTO event_transaction_garuda_id_books (event_id, garuda_id) VALUES ($1, $2)`
 
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, eventID, garudaID)
@@ -103,14 +103,14 @@ func (r *EventTransactionGarudaIDRepositoryImpl) CreateBatch(ctx context.Context
 	if tx != nil {
 		copyCount, err = tx.CopyFrom(
 			ctx,
-			pgx.Identifier{"transaction_garuda_id_books"},
+			pgx.Identifier{"event_transaction_garuda_id_books"},
 			columns,
 			pgx.CopyFromRows(rows),
 		)
 	} else {
 		copyCount, err = r.WrapDB.Postgres.CopyFrom(
 			ctx,
-			pgx.Identifier{"transaction_garuda_id_books"},
+			pgx.Identifier{"event_transaction_garuda_id_books"},
 			columns,
 			pgx.CopyFromRows(rows),
 		)

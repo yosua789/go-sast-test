@@ -45,6 +45,7 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	if err != nil {
 		log.Fatal().Err(err).Msg("asynq didn't respond")
 	}
+	log.Info().Msg("+=== connected to [asynq] ===+")
 
 	// Init Nats
 	natsClient, err := helper.CreateNatsConnection(env)

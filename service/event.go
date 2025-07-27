@@ -22,6 +22,7 @@ type EventService interface {
 	Update(ctx context.Context, eventId string, req dto.EventResponse) (err error)
 	Delete(ctx context.Context, eventId string) (err error)
 	FindByGarudaID(ctx context.Context, eventID, garudaID string) (dto.VerifyGarudaIDResponse, error)
+	GetActiveSettingByEventId(ctx context.Context, eventId string) (res dto.EventSettingsResponse, err error)
 }
 
 type EventServiceImpl struct {
@@ -260,14 +261,22 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 		TargetPage: pagination.TargetPage,
 	}
 
-	paginatedEvents, err := s.EventRepo.FindAllPaginated(ctx, nil, filterDB, paginationDB)
+	tx, err := s.DB.Postgres.Begin(ctx)
+	if err != nil {
+		return
+	}
+
+	paginatedEvents, err := s.EventRepo.FindAllPaginated(ctx, tx, filterDB, paginationDB)
 	if err != nil {
 		return
 	}
 
 	res.Events = make([]dto.EventResponse, 0)
 
+	var eventIds []string
+
 	for _, val := range paginatedEvents.Events {
+		eventIds = append(eventIds, val.ID)
 		event := lib.MapEventEntityToEventResponse(val)
 
 		if s.Env.Storage.Type == lib.StorageTypeGCS {
@@ -279,6 +288,15 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 		}
 
 		res.Events = append(res.Events, event)
+	}
+
+	eventLowestPrices, err := s.EventTicketCategoryRepo.FindLowestPriceTicketByEventIds(ctx, tx, eventIds...)
+	if err != nil {
+		return
+	}
+
+	for i, val := range res.Events {
+		res.Events[i].TicketCategoryPrice = eventLowestPrices[val.ID]
 	}
 
 	var prevPage *int64
@@ -367,4 +385,22 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 	resp.IsAvailable = true
 	resp.GarudaID = garudaID
 	return resp, nil
+}
+
+func (s *EventServiceImpl) GetActiveSettingByEventId(ctx context.Context, eventId string) (res dto.EventSettingsResponse, err error) {
+	_, err = s.EventRepo.FindById(ctx, nil, eventId)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to find event by id")
+		return
+	}
+
+	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, nil, eventId)
+	if err != nil {
+		return
+	}
+
+	eventSettings := lib.MapEventSettingEntityToEventSettingResponse(rawEventSettings)
+
+	res = eventSettings
+	return
 }
