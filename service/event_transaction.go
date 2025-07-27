@@ -423,7 +423,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		return
 	}
 	defer resp.Body.Close()
-
+	log.Info().Msgf("Response Status: %s", resp.Status)
 	// Decode response
 	var responsePaylabs map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&responsePaylabs)
@@ -432,12 +432,11 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		err = &lib.ErrorTransactionPaylabs
 		return
 	}
+	log.Info().Interface("Resp", responsePaylabs).Msgf("response from paylabs")
 
 	var virtualAccountData = responsePaylabs["virtualAccountData"].(map[string]interface{})
 	paylabsVaNumber, _ := virtualAccountData["virtualAccountNo"].(string)
 	transaction.VANumber = paylabsVaNumber
-
-	log.Info().Interface("Resp", responsePaylabs).Msgf("response from paylabs")
 
 	err = s.EventTransactionRepo.UpdateVANo(ctx, tx, transaction.ID, paylabsVaNumber)
 	if err != nil {

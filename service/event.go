@@ -347,8 +347,9 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 	if err != nil {
 		return resp, &lib.ErrorGetGarudaID
 	}
-
+	resp.GarudaID = garudaID
 	if externalResp != nil && !externalResp.Success {
+		resp.IsAvailable = false
 		log.Info().Int("ErrorCode", externalResp.ErrorCode).Msg("Garuda ID verification failed")
 		switch externalResp.ErrorCode {
 		case 40401:
