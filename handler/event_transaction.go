@@ -170,11 +170,14 @@ func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 		switch *tixErr {
 		case lib.ErrorInvoiceIDNotFound:
 			lib.RespondError(ctx, http.StatusNotFound, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
+			return
 		default:
 			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			return
 		}
 	} else {
 		lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		return
 	}
 	lib.RespondSuccess(ctx, http.StatusOK, "Callback received successfully", nil)
 }
