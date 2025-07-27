@@ -336,12 +336,11 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 		return dto.VerifyGarudaIDResponse{IsAvailable: false}, &lib.ErrorEventNonGarudaID
 	}
 	_, err = s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, nil, eventID, garudaID)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to get event garuda id")
-		if err == &lib.ErrorGarudaIDAlreadyUsed {
-			return resp, &lib.ErrorGarudaIDAlreadyUsed
-		}
-		return resp, &lib.ErrorInternalServer
+	if err == nil {
+		return dto.VerifyGarudaIDResponse{
+			IsAvailable: false,
+			GarudaID:    garudaID,
+		}, &lib.ErrorGarudaIDAlreadyUsed
 	}
 
 	externalResp, err := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, garudaID)
