@@ -1,8 +1,8 @@
 # Define variables
 DB_HOST=localhost
 DB_PORT=5432
-DB_USER=
-DB_PASSWORD=
+DB_USER=postgres
+DB_PASSWORD=password
 DB_NAME=assist_tix_dev
 DB_SSLMODE=disable
 MIGRATE_CMD=$(GOPATH)/bin/migrate

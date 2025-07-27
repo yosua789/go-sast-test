@@ -104,13 +104,14 @@ type EnvironmentVariable struct {
 		} `mapstructure:"TIMEOUT"`
 	} `mapstructure:"DATABASE"`
 	Nats struct {
-		Addr   string `mapstructure:"ADDR"`
-		Port   int    `mapstructure:"PORT"`
-		Token  string `mapstructure:"TOKEN"`
-		Stream struct {
-			Mailer             string `mapstructutre:"MAILER"`
-			ReleaseTransaction string `mapstructutre:"RELEASE_TRANSACTION"`
-		} `mapstructure:"STREAM"`
+		Addr     string `mapstructure:"ADDR"`
+		Port     string `mapstructure:"PORT"`
+		Token    string `mapstructure:"TOKEN"`
+		Subjects struct {
+			SendBill    string `mapstructure:"SEND_BILL"`
+			SendInvoice string `mapstructure:"SEND_INVOICE"`
+			SendETicket string `mapstructure:"SEND_ETICKET"`
+		} `mapstructure:"SUBJECTS"`
 	} `mapstructure:"NATS"`
 	Mailer struct {
 		AssetsPath string `mapstructure:"ASSETS_PATH"`
