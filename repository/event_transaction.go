@@ -180,7 +180,7 @@ func (r *EventTransactionRepositoryImpl) MarkTransactionAsSuccess(ctx context.Co
 	currentTime := time.Now()
 	defer cancel()
 
-	query := `UPDATE event_transactions SET transaction_status = $1, updated_at = $2 WHERE id = $3 RETURNING *`
+	query := `UPDATE event_transactions SET transaction_status = $1, updated_at = $2 WHERE id = $3 RETURNING id, created_at`
 	if tx != nil {
 		err = tx.QueryRow(ctx, query, lib.EventTransactionStatusSuccess, currentTime, transactionID).Scan(&res.ID, &res.CreatedAt)
 	} else {
