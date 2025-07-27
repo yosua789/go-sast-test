@@ -261,14 +261,22 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 		TargetPage: pagination.TargetPage,
 	}
 
-	paginatedEvents, err := s.EventRepo.FindAllPaginated(ctx, nil, filterDB, paginationDB)
+	tx, err := s.DB.Postgres.Begin(ctx)
+	if err != nil {
+		return
+	}
+
+	paginatedEvents, err := s.EventRepo.FindAllPaginated(ctx, tx, filterDB, paginationDB)
 	if err != nil {
 		return
 	}
 
 	res.Events = make([]dto.EventResponse, 0)
 
+	var eventIds []string
+
 	for _, val := range paginatedEvents.Events {
+		eventIds = append(eventIds, val.ID)
 		event := lib.MapEventEntityToEventResponse(val)
 
 		if s.Env.Storage.Type == lib.StorageTypeGCS {
@@ -280,6 +288,15 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 		}
 
 		res.Events = append(res.Events, event)
+	}
+
+	eventLowestPrices, err := s.EventTicketCategoryRepo.FindLowestPriceTicketByEventIds(ctx, tx, eventIds...)
+	if err != nil {
+		return
+	}
+
+	for i, val := range res.Events {
+		res.Events[i].TicketCategoryPrice = eventLowestPrices[val.ID]
 	}
 
 	var prevPage *int64

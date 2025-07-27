@@ -28,6 +28,7 @@ type EventTicketCategoryRepository interface {
 	FindSeatmapStatusByEventSectorId(ctx context.Context, tx pgx.Tx, eventId, sectorId string, reqs []domain.SeatmapParam) (seatmap map[string]entity.EventVenueSector, err error)
 	BuyPublicTicketById(ctx context.Context, tx pgx.Tx, eventId, ticketCategoryId string, newStock int) (err error)
 	SoftDelete(ctx context.Context, tx pgx.Tx, ticketCategoryId string) (err error)
+	FindLowestPriceTicketByEventIds(ctx context.Context, tx pgx.Tx, eventIds ...string) (res map[string]int, err error)
 }
 
 type EventTicketCategoryRepositoryImpl struct {
@@ -483,6 +484,62 @@ func (r *EventTicketCategoryRepositoryImpl) FindSeatmapStatusByEventSectorId(ctx
 		)
 
 		seatmap[helper.ConvertRowColumnKey(sectorSeatmap.SeatRow, sectorSeatmap.SeatColumn)] = sectorSeatmap
+	}
+
+	return
+}
+
+// Find lowest price ticket category by event Ids
+// Returning map of ticketId
+func (r *EventTicketCategoryRepositoryImpl) FindLowestPriceTicketByEventIds(ctx context.Context, tx pgx.Tx, eventIds ...string) (res map[string]int, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	res = make(map[string]int)
+
+	query := `SELECT
+		event_id, 
+		min(price) as lowest_price
+	FROM event_ticket_categories  
+	WHERE event_id IN (`
+
+	var args []interface{}
+	var placeholders []string
+
+	for i, val := range eventIds {
+		base := i
+		placeholders = append(placeholders, fmt.Sprintf("$%d",
+			base+1))
+
+		args = append(args, val)
+	}
+
+	query += strings.Join(placeholders, ",")
+	query += `) GROUP BY event_id`
+
+	var rows pgx.Rows
+
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, args...)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, args...)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var eventId string
+		var lowestPrice int
+		rows.Scan(
+			&eventId,
+			&lowestPrice,
+		)
+
+		res[eventId] = lowestPrice
 	}
 
 	return

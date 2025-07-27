@@ -13,6 +13,8 @@ type EventResponse struct {
 	EventTime   time.Time               `json:"event_time"`
 	Venue       SimpleVenueResponse     `json:"venue"`
 
+	TicketCategoryPrice int `json:"ticket_category_price"`
+
 	StartSaleAt *time.Time `json:"start_sale_at"`
 	EndSaleAt   *time.Time `json:"end_sale_at"`
 
