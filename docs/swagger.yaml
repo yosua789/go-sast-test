@@ -154,6 +154,17 @@ definitions:
       venue:
         $ref: '#/definitions/dto.SimpleVenueResponse'
     type: object
+  dto.EventAdditionalFeeResponse:
+    properties:
+      is_percentage:
+        type: boolean
+      is_tax:
+        type: boolean
+      name:
+        type: string
+      value:
+        type: number
+    type: object
   dto.EventResponse:
     properties:
       banner:
@@ -174,6 +185,8 @@ definitions:
         $ref: '#/definitions/dto.SimpleOrganizerResponse'
       start_sale_at:
         type: string
+      ticket_category_price:
+        type: integer
       updated_at:
         type: string
       venue:
@@ -196,6 +209,10 @@ definitions:
     type: object
   dto.EventSettingsResponse:
     properties:
+      additional_fees:
+        items:
+          $ref: '#/definitions/dto.EventAdditionalFeeResponse'
+        type: array
       garuda_id_verification:
         type: boolean
       max_adult_ticket_per_transaction:
@@ -214,6 +231,8 @@ definitions:
     type: object
   dto.EventTransactionResponse:
     properties:
+      access_token:
+        type: string
       admin_fee_percentage:
         type: number
       created_at:

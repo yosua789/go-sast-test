@@ -33,6 +33,7 @@ type EventTransactionResponse struct {
 	AdminFeePercentage float32 `json:"admin_fee_percentage"`
 	TotalAdminFee      int     `json:"total_admin_fee"`
 	GrandTotal         int     `json:"grand_total"`
+	AccessToken        string  `json:"access_token"`
 
 	ExpiredAt time.Time `json:"payment_expired_at"`
 	CreatedAt time.Time `json:"created_at"`

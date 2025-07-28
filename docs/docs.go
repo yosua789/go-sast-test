@@ -1601,6 +1601,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.EventAdditionalFeeResponse": {
+            "type": "object",
+            "properties": {
+                "is_percentage": {
+                    "type": "boolean"
+                },
+                "is_tax": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
         "dto.EventResponse": {
             "type": "object",
             "properties": {
@@ -1630,6 +1647,9 @@ const docTemplate = `{
                 },
                 "start_sale_at": {
                     "type": "string"
+                },
+                "ticket_category_price": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1665,6 +1685,12 @@ const docTemplate = `{
         "dto.EventSettingsResponse": {
             "type": "object",
             "properties": {
+                "additional_fees": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EventAdditionalFeeResponse"
+                    }
+                },
                 "garuda_id_verification": {
                     "type": "boolean"
                 },
@@ -1693,6 +1719,9 @@ const docTemplate = `{
         "dto.EventTransactionResponse": {
             "type": "object",
             "properties": {
+                "access_token": {
+                    "type": "string"
+                },
                 "admin_fee_percentage": {
                     "type": "number"
                 },

@@ -232,6 +232,10 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		// Verify garuda id
 		for i, item := range req.Items {
 
+			if item.GarudaID == "" {
+				return res, &lib.ErrorBadRequest
+			}
+
 			// check internal database whether garuda id is hold
 			_, garudaIdErr := s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, tx, eventId, item.GarudaID)
 			if garudaIdErr == nil {
@@ -285,24 +289,50 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 				log.Info().Interface("externalResp", externalResp).Msg("garuda id validation response")
 			}
 		}
+	} else {
+		for _, item := range req.Items {
+			if !helper.IsValidEmail(item.Email) || !helper.ValidatePhoneNumber(item.PhoneNumber) || !helper.IsValidUsername(item.FullName) {
+				return res, &lib.ErrorBadRequest
+			}
+		}
+		// check if it already exist
 	}
 
 	// Calculate price
 	transaction.TotalPrice = ticketCategory.Price * len(req.Items)
-	taxPerTransaction := (eventSettings.TaxPercentage / 100) * float64(transaction.TotalPrice)
-	transaction.TotalTax = int(taxPerTransaction)
-	log.Info().Int("TotalPrice", transaction.TotalPrice).Float64("TaxaPerTransaction", taxPerTransaction).Int("TotalTax", transaction.TotalTax).Msg("calculate price")
-
-	var totalAdminFee int
-	if eventSettings.AdminFeePercentage > 0 {
-		totalAdminFee = int(eventSettings.AdminFeePercentage/100) * transaction.TotalPrice
-	} else {
-		totalAdminFee = eventSettings.AdminFee
+	additionalFees, err := s.EventSettingRepo.FindAdditionalFee(ctx, nil, eventId)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to find additional fees for event")
+		return
 	}
-
-	transaction.AdminFeePercentage = float32(eventSettings.AdminFeePercentage)
-	transaction.TotalAdminFee = totalAdminFee
-	log.Info().Int("TotalAdminFee", totalAdminFee).Float32("AdminFeePercentage", transaction.AdminFeePercentage).Msg("calculate admin fee")
+	for _, fee := range additionalFees {
+		if fee.IsTax {
+			if fee.IsPercentage {
+				transaction.TotalTax += int(float64(transaction.TotalPrice) * fee.Value / 100)
+			} else {
+				transaction.TotalTax += int(fee.Value)
+			}
+		} else {
+			if fee.IsPercentage {
+				transaction.TotalAdminFee += int(float64(transaction.TotalPrice) * fee.Value / 100)
+			} else {
+				transaction.TotalAdminFee += int(fee.Value)
+			}
+		}
+	}
+	if len(additionalFees) > 0 {
+		var additionalFeesDetails string
+		additionalFeeStr, errMarshal := json.Marshal(additionalFees)
+		if errMarshal != nil {
+			log.Error().Err(errMarshal).Msg("failed to marshal additional fees")
+			return res, &lib.ErrorInternalServer
+		}
+		additionalFeesDetails = string(additionalFeeStr)
+		transaction.AdditionalFeeDetails = additionalFeesDetails
+	}
+	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee
+	// transaction.AdminFeePercentage = float32(eventSettings.AdminFeePercentage)
+	// log.Info().Int("TotalAdminFee", totalAdminFee).Float32("AdminFeePercentage", transaction.AdminFeePercentage).Msg("calculate admin fee")
 
 	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee
 	log.Info().Int("GrandTotal", transaction.GrandTotal).Msg("got grand total price")
@@ -485,18 +515,26 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		return
 	}
 
+	accessToken, err := helper.GenerateAccessToken(s.Env, transaction.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to generate access token")
+		return
+	}
+	// set via cookie
+	helper.SetAccessToken(ctx, accessToken)
 	// TODO ADD JWT
 	res = dto.EventTransactionResponse{
-		InvoiceNumber:      invoiceNumber,
-		PaymentMethod:      req.PaymentMethod,
-		TotalPrice:         transaction.TotalPrice,
-		TaxPercentage:      transaction.TaxPercentage,
-		TotalTax:           transaction.TotalTax,
-		AdminFeePercentage: transaction.AdminFeePercentage,
-		TotalAdminFee:      transaction.TotalAdminFee,
-		GrandTotal:         transaction.GrandTotal,
-		ExpiredAt:          transaction.PaymentExpiredAt,
-		CreatedAt:          transaction.CreatedAt,
+		InvoiceNumber: invoiceNumber,
+		PaymentMethod: req.PaymentMethod,
+		TotalPrice:    transaction.TotalPrice,
+		// TaxPercentage:      transaction.TaxPercentage,
+		TotalTax: transaction.TotalTax,
+		// AdminFeePercentage: transaction.AdminFeePercentage,
+		TotalAdminFee: transaction.TotalAdminFee,
+		GrandTotal:    transaction.GrandTotal,
+		ExpiredAt:     transaction.PaymentExpiredAt,
+		CreatedAt:     transaction.CreatedAt,
+		AccessToken:   accessToken,
 	}
 
 	log.Info().Msg("success create transaction")

@@ -12,12 +12,13 @@ type EventTransaction struct {
 	PaymentExpiredAt  time.Time
 	PaidAt            *time.Time
 
-	TotalPrice         int
-	TaxPercentage      float32
-	TotalTax           int
-	AdminFeePercentage float32
-	TotalAdminFee      int
-	GrandTotal         int
+	TotalPrice int
+	// TaxPercentage      float32
+	TotalTax int
+	// AdminFeePercentage float32
+	AdditionalFeeDetails string
+	TotalAdminFee        int
+	GrandTotal           int
 
 	Fullname string
 	Email    string

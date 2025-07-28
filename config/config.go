@@ -80,6 +80,9 @@ type EnvironmentVariable struct {
 		BasePath   string `mapstructure:"BASE_PATH"`
 		Url        string `mapstructure:"URL"`
 	} `mapstructure:"API"`
+	AccessToken struct {
+		SecretKey string `mapstructure:"SECRET_KEY"`
+	} `mapstructure:"ACCESS_TOKEN"`
 	Redis struct {
 		Address  string `mapstructure:"ADDRESS"`
 		Port     string `mapstructure:"PORT"`

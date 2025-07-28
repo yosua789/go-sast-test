@@ -401,6 +401,23 @@ func (s *EventServiceImpl) GetActiveSettingByEventId(ctx context.Context, eventI
 
 	eventSettings := lib.MapEventSettingEntityToEventSettingResponse(rawEventSettings)
 
+	additionalFees, err := s.EventSettingRepo.FindAdditionalFee(ctx, nil, eventId)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to find additional fees for event")
+		return
+	}
+	for _, fee := range additionalFees {
+		eventSettings.AdditionalFees = append(eventSettings.AdditionalFees, dto.EventAdditionalFeeResponse{
+			Name:         fee.Name,
+			IsPercentage: fee.IsPercentage,
+			IsTax:        fee.IsTax,
+			Value:        fee.Value,
+		})
+	}
+	if len(eventSettings.AdditionalFees) < 1 {
+		eventSettings.AdditionalFees = make([]dto.EventAdditionalFeeResponse, 0)
+	}
+
 	res = eventSettings
 	return
 }
