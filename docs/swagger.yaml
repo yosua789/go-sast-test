@@ -1,12 +1,5 @@
 basePath: /api/v1
 definitions:
-  dto.ActiveEventSettingsResponse:
-    properties:
-      garuda_id_verification:
-        type: boolean
-      max_adult_ticket_per_transaction:
-        type: integer
-    type: object
   dto.CreateEventTicketCategoryRequest:
     properties:
       code:
@@ -129,7 +122,7 @@ definitions:
   dto.DetailEventResponse:
     properties:
       active_settings:
-        $ref: '#/definitions/dto.ActiveEventSettingsResponse'
+        $ref: '#/definitions/dto.EventSettingsResponse'
       additional_information:
         type: string
       banner:
@@ -156,6 +149,8 @@ definitions:
         items:
           $ref: '#/definitions/dto.EventTicketCategoryResponse'
         type: array
+      total_available_ticket:
+        type: integer
       updated_at:
         type: string
       venue:
@@ -193,6 +188,8 @@ definitions:
       start_sale_at:
         type: string
       ticket_category_price:
+        type: integer
+      total_available_ticket:
         type: integer
       updated_at:
         type: string

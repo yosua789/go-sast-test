@@ -1446,17 +1446,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.ActiveEventSettingsResponse": {
-            "type": "object",
-            "properties": {
-                "garuda_id_verification": {
-                    "type": "boolean"
-                },
-                "max_adult_ticket_per_transaction": {
-                    "type": "integer"
-                }
-            }
-        },
         "dto.CreateEventTicketCategoryRequest": {
             "type": "object",
             "required": [
@@ -1621,7 +1610,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "active_settings": {
-                    "$ref": "#/definitions/dto.ActiveEventSettingsResponse"
+                    "$ref": "#/definitions/dto.EventSettingsResponse"
                 },
                 "additional_information": {
                     "type": "string"
@@ -1661,6 +1650,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.EventTicketCategoryResponse"
                     }
+                },
+                "total_available_ticket": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1718,6 +1710,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ticket_category_price": {
+                    "type": "integer"
+                },
+                "total_available_ticket": {
                     "type": "integer"
                 },
                 "updated_at": {

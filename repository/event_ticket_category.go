@@ -29,6 +29,7 @@ type EventTicketCategoryRepository interface {
 	BuyPublicTicketById(ctx context.Context, tx pgx.Tx, eventId, ticketCategoryId string, newStock int) (err error)
 	SoftDelete(ctx context.Context, tx pgx.Tx, ticketCategoryId string) (err error)
 	FindLowestPriceTicketByEventIds(ctx context.Context, tx pgx.Tx, eventIds ...string) (res map[string]int, err error)
+	FindTotalSaleTicketByEventIds(ctx context.Context, tx pgx.Tx, eventIds ...string) (res map[string]int, err error)
 }
 
 type EventTicketCategoryRepositoryImpl struct {
@@ -544,6 +545,66 @@ func (r *EventTicketCategoryRepositoryImpl) FindLowestPriceTicketByEventIds(ctx 
 		)
 
 		res[eventId] = lowestPrice
+	}
+
+	return
+}
+
+func (r *EventTicketCategoryRepositoryImpl) FindTotalSaleTicketByEventIds(ctx context.Context, tx pgx.Tx, eventIds ...string) (res map[string]int, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	res = make(map[string]int)
+
+	if len(eventIds) <= 0 {
+		return
+	}
+
+	query := `SELECT 
+		event_id, 
+		SUM(total_public_stock) as total_public_sale 
+	FROM event_ticket_categories
+	WHERE deleted_at IS NULL 
+	AND event_id IN (`
+
+	var args []interface{}
+	var placeholders []string
+
+	for i, val := range eventIds {
+		base := i
+		placeholders = append(placeholders, fmt.Sprintf("$%d",
+			base+1))
+
+		args = append(args, val)
+	}
+
+	query += strings.Join(placeholders, ",")
+	query += `) GROUP BY event_id`
+
+	var rows pgx.Rows
+
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, args...)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, args...)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var eventId string
+		var totalPublicSale int
+
+		rows.Scan(
+			&eventId,
+			&totalPublicSale,
+		)
+
+		res[eventId] = totalPublicSale
 	}
 
 	return
