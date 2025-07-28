@@ -17,6 +17,7 @@ type EventTransactionHandler interface {
 	CreateTransaction(ctx *gin.Context)
 	PaylabsVASnap(ctx *gin.Context)
 	CallbackVASnap(ctx *gin.Context)
+	IsEmailAlreadyBook(ctx *gin.Context)
 }
 
 type EventTransactionHandlerImpl struct {
@@ -109,7 +110,7 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 			switch *tixErr {
 			case lib.ErrorEventSaleIsPaused, lib.ErrorEventSaleIsNotStartedYet, lib.ErrorEventSaleAlreadyOver:
 				lib.RespondError(ctx, http.StatusForbidden, "error", err, tixErr.Code, h.Env.App.Debug)
-			case lib.ErrorSeatIsAlreadyBooked, lib.ErrorTicketIsOutOfStock, lib.ErrorPurchaseQuantityExceedTheLimit, lib.ErrorEmailIsAlreadyBooked, lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed:
+			case lib.ErrorSeatIsAlreadyBooked, lib.ErrorTicketIsOutOfStock, lib.ErrorPurchaseQuantityExceedTheLimit, lib.ErrorOrderInformationIsAlreadyBook, lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed:
 				lib.RespondError(ctx, http.StatusConflict, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventIdInvalid, lib.ErrorTicketCategoryInvalid, lib.ErrorFailedToBookSeat:
 				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
@@ -177,4 +178,56 @@ func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 		}
 	}
 	lib.RespondSuccess(ctx, http.StatusOK, "Callback received successfully", nil)
+}
+
+// @Summary validate email for booking is used or not
+// @Description validate email for booking is used or not
+// @Tags events
+// @Produce json
+// @Param eventId path string false "Event ID"
+// @Param email path string false "Email book"
+// @Success 200 {object} lib.APIResponse{data=nil} "Success validate order information"
+// @Failure 404 {object} lib.HTTPError "Not Found"
+// @Failure 500 {object} lib.HTTPError "Internal server error"
+// @Router /events/{eventId}/email-books/{email} [get]
+func (h *EventTransactionHandlerImpl) IsEmailAlreadyBook(ctx *gin.Context) {
+	var uriParams dto.GetValidateEmailForBookEventParams
+	if err := ctx.ShouldBindUri(&uriParams); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			// Find first error
+			log.Error().Err(err).Msg("error binding uri params")
+			fieldErr := validationErrors[0]
+
+			mappedError := lib.MapErrorGetGarudaIDByIdParams(fieldErr)
+			if mappedError != nil {
+				var tixErr *lib.TIXError
+				if errors.As(mappedError, &tixErr) {
+					lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), tixErr, tixErr.Code, h.Env.App.Debug)
+					return
+				}
+			}
+
+			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+			return
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	err := h.EventTransactionService.ValidateEmailIsAlreadyBook(ctx, uriParams.EventID, uriParams.Email)
+	if err != nil {
+		var tixErr *lib.TIXError
+		if errors.As(err, &tixErr) {
+			switch *tixErr {
+			case lib.ErrorOrderInformationIsAlreadyBook:
+				lib.RespondError(ctx, http.StatusConflict, "error", tixErr, tixErr.Code, h.Env.App.Debug)
+			default:
+				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			}
+		}
+
+		return
+	}
+
+	lib.RespondSuccess(ctx, http.StatusOK, "success", nil)
 }

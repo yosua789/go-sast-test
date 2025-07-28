@@ -1,5 +1,12 @@
 basePath: /api/v1
 definitions:
+  dto.ActiveEventSettingsResponse:
+    properties:
+      garuda_id_verification:
+        type: boolean
+      max_adult_ticket_per_transaction:
+        type: integer
+    type: object
   dto.CreateEventTicketCategoryRequest:
     properties:
       code:
@@ -122,7 +129,7 @@ definitions:
   dto.DetailEventResponse:
     properties:
       active_settings:
-        $ref: '#/definitions/dto.EventSettingsResponse'
+        $ref: '#/definitions/dto.ActiveEventSettingsResponse'
       additional_information:
         type: string
       banner:
@@ -644,6 +651,41 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Get event active settings
+      tags:
+      - events
+  /events/{eventId}/email-books/{email}:
+    get:
+      description: validate email for booking is used or not
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      - description: Email book
+        in: path
+        name: email
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success validate order information
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: validate email for booking is used or not
       tags:
       - events
   /events/{eventId}/ticket-categories:

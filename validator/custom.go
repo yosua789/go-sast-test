@@ -4,14 +4,25 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 )
 
 func InitCustomValidator(validate *validator.Validate) {
+	// Go playground validator
 	validate.RegisterValidation("not_blank", notBlank)
 	validate.RegisterValidation("custom_email", validateEmail)
 	validate.RegisterValidation("custom_phone_number", validatePhoneNumber)
 	validate.RegisterValidation("alphaunicodespaces", validateAlphaUnicodeWithSpace)
+
+	// Binding gin validator
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("not_blank", notBlank)
+		v.RegisterValidation("custom_email", validateEmail)
+		v.RegisterValidation("custom_phone_number", validatePhoneNumber)
+		v.RegisterValidation("alphaunicodespaces", validateAlphaUnicodeWithSpace)
+		v.RegisterValidation("custom_email", validateEmail)
+	}
 }
 
 func notBlank(fl validator.FieldLevel) bool {

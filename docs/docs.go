@@ -255,6 +255,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/events/{eventId}/email-books/{email}": {
+            "get": {
+                "description": "validate email for booking is used or not",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "validate email for booking is used or not",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email book",
+                        "name": "email",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success validate order information",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/events/{eventId}/ticket-categories": {
             "get": {
                 "description": "Get event By ID",
@@ -1388,6 +1446,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.ActiveEventSettingsResponse": {
+            "type": "object",
+            "properties": {
+                "garuda_id_verification": {
+                    "type": "boolean"
+                },
+                "max_adult_ticket_per_transaction": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.CreateEventTicketCategoryRequest": {
             "type": "object",
             "required": [
@@ -1552,7 +1621,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "active_settings": {
-                    "$ref": "#/definitions/dto.EventSettingsResponse"
+                    "$ref": "#/definitions/dto.ActiveEventSettingsResponse"
                 },
                 "additional_information": {
                     "type": "string"
