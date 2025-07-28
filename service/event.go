@@ -265,6 +265,7 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 	if err != nil {
 		return
 	}
+	defer tx.Rollback(ctx)
 
 	paginatedEvents, err := s.EventRepo.FindAllPaginated(ctx, tx, filterDB, paginationDB)
 	if err != nil {
@@ -291,6 +292,11 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 	}
 
 	eventLowestPrices, err := s.EventTicketCategoryRepo.FindLowestPriceTicketByEventIds(ctx, tx, eventIds...)
+	if err != nil {
+		return
+	}
+
+	err = tx.Commit(ctx)
 	if err != nil {
 		return
 	}
