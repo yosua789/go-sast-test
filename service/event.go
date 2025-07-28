@@ -189,21 +189,24 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 		return
 	}
 
+	var totalAvailableTicket int = 0
 	var ticketCategoriesResponse []dto.EventTicketCategoryResponse = make([]dto.EventTicketCategoryResponse, 0)
 	for _, ticketCategory := range ticketCategories {
+		totalAvailableTicket += ticketCategory.TotalPublicStock
 		ticketCategoryResponse := lib.MapEventTicketCategoryModelToEventTicketCategoryResponse(ticketCategory)
 		ticketCategoriesResponse = append(ticketCategoriesResponse, ticketCategoryResponse)
 	}
 
 	res = dto.DetailEventResponse{
-		ID:           event.ID,
-		Organizer:    lib.MapOrganizerEntityToSimpleResponse(event.Organizer),
-		Name:         event.Name,
-		Description:  event.Description,
-		Banner:       event.Banner,
-		EventTime:    event.EventTime,
-		Venue:        lib.MapVenueEntityToSimpleResponse(event.Venue),
-		IsSaleActive: event.IsSaleActive,
+		ID:                   event.ID,
+		Organizer:            lib.MapOrganizerEntityToSimpleResponse(event.Organizer),
+		Name:                 event.Name,
+		Description:          event.Description,
+		Banner:               event.Banner,
+		EventTime:            event.EventTime,
+		Venue:                lib.MapVenueEntityToSimpleResponse(event.Venue),
+		IsSaleActive:         event.IsSaleActive,
+		TotalAvailableTicket: totalAvailableTicket,
 
 		AdditionalInformation: event.AdditionalInformation,
 
@@ -296,6 +299,11 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 		return
 	}
 
+	eventTotalPublicSale, err := s.EventTicketCategoryRepo.FindTotalSaleTicketByEventIds(ctx, tx, eventIds...)
+	if err != nil {
+		return
+	}
+
 	err = tx.Commit(ctx)
 	if err != nil {
 		return
@@ -303,6 +311,7 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 
 	for i, val := range res.Events {
 		res.Events[i].TicketCategoryPrice = eventLowestPrices[val.ID]
+		res.Events[i].TotalAvailableTicket = eventTotalPublicSale[val.ID]
 	}
 
 	var prevPage *int64

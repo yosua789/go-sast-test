@@ -13,7 +13,8 @@ type EventResponse struct {
 	EventTime   time.Time               `json:"event_time"`
 	Venue       SimpleVenueResponse     `json:"venue"`
 
-	TicketCategoryPrice int `json:"ticket_category_price"`
+	TicketCategoryPrice  int `json:"ticket_category_price"`
+	TotalAvailableTicket int `json:"total_available_ticket"`
 
 	StartSaleAt *time.Time `json:"start_sale_at"`
 	EndSaleAt   *time.Time `json:"end_sale_at"`
@@ -23,13 +24,14 @@ type EventResponse struct {
 }
 
 type DetailEventResponse struct {
-	ID          string                  `json:"id"`
-	Organizer   SimpleOrganizerResponse `json:"organizer"`
-	Name        string                  `json:"name"`
-	Description string                  `json:"description"`
-	Banner      string                  `json:"banner"`
-	EventTime   time.Time               `json:"event_time"`
-	Venue       SimpleVenueResponse     `json:"venue"`
+	ID                   string                  `json:"id"`
+	Organizer            SimpleOrganizerResponse `json:"organizer"`
+	Name                 string                  `json:"name"`
+	Description          string                  `json:"description"`
+	Banner               string                  `json:"banner"`
+	EventTime            time.Time               `json:"event_time"`
+	Venue                SimpleVenueResponse     `json:"venue"`
+	TotalAvailableTicket int                     `json:"total_available_ticket"`
 
 	AdditionalInformation string `json:"additional_information"`
 
