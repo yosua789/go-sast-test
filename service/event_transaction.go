@@ -521,7 +521,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		return
 	}
 	// set via cookie
-	helper.SetAccessToken(ctx, accessToken)
+	// helper.SetAccessToken(ctx, accessToken)
 	// TODO ADD JWT
 	res = dto.EventTransactionResponse{
 		InvoiceNumber: invoiceNumber,
