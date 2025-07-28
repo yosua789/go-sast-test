@@ -56,7 +56,7 @@ func (r *EventTransactionRepositoryImpl) IsEmailAlreadyBookEvent(ctx context.Con
 		return
 	}
 
-	err = &lib.ErrorEmailIsAlreadyBooked
+	err = &lib.ErrorOrderInformationIsAlreadyBook
 
 	return
 }

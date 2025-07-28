@@ -44,6 +44,9 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 	r.DELETE("/:eventId", h.EventHandler.Delete)
 	r.GET("/:eventId/verify/garuda-id/:garudaId", h.EventHandler.VerifyGarudaID)
 
+	// Validate book email
+	r.GET("/:eventId/email-books/:email", h.EventTransaction.IsEmailAlreadyBook)
+
 	EventTicketCategories(h, r)
 }
 

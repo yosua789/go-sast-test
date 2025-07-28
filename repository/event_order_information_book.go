@@ -5,6 +5,7 @@ import (
 	"assist-tix/database"
 	"assist-tix/lib"
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
@@ -14,6 +15,7 @@ import (
 type EventOrderInformationBookRepository interface {
 	CreateOrderInformation(ctx context.Context, tx pgx.Tx, eventId, email, fullname string) (id int, err error)
 	UpdateTransactionIdByID(ctx context.Context, tx pgx.Tx, id int, transactionId string) (err error)
+	ValidateOrderInformationByEmailEventId(ctx context.Context, tx pgx.Tx, eventId, email string) (err error)
 }
 
 type EventOrderInformationBookRepositoryImpl struct {
@@ -52,7 +54,7 @@ func (r *EventOrderInformationBookRepositoryImpl) CreateOrderInformation(ctx con
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "23505" {
-				err = &lib.ErrorEmailIsAlreadyBooked
+				err = &lib.ErrorOrderInformationIsAlreadyBook
 			}
 		}
 		return
@@ -78,4 +80,28 @@ func (r *EventOrderInformationBookRepositoryImpl) UpdateTransactionIdByID(ctx co
 	}
 
 	return
+}
+
+func (r *EventOrderInformationBookRepositoryImpl) ValidateOrderInformationByEmailEventId(ctx context.Context, tx pgx.Tx, eventId, email string) (err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := `SELECT id FROM event_order_information_books WHERE event_id = $1 AND email = $2 LIMIT 1`
+
+	var id int
+	if tx != nil {
+		err = tx.QueryRow(ctx, query, eventId, email).Scan(&id)
+	} else {
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, eventId, email).Scan(&id)
+	}
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		return err
+	}
+
+	return &lib.ErrorOrderInformationIsAlreadyBook
 }

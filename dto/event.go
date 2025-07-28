@@ -47,10 +47,11 @@ type DetailEventResponse struct {
 }
 
 type EventSettingsResponse struct {
-	GarudaIdVerification         bool                         `json:"garuda_id_verification,omitempty"`
-	MaxAdultTicketPerTransaction int                          `json:"max_adult_ticket_per_transaction,omitempty"`
+	GarudaIdVerification         bool                         `json:"garuda_id_verification"`
+	MaxAdultTicketPerTransaction int                          `json:"max_adult_ticket_per_transaction"`
 	AdditionalFees               []EventAdditionalFeeResponse `json:"additional_fees,omitempty"`
 }
+
 type EventAdditionalFeeResponse struct {
 	Name         string  `json:"name"`
 	IsPercentage bool    `json:"is_percentage"`
@@ -174,4 +175,9 @@ type GetEventTicketCategoryByIdParams struct {
 type GetDetailEventTicketCategoryByIdParams struct {
 	EventID          string `uri:"eventId" binding:"required,min=1,uuid"`
 	TicketCategoryID string `uri:"ticketCategoryId" binding:"required,min=1,uuid"`
+}
+
+type GetValidateEmailForBookEventParams struct {
+	EventID string `uri:"eventId" binding:"required,min=1,uuid"`
+	Email   string `uri:"email" binding:"required,min=1,custom_email"`
 }

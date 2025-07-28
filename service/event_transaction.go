@@ -30,6 +30,7 @@ type EventTransactionService interface {
 	CreateEventTransaction(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
 	PaylabsVASnap(ctx *gin.Context) (err error)
 	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error)
+	ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error)
 }
 
 type EventTransactionServiceImpl struct {
@@ -687,4 +688,29 @@ func (s *EventTransactionServiceImpl) CallbackVA(ctx *gin.Context, req dto.Payla
 		return errors.New("invalid signature")
 	}
 	return
+}
+
+func (s *EventTransactionServiceImpl) ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error) {
+	tx, err := s.DB.Postgres.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = s.EventRepo.FindById(ctx, tx, eventId)
+	if err != nil {
+		return
+	}
+
+	err = s.EventOrderInformationBookRepo.ValidateOrderInformationByEmailEventId(ctx, tx, eventId, email)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return
+	}
+
+	return nil
 }
