@@ -78,9 +78,7 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 		payment_expired_at,
 
 		total_price, 
-		tax_percentage,
 		total_tax,
-		admin_fee_percentage,
 		total_admin_fee,
 		grand_total,
 
