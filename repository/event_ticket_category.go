@@ -497,6 +497,10 @@ func (r *EventTicketCategoryRepositoryImpl) FindLowestPriceTicketByEventIds(ctx 
 
 	res = make(map[string]int)
 
+	if len(eventIds) <= 0 {
+		return
+	}
+
 	query := `SELECT
 		event_id, 
 		min(price) as lowest_price
