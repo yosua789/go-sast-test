@@ -640,6 +640,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		return err
 	}
 	defer tx.Rollback(ctx)
+
 	for key, value := range ctx.Request.Header {
 		header[key] = value
 	}
@@ -667,6 +668,11 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to mark transaction as success")
+		return
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
 		return
 	}
 	// sent email to users
