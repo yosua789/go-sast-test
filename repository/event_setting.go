@@ -11,6 +11,7 @@ import (
 
 type EventSettingsRepository interface {
 	FindByEventId(ctx context.Context, tx pgx.Tx, eventId string) (res []entity.EventSetting, err error)
+	FindAdditionalFee(ctx context.Context, tx pgx.Tx, eventId string) (res []entity.AdditionalFee, err error)
 }
 
 type EventSettingsRepositoryImpl struct {
@@ -72,6 +73,50 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 			&eventSetting.UpdatedAt,
 		)
 		res = append(res, eventSetting)
+	}
+
+	return
+}
+
+func (r *EventSettingsRepositoryImpl) FindAdditionalFee(ctx context.Context, tx pgx.Tx, eventId string) (res []entity.AdditionalFee, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+	query := `SELECT
+		id,
+		event_id,
+		name,
+		is_percentage,
+		is_tax,
+		value,
+		created_at,
+		updated_at
+	FROM event_additional_fees
+	WHERE event_id = $1 `
+	var rows pgx.Rows
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, eventId)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, eventId)
+	}
+	if err != nil {
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var additionalFee entity.AdditionalFee
+		rows.Scan(
+			&additionalFee.ID,
+			&additionalFee.EventID,
+			&additionalFee.Name,
+			&additionalFee.IsPercentage,
+			&additionalFee.IsTax,
+			&additionalFee.Value,
+			&additionalFee.CreatedAt,
+			&additionalFee.UpdatedAt,
+		)
+		res = append(res, additionalFee)
 	}
 
 	return

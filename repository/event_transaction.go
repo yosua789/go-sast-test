@@ -90,7 +90,7 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 		is_compliment,
 
 		created_at
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW()) RETURNING id, created_at`
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW()) RETURNING id, created_at`
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query,
@@ -103,9 +103,9 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 			req.PaymentChannel,
 			req.PaymentExpiredAt,
 			req.TotalPrice,
-			req.TaxPercentage,
+			// req.TaxPercentage,
 			req.TotalTax,
-			req.AdminFeePercentage,
+			// req.AdminFeePercentage,
 			req.TotalAdminFee,
 			req.GrandTotal,
 			req.Email,
@@ -123,9 +123,9 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 			req.PaymentChannel,
 			req.PaymentExpiredAt,
 			req.TotalPrice,
-			req.TaxPercentage,
+			// req.TaxPercentage,
 			req.TotalTax,
-			req.AdminFeePercentage,
+			// req.AdminFeePercentage,
 			req.TotalAdminFee,
 			req.GrandTotal,
 			req.Email,

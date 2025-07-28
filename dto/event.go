@@ -47,8 +47,15 @@ type DetailEventResponse struct {
 }
 
 type EventSettingsResponse struct {
-	GarudaIdVerification         bool `json:"garuda_id_verification,omitempty"`
-	MaxAdultTicketPerTransaction int  `json:"max_adult_ticket_per_transaction,omitempty"`
+	GarudaIdVerification         bool                         `json:"garuda_id_verification,omitempty"`
+	MaxAdultTicketPerTransaction int                          `json:"max_adult_ticket_per_transaction,omitempty"`
+	AdditionalFees               []EventAdditionalFeeResponse `json:"additional_fees,omitempty"`
+}
+type EventAdditionalFeeResponse struct {
+	Name         string  `json:"name"`
+	IsPercentage bool    `json:"is_percentage"`
+	IsTax        bool    `json:"is_tax"`
+	Value        float64 `json:"value"`
 }
 
 type EventSettings struct {

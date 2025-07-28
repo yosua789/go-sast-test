@@ -1,13 +1,6 @@
-package model
+package entity
 
 import "time"
-
-type EventSetting struct {
-	ID           string
-	SettingID    string
-	EventID      string
-	SettingValue string
-}
 
 type AdditionalFee struct {
 	ID           string
