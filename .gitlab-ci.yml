@@ -34,8 +34,7 @@ build-job-staging:
     - staging
   tags:
     - registry
-  environment:
-    - staging
+  environment: staging
   script:
     - docker build -t registry.assistx.dev/assist-tix/backend-api:staging .   
     - docker push registry.assistx.dev/assist-tix/backend-api:staging
@@ -46,8 +45,7 @@ build-job-main:
     - main
   tags:
     - registry
-  environment:
-    - production
+  environment: production
   script:
     - docker build -t registry.assistx.dev/assist-tix/backend-api:latest .   
     - docker push registry.assistx.dev/assist-tix/backend-api:latest
@@ -62,8 +60,7 @@ deploy-job-staging:
     - dev-server-new
   variables:
     GIT_STRATEGY: none
-  environment:
-    - staging
+  environment: staging
   script:
     - cd ~/tix
     - docker compose pull api 
@@ -81,9 +78,7 @@ deploy-job-main:
     entrypoint: [""]
   variables:
     KUBE_CONTEXT_PROD: kecilin-id/kubernetes-agent-config:k8s-assistxticket-prod
-    GIT_STRATEGY: none
-  environment:
-    - production
+  environment: production
   script:
     - kubectl config use-context "$KUBE_CONTEXT_PROD"
     - kubectl apply -f $CI_PROJECT_DIR/kubernetes/prod
