@@ -191,6 +191,13 @@ var (
 )
 
 var (
+	ErrorPaymentMethodInvalid = TIXError{
+		Code: 40012,
+		Err:  errors.New("payment method is invalid"),
+	}
+)
+
+var (
 	ErrorBookedSeatNotFound = TIXError{
 		Code: 40410,
 		Err:  errors.New("booked seat not found"),

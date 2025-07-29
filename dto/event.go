@@ -183,3 +183,7 @@ type GetValidateEmailForBookEventParams struct {
 	EventID string `uri:"eventId" binding:"required,min=1,uuid"`
 	Email   string `uri:"email" binding:"required,min=1,custom_email"`
 }
+
+type GetAvailablePaymentMethodParams struct {
+	EventID string `uri:"eventId" binding:"required,min=1,uuid"`
+}

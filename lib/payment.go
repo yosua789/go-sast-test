@@ -10,3 +10,8 @@ const (
 const (
 	PaymentChannelPaylabs = "PAYLABS"
 )
+
+const (
+	PaymentGroupVirtualAccount = "Virtual Account"
+	PaymentGroupOthers         = "Others"
+)
