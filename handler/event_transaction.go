@@ -18,6 +18,7 @@ type EventTransactionHandler interface {
 	PaylabsVASnap(ctx *gin.Context)
 	CallbackVASnap(ctx *gin.Context)
 	IsEmailAlreadyBook(ctx *gin.Context)
+	GetAvailablePaymentMethods(ctx *gin.Context)
 	GetTransactionDetails(ctx *gin.Context)
 }
 
@@ -113,7 +114,7 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 				lib.RespondError(ctx, http.StatusForbidden, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorSeatIsAlreadyBooked, lib.ErrorTicketIsOutOfStock, lib.ErrorPurchaseQuantityExceedTheLimit, lib.ErrorOrderInformationIsAlreadyBook, lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed, lib.ErrorDuplicateGarudaIDPayload:
 				lib.RespondError(ctx, http.StatusConflict, "error", err, tixErr.Code, h.Env.App.Debug)
-			case lib.ErrorEventIdInvalid, lib.ErrorTicketCategoryInvalid, lib.ErrorFailedToBookSeat:
+			case lib.ErrorEventIdInvalid, lib.ErrorTicketCategoryInvalid, lib.ErrorFailedToBookSeat, lib.ErrorPaymentMethodInvalid, lib.ErrorBadRequest:
 				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventNotFound, lib.ErrorTicketCategoryNotFound, lib.ErrorBookedSeatNotFound, lib.ErrorGarudaIDNotFound, lib.ErrorVenueSectorNotFound:
 				lib.RespondError(ctx, http.StatusNotFound, "error", err, tixErr.Code, h.Env.App.Debug)
@@ -231,6 +232,48 @@ func (h *EventTransactionHandlerImpl) IsEmailAlreadyBook(ctx *gin.Context) {
 	}
 
 	lib.RespondSuccess(ctx, http.StatusOK, "success", nil)
+}
+
+// @Summary Get available payment methods
+// @Description Get available payment methods
+// @Tags events
+// @Produce json
+// @Param eventId path string false "Event ID"
+// @Success 200 {object} lib.APIResponse{data=nil} "Success get available payment methods"
+// @Failure 404 {object} lib.HTTPError "Not Found"
+// @Failure 500 {object} lib.HTTPError "Internal server error"
+// @Router /events/{eventId}/payment-methods [get]
+func (h *EventTransactionHandlerImpl) GetAvailablePaymentMethods(ctx *gin.Context) {
+	var uriParams dto.GetAvailablePaymentMethodParams
+	if err := ctx.ShouldBindUri(&uriParams); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			// Find first error
+			log.Error().Err(err).Msg("error binding uri params")
+			fieldErr := validationErrors[0]
+
+			mappedError := lib.MapErrorGetGarudaIDByIdParams(fieldErr)
+			if mappedError != nil {
+				var tixErr *lib.TIXError
+				if errors.As(mappedError, &tixErr) {
+					lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), tixErr, tixErr.Code, h.Env.App.Debug)
+					return
+				}
+			}
+
+			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+			return
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	res, err := h.EventTransactionService.GetAvailablePaymentMethods(ctx, uriParams.EventID)
+	if err != nil {
+		lib.RespondError(ctx, http.StatusInternalServerError, "error", nil, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		return
+	}
+
+	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
 }
 
 // @Summary Get transaction details by ID

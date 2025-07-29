@@ -3,7 +3,7 @@ package dto
 import "time"
 
 type CreateEventTransaction struct {
-	Fullname string `json:"fullname" validate:"required,alphaunicodespaces,max=255"`
+	Fullname string `json:"fullname" validate:"required,alphaunicodespaces,min=3,max=255"`
 	Email    string `json:"email" validate:"required,custom_email,max=255"`
 	// PhoneNumber string `json:"phone_number" validate:"required,custom_phone_number,max=50"`
 
@@ -40,6 +40,22 @@ type EventTransactionResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type EventGrouppedPaymentMethodsResponse struct {
+	PaymentGroup string                       `json:"payment_group"`
+	Payments     []EventPaymentMethodResponse `json:"payments"`
+}
+
+type EventPaymentMethodResponse struct {
+	Name string `json:"name"`
+	Logo string `json:"logo"`
+
+	IsPaused     bool       `json:"is_paused"`
+	PauseMessage string     `json:"pause_message"`
+	PausedAt     *time.Time `json:"paused_at"`
+
+	PaymentType string `json:"payment_type"`
+	PaymentCode string `json:"payment_code"`
+}
 type GetTransactionDetails struct {
 	TransactionID string `uri:"transactionId" binding:"required,min=1,uuid"`
 }

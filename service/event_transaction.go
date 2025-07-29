@@ -33,6 +33,7 @@ type EventTransactionService interface {
 	PaylabsVASnap(ctx *gin.Context) (err error)
 	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error)
 	ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error)
+	GetAvailablePaymentMethods(ctx *gin.Context, eventId string) (res []dto.EventGrouppedPaymentMethodsResponse, err error)
 	FindById(ctx context.Context, transactionID string) (res entity.OrderDetails, err error)
 }
 
@@ -48,6 +49,7 @@ type EventTransactionServiceImpl struct {
 	EventTransactionGarudaIDRepo  repository.EventTransactionGarudaIDRepository
 	EventOrderInformationBookRepo repository.EventOrderInformationBookRepository
 	VenueSectorRepo               repository.VenueSectorRepository
+	PaymentMethodRepo             repository.PaymentMethodRepository
 
 	CheckStatusTransactionJob job.CheckStatusTransactionJob
 
@@ -66,6 +68,7 @@ func NewEventTransactionService(
 	EventOrderInformationBookRepo repository.EventOrderInformationBookRepository,
 	venueSectorRepo repository.VenueSectorRepository,
 	eventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository,
+	paymentMethodRepo repository.PaymentMethodRepository,
 
 	checkStatusTransactionJob job.CheckStatusTransactionJob,
 
@@ -83,6 +86,7 @@ func NewEventTransactionService(
 		EventOrderInformationBookRepo: EventOrderInformationBookRepo,
 		VenueSectorRepo:               venueSectorRepo,
 		EventTransactionGarudaIDRepo:  eventTransactionGarudaIDRepo,
+		PaymentMethodRepo:             paymentMethodRepo,
 
 		CheckStatusTransactionJob: checkStatusTransactionJob,
 
@@ -120,6 +124,11 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		}
 	} else {
 		err = &lib.ErrorEventSaleIsPaused
+		return
+	}
+
+	err = s.PaymentMethodRepo.ValidatePaymentCodeIsActive(ctx, tx, req.PaymentMethod)
+	if err != nil {
 		return
 	}
 
@@ -729,6 +738,36 @@ func (s *EventTransactionServiceImpl) ValidateEmailIsAlreadyBook(ctx *gin.Contex
 	}
 
 	return nil
+}
+
+func (s *EventTransactionServiceImpl) GetAvailablePaymentMethods(ctx *gin.Context, eventId string) (res []dto.EventGrouppedPaymentMethodsResponse, err error) {
+	grouppedPayments, err := s.PaymentMethodRepo.GetGrouppedActivePaymentMethod(ctx, nil)
+	if err != nil {
+		return res, err
+	}
+
+	for key, paymentMethods := range grouppedPayments {
+		var payments []dto.EventPaymentMethodResponse = make([]dto.EventPaymentMethodResponse, 0)
+
+		for _, payment := range paymentMethods {
+			payments = append(payments, dto.EventPaymentMethodResponse{
+				Name:         payment.Name,
+				Logo:         payment.Logo,
+				IsPaused:     payment.IsPaused,
+				PauseMessage: payment.PauseMessage,
+				PausedAt:     helper.ConvertNullTimeToPointer(payment.PausedAt),
+				PaymentType:  payment.PaymentType,
+				PaymentCode:  payment.PaymentCode,
+			})
+		}
+
+		res = append(res, dto.EventGrouppedPaymentMethodsResponse{
+			PaymentGroup: key,
+			Payments:     payments,
+		})
+	}
+
+	return res, nil
 }
 
 func (s *EventTransactionServiceImpl) FindById(ctx context.Context, transactionID string) (res entity.OrderDetails, err error) {

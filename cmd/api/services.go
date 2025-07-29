@@ -37,6 +37,7 @@ func Newservice(
 		r.EventOrderInformationBookRepo,
 		r.VenueSectorRepo,
 		r.EventTransactionGarudaIDRepo,
+		r.PaymentMethodRepository,
 		job.CheckStatusTransactionJob,
 		useCase.TransactionUseCase,
 	)
