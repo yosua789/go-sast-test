@@ -17,7 +17,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -630,7 +629,10 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	url := s.Env.Paylabs.BaseUrl + path
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to create new request for Paylabs QRIS")
+		err = &lib.ErrorTransactionPaylabs
+		return
+
 	}
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -638,7 +640,9 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to send request to Paylabs")
+		err = &lib.ErrorTransactionPaylabs
+		return
 	}
 	defer resp.Body.Close()
 
@@ -646,16 +650,20 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	var response map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to decode response from Paylabs")
+		err = &lib.ErrorTransactionPaylabs
+		return
 	}
+	log.Info().Interface("Response", response).Msg("Response from Paylabs QRIS")
 	barcode, ok := response["qrCode"].(string)
 	if !ok {
 		err = &lib.ErrorTransactionPaylabs
 		log.Error().Err(err).Msg("Failed to get QR code from response")
+		err = &lib.ErrorTransactionPaylabs
+		return
 	}
 
 	// Print response
-	fmt.Printf("%+v\n", response)
 
 	return barcode, nil
 }
