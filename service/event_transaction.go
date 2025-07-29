@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	mrand "math/rand"
 	"net/http"
 	"strconv"
 	"time"
@@ -29,7 +28,8 @@ import (
 
 type EventTransactionService interface {
 	CreateEventTransaction(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
-	PaylabsVASnap(ctx *gin.Context) (err error)
+	paylabsVASnap(ctx *gin.Context, transaction model.EventTransaction) (vaNo string, err error)
+	paylabsQris(ctx *gin.Context, transaction model.EventTransaction, productName string) (barcode string, err error)
 	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error)
 	ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error)
 	GetAvailablePaymentMethods(ctx *gin.Context, eventId string) (res []dto.EventGrouppedPaymentMethodsResponse, err error)
@@ -405,97 +405,32 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	if err != nil {
 		return
 	}
+	var paymentAdditionalInformation string
+	// mapping paylabs va snap or qris
+	if helper.IsVA(transaction.PaymentMethod) {
+		log.Info().Msg("payment method is VA, calling paylabs snap")
+		var errPaylabs error
+		paymentAdditionalInformation, errPaylabs = s.paylabsVASnap(ctx, transaction)
+		if errPaylabs != nil {
+			log.Error().Err(errPaylabs).Msg("failed to get paylabs va number")
+			err = &lib.ErrorTransactionPaylabs
+			return
+		}
+		log.Info().Str("paymentAdditionalInformation", paymentAdditionalInformation).Msg("got payment additional information")
+	} else if helper.IsQRIS(transaction.PaymentMethod) {
+		var errPaylabs error
+		log.Info().Msg("payment method is QRIS, calling paylabs qris")
+		paymentAdditionalInformation, errPaylabs = s.paylabsQris(ctx, transaction, event.Name+" - "+ticketCategory.Name)
+		if errPaylabs != nil {
+			log.Error().Err(errPaylabs).Msg("failed to get paylabs qris barcode")
+			err = &lib.ErrorTransactionPaylabs
+			return
+		}
 
-	//  VA SNAP Init
-	expiredDate := expiryInvoice.Format("2006-01-02T15:04:05+07:00")
-	date := time.Now().Format("2006-01-02T15:04:05.999+07:00")
-	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:]
-	partnerServiceId := s.Env.Paylabs.AccountID[:8]
-	idRequest := transaction.ID
-	// Generate a random 20-digit customer number as a string
-
-	privateKeyPEM := s.Env.Paylabs.PrivateKey                     // Private key in PEM format
-	totalPriceStr := strconv.Itoa(transaction.GrandTotal) + ".00" // Amount with 2 decimal
-	payload := dto.VirtualAccountSnapRequest{
-		PartnerServiceID:    partnerServiceId,                 // 8 characters
-		CustomerNo:          transaction.ID[:20],              // Fixed 20-digit value
-		VirtualAccountNo:    transaction.ID[:20] + merchantId, // 28-digit composite value
-		VirtualAccountName:  req.Fullname,                     // Payer name
-		VirtualAccountEmail: req.Email,                        // Payer email
-		// VirtualAccountPhone: req.Items[0].PhoneNumber,  // Mobile phone number in Indonesian format
-		TrxID: transaction.InvoiceNumber, // Merchant transaction number
-		TotalAmount: dto.Amount{
-			Value:    totalPriceStr, // Amount with 2 decimal
-			Currency: "IDR",         // Fixed currency
-		},
-		AdditionalInfo: dto.AdditionalInfo{
-			PaymentType: req.PaymentMethod, // Payment type
-		},
-
-		ExpiredDate: expiredDate, // ISO-8601 formatted expiration
 	}
+	transaction.PaymentAdditionalInfo = paymentAdditionalInformation
 
-	log.Info().Msgf("Creating event transaction with ID: %s", idRequest)
-
-	// VA
-	jsonData, err := json.Marshal(payload)
-	if err != nil {
-		log.Error().Err(err)
-		return
-	}
-	log.Info().Msgf("JSON Payload: %s", jsonData)
-
-	// Hash the JSON body
-	shaJson := sha256.Sum256(jsonData)
-
-	signature := helper.GenerateSnapSignature(shaJson, date, privateKeyPEM)
-	log.Info().Msgf("Payload: %x", shaJson)
-	// Create HTTP headers
-	headers := map[string]string{
-		"X-TIMESTAMP":   date,
-		"X-SIGNATURE":   signature,
-		"X-PARTNER-ID":  merchantId,
-		"X-EXTERNAL-ID": idRequest,
-		"X-IP-ADDRESS":  ctx.ClientIP(),
-		"Content-Type":  "application/json",
-	}
-	log.Info().Msgf("Headers: %v", headers)
-
-	// Send HTTP request
-	url := s.Env.Paylabs.BaseUrl + "/api/v1.0/transfer-va/create-va"
-	paylabsReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		log.Error().Err(err)
-		err = &lib.ErrorTransactionPaylabs
-		return
-	}
-	for key, value := range headers {
-		paylabsReq.Header.Set(key, value)
-	}
-	client := &http.Client{}
-	resp, err := client.Do(paylabsReq)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to send request to Paylabs")
-		err = &lib.ErrorTransactionPaylabs
-		return
-	}
-	defer resp.Body.Close()
-	log.Info().Msgf("Response Status: %s", resp.Status)
-	// Decode response
-	var responsePaylabs map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&responsePaylabs)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to decode response from Paylabs")
-		err = &lib.ErrorTransactionPaylabs
-		return
-	}
-	log.Info().Interface("Resp", responsePaylabs).Msgf("response from paylabs")
-
-	var virtualAccountData = responsePaylabs["virtualAccountData"].(map[string]interface{})
-	paylabsVaNumber, _ := virtualAccountData["virtualAccountNo"].(string)
-	transaction.PaymentAdditionalInfo = paylabsVaNumber
-
-	err = s.EventTransactionRepo.UpdateVANo(ctx, tx, transaction.ID, paylabsVaNumber)
+	err = s.EventTransactionRepo.UpdatePaymentAdditionalInformation(ctx, tx, transaction.ID, paymentAdditionalInformation)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to update VA number")
 		err = &lib.ErrorTransactionPaylabs
@@ -561,40 +496,39 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 }
 
 // static Eventtransaction without any business logic
-func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error) {
-
+func (s *EventTransactionServiceImpl) paylabsVASnap(ctx *gin.Context, transaction model.EventTransaction) (vaNo string, err error) {
+	//  VA SNAP Init
+	expiredDate := transaction.PaymentExpiredAt.Format("2006-01-02T15:04:05+07:00")
 	date := time.Now().Format("2006-01-02T15:04:05.999+07:00")
 	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:]
 	partnerServiceId := s.Env.Paylabs.AccountID[:8]
-	idRequest := fmt.Sprintf("%d", mrand.Intn(9999999-1111)+1111)
+	idRequest := transaction.ID
 	// Generate a random 20-digit customer number as a string
-	var customerNo string
-	for i := 0; i < 20; i++ {
-		digit := mrand.Intn(10)
-		customerNo += fmt.Sprintf("%d", digit)
-	}
-	privateKeyPEM := s.Env.Paylabs.PrivateKey // Private key in PEM format
+
+	privateKeyPEM := s.Env.Paylabs.PrivateKey                     // Private key in PEM format
+	totalPriceStr := strconv.Itoa(transaction.GrandTotal) + ".00" // Amount with 2 decimal
 	payload := dto.VirtualAccountSnapRequest{
-		PartnerServiceID:    partnerServiceId,        // 8 characters
-		CustomerNo:          customerNo,              // Fixed 20-digit value
-		VirtualAccountNo:    customerNo + merchantId, // 28-digit composite value
-		VirtualAccountName:  "john doe",              // Payer name
-		VirtualAccountEmail: "john.doe@example.com",
-		VirtualAccountPhone: "6281234567890", // Mobile phone number in Indonesian format
-		TrxID:               idRequest,       // Merchant transaction number
+		PartnerServiceID:    partnerServiceId,                 // 8 characters
+		CustomerNo:          transaction.ID[:20],              // Fixed 20-digit value
+		VirtualAccountNo:    transaction.ID[:20] + merchantId, // 28-digit composite value
+		VirtualAccountName:  transaction.Fullname,             // Payer name
+		VirtualAccountEmail: transaction.Email,                // Payer email
+		// VirtualAccountPhone: req.Items[0].PhoneNumber,  // Mobile phone number in Indonesian format
+		TrxID: transaction.InvoiceNumber, // Merchant transaction number
 		TotalAmount: dto.Amount{
-			Value:    "10000.00", // Amount with 2 decimal
-			Currency: "IDR",      // Fixed currency
+			Value:    totalPriceStr, // Amount with 2 decimal
+			Currency: "IDR",         // Fixed currency
 		},
 		AdditionalInfo: dto.AdditionalInfo{
-			PaymentType: "MandiriVA", // Payment type
+			PaymentType: transaction.PaymentMethod, // Payment type
 		},
-		ExpiredDate: "2025-12-31T23:59:59+07:00", // ISO-8601 formatted expiration
+
+		ExpiredDate: expiredDate, // ISO-8601 formatted expiration
 	}
 
 	log.Info().Msgf("Creating event transaction with ID: %s", idRequest)
-	// VA
 
+	// VA
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		log.Error().Err(err)
@@ -620,10 +554,83 @@ func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error
 
 	// Send HTTP request
 	url := s.Env.Paylabs.BaseUrl + "/api/v1.0/transfer-va/create-va"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	paylabsReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Error().Err(err)
+		err = &lib.ErrorTransactionPaylabs
 		return
+	}
+	for key, value := range headers {
+		paylabsReq.Header.Set(key, value)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(paylabsReq)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to send request to Paylabs")
+		err = &lib.ErrorTransactionPaylabs
+		return
+	}
+	defer resp.Body.Close()
+	log.Info().Msgf("Response Status: %s", resp.Status)
+	// Decode response
+	var responsePaylabs map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&responsePaylabs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to decode response from Paylabs")
+		err = &lib.ErrorTransactionPaylabs
+		return
+	}
+	log.Info().Interface("Resp", responsePaylabs).Msgf("response from paylabs")
+
+	var virtualAccountData = responsePaylabs["virtualAccountData"].(map[string]interface{})
+	paylabsVaNumber, _ := virtualAccountData["virtualAccountNo"].(string)
+	return paylabsVaNumber, nil
+}
+func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction model.EventTransaction, productName string) (barcode string, err error) {
+	// Define the request data
+	currentTime := time.Now().Local() // UTC +07:00
+	date := currentTime.Format("2006-01-02T15:04:05.999+07:00")
+	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:] // 6 characters
+	requestID := transaction.InvoiceNumber                                 // 20 characters
+
+	path := "/qris/create"
+	privateKeyPem := s.Env.Paylabs.PrivateKey // Private key in PEM format
+	// VA
+	var jsonBody = dto.PaylabsQRISRequest{
+		MerchantID:      merchantId,                                   // 6 characters
+		MerchantTradeNo: transaction.ID,                               // 8 characters
+		RequestID:       requestID,                                    // 20 characters //for lookup purposes
+		PaymentType:     "QRIS",                                       // Payment type
+		Amount:          strconv.Itoa(transaction.GrandTotal) + ".00", // Amount with 2 decimal
+		ProductName:     "Sepeda",
+		Expire:          int(s.Env.Transaction.ExpirationDuration),                // ISO-8601 formatted expiration
+		NotifyURL:       s.Env.Api.Url + "/api/v1/external/paylabs/qris/callback", // Callback URL
+	}
+
+	// Encode JSON body
+	jsonData, err := json.Marshal(jsonBody)
+	if err != nil {
+		panic(err)
+	}
+
+	// Hash the JSON body
+	shaJson := sha256.Sum256(jsonData)
+	signature := helper.GenerateQRISSignature(shaJson, date, privateKeyPem)
+
+	// Create HTTP headers
+	headers := map[string]string{
+		"X-TIMESTAMP":  date,
+		"X-SIGNATURE":  signature,
+		"X-PARTNER-ID": merchantId,
+		"X-REQUEST-ID": requestID,
+		"Content-Type": "application/json;charset=utf-8",
+	}
+
+	// Send HTTP request
+	url := s.Env.Paylabs.BaseUrl + path
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		panic(err)
 	}
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -631,8 +638,7 @@ func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to send request to Paylabs")
-		return
+		panic(err)
 	}
 	defer resp.Body.Close()
 
@@ -640,13 +646,18 @@ func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error
 	var response map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		log.Error().Err(err)
-		return
+		panic(err)
+	}
+	barcode, ok := response["qrCode"].(string)
+	if !ok {
+		err = &lib.ErrorTransactionPaylabs
+		log.Error().Err(err).Msg("Failed to get QR code from response")
 	}
 
 	// Print response
-	log.Info().Msgf("Response: %v", response)
-	return
+	fmt.Printf("%+v\n", response)
+
+	return barcode, nil
 }
 
 func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error) {

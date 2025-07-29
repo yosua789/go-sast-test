@@ -20,7 +20,7 @@ type EventTransactionRepository interface {
 	IsEmailAlreadyBookEvent(ctx context.Context, tx pgx.Tx, eventId, email string) (id string, err error)
 	FindByInvoiceNumber(ctx context.Context, tx pgx.Tx, invoiceNumber string) (res model.EventTransaction, err error)
 	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error)
-	UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
+	UpdatePaymentAdditionalInformation(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
 	FindById(ctx context.Context, tx pgx.Tx, transactionID string) (resData dto.OrderDetails, err error)
 }
 
@@ -202,7 +202,7 @@ func (r *EventTransactionRepositoryImpl) MarkTransactionAsSuccess(ctx context.Co
 	return
 }
 
-func (r *EventTransactionRepositoryImpl) UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error) {
+func (r *EventTransactionRepositoryImpl) UpdatePaymentAdditionalInformation(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
@@ -307,7 +307,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	var resAdditionalPayment []entity.AdditionalPaymentInfo
 	queryAdditionalPayment := `
 	SELECT name, is_tax, is_percentage, value
-	FROM event_additional_fee
+	FROM event_additional_fees
 	WHERE transaction_id = $1
 	`
 	if tx != nil {

@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -82,4 +83,41 @@ func GenerateSnapSignature(shaJson [32]byte, date, privateKeyPEM string) string 
 	signatureB64 := base64.StdEncoding.EncodeToString(signature)
 
 	return signatureB64
+}
+
+func GenerateQRISSignature(shaJson [32]byte, date, privateKeyPEM string) string {
+	//  Parse the private key
+	blockPrivate, _ := pem.Decode([]byte(privateKeyPEM))
+	privateKey, err := x509.ParsePKCS1PrivateKey(blockPrivate.Bytes)
+	if err != nil {
+		panic(err)
+	}
+	// Generate the signature
+	rawSignature := fmt.Sprintf("POST:/payment/v2/qris/create:%x:%s", shaJson, date)
+	h := sha256.New()
+	h.Write([]byte(rawSignature))
+	hashed := h.Sum(nil)
+
+	// Sign the hash
+	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, hashed)
+	if err != nil {
+		panic(err)
+	}
+
+	// Base64 encode the signature
+	signatureB64 := base64.StdEncoding.EncodeToString(signature)
+
+	return signatureB64
+}
+
+func IsVA(paymentMethod string) bool {
+	// if contains va or virtual account
+	paymentMethodLower := strings.ToLower(paymentMethod)
+	return strings.Contains(paymentMethodLower, "va") || strings.Contains(paymentMethodLower, "virtual account")
+}
+
+func IsQRIS(paymentMethod string) bool {
+	// if contains qris
+	paymentMethodLower := strings.ToLower(paymentMethod)
+	return strings.Contains(paymentMethodLower, "qris")
 }

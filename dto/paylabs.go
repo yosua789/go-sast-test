@@ -154,3 +154,14 @@ type SnapCallbackPaymentRequest struct {
 	FreeTexts               []SnapCallbackFreeText      `json:"freeTexts,omitempty"`               // * Max 25 items
 	AdditionalInfo          *SnapCallbackAdditionalInfo `json:"additionalInfo"`                    // * Nested object
 }
+
+type PaylabsQRISRequest struct {
+	MerchantID      string `json:"merchantId"`
+	MerchantTradeNo string `json:"merchantTradeNo"`
+	RequestID       string `json:"requestId"`
+	PaymentType     string `json:"paymentType"`
+	Amount          string `json:"amount"`
+	ProductName     string `json:"productName"`
+	Expire          int    `json:"expire"` // in second
+	NotifyURL       string `json:"notifyUrl"`
+}
