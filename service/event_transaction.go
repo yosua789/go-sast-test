@@ -597,7 +597,7 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	// VA
 	var jsonBody = dto.PaylabsQRISRequest{
 		MerchantID:      merchantId,                                   // 6 characters
-		MerchantTradeNo: transaction.ID,                               // 8 characters
+		MerchantTradeNo: requestID,                                    // 8 characters
 		RequestID:       requestID,                                    // 20 characters //for lookup purposes
 		PaymentType:     "QRIS",                                       // Payment type
 		Amount:          strconv.Itoa(transaction.GrandTotal) + ".00", // Amount with 2 decimal
