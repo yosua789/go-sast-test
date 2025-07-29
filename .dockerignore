@@ -2,3 +2,5 @@
 .env*
 .gitignore
 sonar-project.properties
+
+kubernetes/
