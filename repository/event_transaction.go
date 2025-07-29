@@ -250,7 +250,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	LEFT JOIN event_transaction_items eti ON et.id = eti.transaction_id
 	WHERE et.id = $1
 	GROUP BY 
-	e.name, e.event_time, v.venue_name,
+	e.name, e.event_time, v.name,
 	et.payment_expired_at, et.transaction_status,
 	et.payment_additional_information, et.payment_method,
 	et.grand_total, et.total_admin_fee, et.total_tax, et.total_price
