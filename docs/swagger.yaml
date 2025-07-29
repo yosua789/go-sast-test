@@ -60,6 +60,7 @@ definitions:
         type: string
       fullname:
         maxLength: 255
+        minLength: 3
         type: string
       items:
         items:
@@ -724,6 +725,37 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: validate email for booking is used or not
+      tags:
+      - events
+  /events/{eventId}/payment-methods:
+    get:
+      description: Get available payment methods
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success get available payment methods
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get available payment methods
       tags:
       - events
   /events/{eventId}/ticket-categories:
