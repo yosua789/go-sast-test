@@ -1,0 +1,51 @@
+
+networks:
+  assistix-network:
+    external: true
+services:  
+  # api:
+  #   # env_file: .env.api/
+  #   image: registry.assistx.dev/assist-tix/backend-api:staging
+  #   ports:
+  #     - 127.0.0.1:3010:3000
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:15432:5432"
+
+  redis:
+    image: redis:7.4.2-alpine
+    restart: unless-stopped
+    command: redis-server --save 20 1 --loglevel warning --requirepass ptHvWpjJ6ua6V
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+        - redis-volume:/data
+    networks:
+        - assistix-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  redis-monitoring:
+    image: hibiken/asynqmon
+    restart: unless-stopped
+    command: --redis-addr=0.0.0.0:6379 --redis-password ptHvWpjJ6ua6V
+    ports:
+      - 127.0.0.1:3011:8080
+    networks:
+      - assistix-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  pgdata:
+  redis-volume:
+

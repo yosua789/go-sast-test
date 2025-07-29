@@ -1,0 +1,20 @@
+package model
+
+import (
+	"database/sql"
+	"time"
+)
+
+type Venue struct {
+	ID        string
+	VenueType string
+	Name      string
+	Country   string
+	City      string
+	Capacity  int
+	Image     string
+
+	CreatedAt time.Time
+	UpdatedAt sql.NullTime
+	DeletedAt sql.NullTime
+}

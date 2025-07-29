@@ -1,0 +1,1465 @@
+basePath: /api/v1
+definitions:
+  dto.CreateEventTicketCategoryRequest:
+    properties:
+      code:
+        maxLength: 255
+        type: string
+      compliment_stock:
+        example: 0
+        minimum: 0
+        type: integer
+      description:
+        example: Ticket description
+        type: string
+      entrance:
+        maxLength: 255
+        type: string
+      name:
+        example: Ticket Reguler
+        minLength: 3
+        type: string
+      price:
+        example: 100000
+        minimum: 0
+        type: integer
+      public_stock:
+        example: 0
+        minimum: 0
+        type: integer
+      total_compliment_stock:
+        example: 0
+        minimum: 0
+        type: integer
+      total_public_stock:
+        example: 0
+        minimum: 0
+        type: integer
+      total_stock:
+        example: 10
+        minimum: 0
+        type: integer
+      venue_sector_id:
+        type: string
+    required:
+    - code
+    - compliment_stock
+    - description
+    - name
+    - price
+    - public_stock
+    - total_compliment_stock
+    - total_public_stock
+    - total_stock
+    - venue_sector_id
+    type: object
+  dto.CreateEventTransaction:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      fullname:
+        maxLength: 255
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.OrderItemEventTransaction'
+        type: array
+      payment_method:
+        type: string
+    required:
+    - email
+    - fullname
+    - items
+    - payment_method
+    type: object
+  dto.CreateVenueRequest:
+    properties:
+      capacity:
+        minimum: 0
+        type: integer
+      city:
+        maxLength: 255
+        type: string
+      country:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      venue_type:
+        enum:
+        - STADIUM
+        - VENUE
+        - HALL
+        - OTHER
+        type: string
+    required:
+    - city
+    - country
+    - name
+    - venue_type
+    type: object
+  dto.DetailEventPublicTicketCategoryResponse:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      entrance:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      public_stock:
+        type: integer
+      sector:
+        $ref: '#/definitions/dto.TicketCategorySectorResponse'
+    type: object
+  dto.DetailEventResponse:
+    properties:
+      active_settings:
+        $ref: '#/definitions/dto.EventSettingsResponse'
+      additional_information:
+        type: string
+      banner:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      end_sale_at:
+        type: string
+      event_time:
+        type: string
+      id:
+        type: string
+      is_sale_active:
+        type: boolean
+      name:
+        type: string
+      organizer:
+        $ref: '#/definitions/dto.SimpleOrganizerResponse'
+      start_sale_at:
+        type: string
+      ticket_categories:
+        items:
+          $ref: '#/definitions/dto.EventTicketCategoryResponse'
+        type: array
+      total_available_ticket:
+        type: integer
+      updated_at:
+        type: string
+      venue:
+        $ref: '#/definitions/dto.SimpleVenueResponse'
+    type: object
+  dto.EventAdditionalFeeResponse:
+    properties:
+      is_percentage:
+        type: boolean
+      is_tax:
+        type: boolean
+      name:
+        type: string
+      value:
+        type: number
+    type: object
+  dto.EventResponse:
+    properties:
+      banner:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      end_sale_at:
+        type: string
+      event_time:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      organizer:
+        $ref: '#/definitions/dto.SimpleOrganizerResponse'
+      start_sale_at:
+        type: string
+      ticket_category_price:
+        type: integer
+      total_available_ticket:
+        type: integer
+      updated_at:
+        type: string
+      venue:
+        $ref: '#/definitions/dto.SimpleVenueResponse'
+    type: object
+  dto.EventSectorSeatmapResponse:
+    properties:
+      area_code:
+        type: string
+      color:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      seatmap:
+        items:
+          $ref: '#/definitions/dto.SectorSeatmapRowResponse'
+        type: array
+    type: object
+  dto.EventSettingsResponse:
+    properties:
+      additional_fees:
+        items:
+          $ref: '#/definitions/dto.EventAdditionalFeeResponse'
+        type: array
+      garuda_id_verification:
+        type: boolean
+      max_adult_ticket_per_transaction:
+        type: integer
+    type: object
+  dto.EventTicketCategoryResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+    type: object
+  dto.EventTransactionResponse:
+    properties:
+      access_token:
+        type: string
+      admin_fee_percentage:
+        type: number
+      created_at:
+        type: string
+      grand_total:
+        type: integer
+      invoice_number:
+        type: string
+      payment_expired_at:
+        type: string
+      payment_method:
+        type: string
+      tax_percentage:
+        type: number
+      total_admin_fee:
+        type: integer
+      total_price:
+        type: integer
+      total_tax:
+        type: integer
+      transaction_id:
+        type: string
+    type: object
+  dto.OrderItemEventTransaction:
+    properties:
+      additional_information:
+        type: string
+      email:
+        maxLength: 255
+        type: string
+      fullname:
+        maxLength: 255
+        type: string
+      garuda_id:
+        maxLength: 20
+        type: string
+      phone_number:
+        maxLength: 50
+        type: string
+      seat_column:
+        minimum: 1
+        type: integer
+      seat_row:
+        minimum: 1
+        type: integer
+    type: object
+  dto.OrganizerResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      logo:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.PaginatedEvents:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/dto.EventResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/dto.Pagination'
+    type: object
+  dto.Pagination:
+    properties:
+      current_page:
+        type: integer
+      max_page:
+        type: integer
+      next_page:
+        type: integer
+      prev_page:
+        type: integer
+      total_records:
+        type: integer
+    type: object
+  dto.SectorSeatmapResponse:
+    properties:
+      column:
+        type: integer
+      label:
+        type: string
+      status:
+        type: string
+    type: object
+  dto.SectorSeatmapRowResponse:
+    properties:
+      row:
+        type: integer
+      seats:
+        items:
+          $ref: '#/definitions/dto.SectorSeatmapResponse'
+        type: array
+    type: object
+  dto.SimpleOrganizerResponse:
+    properties:
+      id:
+        type: string
+      logo:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  dto.SimpleVenueResponse:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      venue_type:
+        type: string
+    type: object
+  dto.TicketCategorySectorResponse:
+    properties:
+      area_code:
+        type: string
+      color:
+        type: string
+      has_seatmap:
+        type: boolean
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  dto.UpdateOrganizerRequest:
+    properties:
+      name:
+        maxLength: 255
+        type: string
+      slug:
+        maxLength: 255
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  dto.UpdateVenueRequest:
+    properties:
+      capacity:
+        minimum: 0
+        type: integer
+      city:
+        maxLength: 255
+        type: string
+      country:
+        maxLength: 255
+        type: string
+      is_active:
+        type: boolean
+      name:
+        maxLength: 255
+        type: string
+      venue_type:
+        enum:
+        - STADIUM
+        - VENUE
+        - HALL
+        - OTHER
+        type: string
+    required:
+    - city
+    - country
+    - is_active
+    - name
+    - venue_type
+    type: object
+  dto.VenueEventTicketCategoryResponse:
+    properties:
+      ticket_categories:
+        items:
+          $ref: '#/definitions/dto.DetailEventPublicTicketCategoryResponse'
+        type: array
+      venue:
+        $ref: '#/definitions/dto.VenueResponse'
+    type: object
+  dto.VenueResponse:
+    properties:
+      capacity:
+        type: integer
+      city:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+      venue_type:
+        type: string
+    type: object
+  dto.VenueSectorResponse:
+    properties:
+      area_code:
+        type: string
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      has_seatmap:
+        type: boolean
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      sector_color:
+        type: string
+      sector_column:
+        type: integer
+      sector_row:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  dto.VerifyGarudaIDResponse:
+    properties:
+      garuda_id:
+        type: string
+      is_available:
+        type: boolean
+    type: object
+  entity.OrderDetails:
+    properties:
+      event_name:
+        description: event transaction -> event -> name
+        type: string
+      event_time:
+        description: event transaction -> event -> event_time
+        type: string
+      grand_total:
+        description: event_transaction -> transaction -> grand total
+        type: integer
+      payment_additional_info:
+        description: e.g. VA Number, QR Code
+        type: string
+      payment_method:
+        description: if VA then return VA Number if qris return qr code string
+        type: string
+      total_admin_fee:
+        description: event_transaction -> transaction -> total admin fee
+        type: integer
+      total_price:
+        description: event_transaction -> transaction -> total price
+        type: integer
+      total_tax:
+        description: event_transaction -> transaction -> total tax
+        type: integer
+      transaction_deadline:
+        description: event_transactions.payment_expired_at
+        type: string
+      transaction_quantity:
+        description: event_transaction -> transaction -> item count
+        type: integer
+      transaction_status:
+        description: event_transaction -> transaction -> transaction status
+        type: string
+      venue_name:
+        description: event transaction -> event -> venue
+        type: string
+    type: object
+  lib.APIResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      success:
+        default: true
+        type: boolean
+    type: object
+  lib.HTTPError:
+    properties:
+      code:
+        type: integer
+      error: {}
+      message:
+        type: string
+      success:
+        default: false
+        type: boolean
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: Assist Tix API Documentation
+  title: Assist Tix Documentation
+  version: "1.0"
+paths:
+  /events:
+    get:
+      description: Get all paginated event
+      parameters:
+      - description: Search event
+        in: query
+        name: search
+        type: string
+      - description: Status sale event
+        enum:
+        - UPCOMING
+        - FINISHED
+        in: query
+        name: status
+        type: string
+      - description: page event
+        in: query
+        name: page
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated events
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PaginatedEvents'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get all paginated event
+      tags:
+      - events
+  /events/{eventId}:
+    delete:
+      description: Delete event
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Delete event
+      tags:
+      - events
+    get:
+      description: Get event By ID
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue by id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DetailEventResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get event By ID
+      tags:
+      - events
+  /events/{eventId}/active-settings:
+    get:
+      description: Get event active settings
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success get event active settings
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.EventSettingsResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get event active settings
+      tags:
+      - events
+  /events/{eventId}/email-books/{email}:
+    get:
+      description: validate email for booking is used or not
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      - description: Email book
+        in: path
+        name: email
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success validate order information
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: validate email for booking is used or not
+      tags:
+      - events
+  /events/{eventId}/ticket-categories:
+    get:
+      description: Get event By ID
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue by id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VenueEventTicketCategoryResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get public ticket categories by event ID
+      tags:
+      - events
+    post:
+      consumes:
+      - application/json
+      description: Create event ticket category
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      - description: Create event ticket category
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEventTicketCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success create event ticket category
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create event ticket category
+      tags:
+      - events
+  /events/{eventId}/ticket-categories/{ticketCategoryId}:
+    get:
+      consumes:
+      - application/json
+      description: Get event ticket category by id
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      - description: Ticket Category ID
+        in: path
+        name: ticketCategoryId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue by id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DetailEventResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get detail event ticket category by id
+      tags:
+      - events
+  /events/{eventId}/ticket-categories/{ticketCategoryId}/order:
+    post:
+      consumes:
+      - application/json
+      description: Create event ticket transaction
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        required: true
+        type: string
+      - description: Ticket Category ID
+        in: path
+        name: ticketCategoryId
+        required: true
+        type: string
+      - description: Create event ticket transaction
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEventTransaction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Order created
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.EventTransactionResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create event ticket transaction
+      tags:
+      - events
+  /events/{eventId}/ticket-categories/{ticketCategoryId}/order/paylabs-vasnap:
+    post:
+      consumes:
+      - application/json
+      description: Create VA snap for event ticket transaction
+      parameters:
+      - description: Ticket Category ID
+        in: path
+        name: ticketCategoryId
+        required: true
+        type: string
+      - description: Event ID
+        in: path
+        name: eventId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VA snap created
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create VA snap for event ticket transaction
+      tags:
+      - events
+  /events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap:
+    get:
+      consumes:
+      - application/json
+      description: Get seatmap by event and ticket category id
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      - description: Ticket Category ID
+        in: path
+        name: ticketCategoryId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success get seatmap
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.EventSectorSeatmapResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get seatmap by event and ticket category id
+      tags:
+      - events
+  /events/{eventId}/verify/garuda-id/{garudaId}:
+    get:
+      description: VerifyGarudaID
+      parameters:
+      - description: Garuda ID
+        in: path
+        name: garudaId
+        type: string
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success get garuda id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VerifyGarudaIDResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: VerifyGarudaID
+      tags:
+      - events
+  /events/transactions/{transactionId}:
+    get:
+      description: Get transaction details by ID
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: transactionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/entity.OrderDetails'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Transaction not found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      security:
+      - BearerAuth: []
+      summary: Get transaction details by ID
+      tags:
+      - events
+  /organizers:
+    get:
+      description: Get all organizer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organizers response
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.OrganizerResponse'
+                  type: array
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get all organizer
+      tags:
+      - organizer
+    post:
+      description: Create organizer
+      parameters:
+      - description: Name
+        in: formData
+        name: name
+        type: string
+      - description: Slug
+        in: formData
+        name: slug
+        type: string
+      - description: Logo
+        in: formData
+        name: logo
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organizer created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create organizer
+      tags:
+      - organizer
+  /organizers/{organizerId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete organizer
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizerId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Venue created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Delete organizer
+      tags:
+      - organizer
+    get:
+      description: Get organizer by ID
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organizer response
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.OrganizerResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get organizer by ID
+      tags:
+      - organizer
+    put:
+      consumes:
+      - application/json
+      description: Update organizer
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizerId
+        type: string
+      - description: Create venue request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateOrganizerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Venue created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Update organizer
+      tags:
+      - organizer
+  /venues:
+    get:
+      description: Get all venue
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List venues
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VenueResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get all venue
+      tags:
+      - venue
+    post:
+      consumes:
+      - application/json
+      description: Create venue
+      parameters:
+      - description: Create venue request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateVenueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Venue created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create venue
+      tags:
+      - venue
+  /venues/{venueId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete venue
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venueId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Delete venue
+      tags:
+      - venue
+    get:
+      description: Get venue By ID
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venueId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue by id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VenueResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get venue By ID
+      tags:
+      - venue
+    put:
+      consumes:
+      - application/json
+      description: Edit venue
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venueId
+        type: string
+      - description: update venue request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateVenueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Venue created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Edit venue
+      tags:
+      - venue
+  /venues/{venueId}/sectors:
+    get:
+      consumes:
+      - application/json
+      description: venue sectors
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venueId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get venue sectors by venue id
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VenueSectorResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get venue sectors
+      tags:
+      - venue
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
