@@ -307,7 +307,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	var resAdditionalPayment []entity.AdditionalPaymentInfo
 	queryAdditionalPayment := `
 	SELECT name, is_tax, is_percentage, value
-	FROM payment_additional_information
+	FROM event_additional_fee
 	WHERE transaction_id = $1
 	`
 	if tx != nil {
