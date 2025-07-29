@@ -260,3 +260,15 @@ var (
 		Err:  errors.New("failed to update va no, please try again"),
 	}
 )
+
+// transaction details
+var (
+	ErrorTransactionDetailsNotFound = TIXError{
+		Code: 40413,
+		Err:  errors.New("transaction details not found"),
+	}
+	InvalidJWTError = TIXError{
+		Code: 40101,
+		Err:  errors.New("invalid JWT token"),
+	}
+)

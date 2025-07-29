@@ -18,6 +18,7 @@ type EventTransactionHandler interface {
 	PaylabsVASnap(ctx *gin.Context)
 	CallbackVASnap(ctx *gin.Context)
 	IsEmailAlreadyBook(ctx *gin.Context)
+	GetTransactionDetails(ctx *gin.Context)
 }
 
 type EventTransactionHandlerImpl struct {
@@ -230,4 +231,46 @@ func (h *EventTransactionHandlerImpl) IsEmailAlreadyBook(ctx *gin.Context) {
 	}
 
 	lib.RespondSuccess(ctx, http.StatusOK, "success", nil)
+}
+
+// @Summary Get transaction details by ID
+// @Description Get transaction details by ID
+// @Tags events
+// @Produce json
+// @Param transactionId path string true "Transaction ID"
+// @Success 200 {object} lib.APIResponse{data=entity.OrderDetails} "Success"
+// @Failure 400 {object} lib.HTTPError "Invalid request body"
+// @Failure 404 {object} lib.HTTPError "Transaction not found"
+// @Failure 500 {object} lib.HTTPError "Internal server error"
+// @Security BearerAuth
+// @Router /events/transactions/{transactionId} [get]
+func (h *EventTransactionHandlerImpl) GetTransactionDetails(ctx *gin.Context) {
+	var uriParams dto.GetTransactionDetails
+	if err := ctx.ShouldBindUri(&uriParams); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			fieldErr := validationErrors[0]
+			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+			return
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+	res, err := h.EventTransactionService.FindById(ctx, uriParams.TransactionID)
+	if err != nil {
+		log.Error().Err(err).Msg("error finding transaction by id")
+		var tixErr *lib.TIXError
+		if errors.As(err, &tixErr) {
+			switch *tixErr {
+			case lib.ErrorTransactionDetailsNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "transaction not found", tixErr, tixErr.Code, h.Env.App.Debug)
+			default:
+				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			}
+		} else {
+			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		}
+		return
+	}
+	log.Info().Interface("transactionDetails", res).Msg("found transaction details by id")
+	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
 }

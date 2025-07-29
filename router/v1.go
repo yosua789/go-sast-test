@@ -47,6 +47,8 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 	// Validate book email
 	r.GET("/:eventId/email-books/:email", h.EventTransaction.IsEmailAlreadyBook)
 
+	r.GET("/transactions/:transactionId", h.Middleware.TokenAuthMiddleware(), h.EventTransaction.GetTransactionDetails)
+
 	EventTicketCategories(h, r)
 }
 
