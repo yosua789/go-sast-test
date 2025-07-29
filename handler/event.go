@@ -294,8 +294,10 @@ func (h *EventHandlerImpl) VerifyGarudaID(ctx *gin.Context) {
 			switch *tixErr {
 			case lib.ErrorGarudaIDNotFound, lib.ErrorEventNotFound:
 				lib.RespondErrorWithData(ctx, http.StatusNotFound, "error", res, err, lib.ErrorGarudaIDNotFound.Code, h.Env.App.Debug)
-			case lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed:
+			case lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted:
 				lib.RespondErrorWithData(ctx, http.StatusBadRequest, "error", res, err, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorGarudaIDAlreadyUsed:
+				lib.RespondErrorWithData(ctx, http.StatusConflict, "error", res, err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventNonGarudaID:
 				lib.RespondErrorWithData(ctx, http.StatusForbidden, "error", res, err, lib.ErrorEventNonGarudaID.Code, h.Env.App.Debug)
 			default:

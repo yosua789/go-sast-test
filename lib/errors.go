@@ -239,6 +239,10 @@ var (
 		Code: 40305,
 		Err:  errors.New("event does not require garuda id verification"),
 	}
+	ErrorDuplicateGarudaIDPayload = TIXError{
+		Code: 40913,
+		Err:  errors.New("duplicate garuda id found in payload"),
+	}
 )
 
 // callback

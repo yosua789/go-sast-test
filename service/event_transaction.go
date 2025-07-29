@@ -230,6 +230,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 			return
 		}
 	}
+	usedGarudaID := make(map[string]interface{})
 
 	// TODO: Checking bulk garuda id
 	if eventSettings.GarudaIdVerification {
@@ -238,6 +239,10 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 			if item.GarudaID == "" {
 				return res, &lib.ErrorBadRequest
+			}
+			if _, ok := usedGarudaID[item.GarudaID]; ok {
+				log.Warn().Str("GarudaID", item.GarudaID).Msg("Duplicate GarudaID on payload")
+				return res, &lib.ErrorDuplicateGarudaIDPayload
 			}
 
 			// check internal database whether garuda id is hold
