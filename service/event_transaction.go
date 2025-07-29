@@ -5,7 +5,6 @@ import (
 	"assist-tix/database"
 	"assist-tix/domain"
 	"assist-tix/dto"
-	"assist-tix/entity"
 	"assist-tix/helper"
 	"assist-tix/internal/job"
 	"assist-tix/internal/usecase"
@@ -34,7 +33,7 @@ type EventTransactionService interface {
 	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error)
 	ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error)
 	GetAvailablePaymentMethods(ctx *gin.Context, eventId string) (res []dto.EventGrouppedPaymentMethodsResponse, err error)
-	FindById(ctx context.Context, transactionID string) (res entity.OrderDetails, err error)
+	FindById(ctx context.Context, transactionID string) (res dto.OrderDetails, err error)
 }
 
 type EventTransactionServiceImpl struct {
@@ -770,7 +769,7 @@ func (s *EventTransactionServiceImpl) GetAvailablePaymentMethods(ctx *gin.Contex
 	return res, nil
 }
 
-func (s *EventTransactionServiceImpl) FindById(ctx context.Context, transactionID string) (res entity.OrderDetails, err error) {
+func (s *EventTransactionServiceImpl) FindById(ctx context.Context, transactionID string) (res dto.OrderDetails, err error) {
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to begin transaction")
