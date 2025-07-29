@@ -482,6 +482,12 @@ definitions:
     type: object
   entity.OrderDetails:
     properties:
+      city:
+        description: event transaction -> user -> city
+        type: string
+      country:
+        description: event transaction -> user -> country
+        type: string
       event_name:
         description: event transaction -> event -> name
         type: string

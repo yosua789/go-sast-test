@@ -3,6 +3,7 @@ package repository
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/dto"
 	"assist-tix/entity"
 	"assist-tix/lib"
 	"assist-tix/model"
@@ -20,7 +21,7 @@ type EventTransactionRepository interface {
 	FindByInvoiceNumber(ctx context.Context, tx pgx.Tx, invoiceNumber string) (res model.EventTransaction, err error)
 	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error)
 	UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
-	FindById(ctx context.Context, tx pgx.Tx, transactionID string) (res entity.OrderDetails, err error)
+	FindById(ctx context.Context, tx pgx.Tx, transactionID string) (resData dto.OrderDetails, err error)
 }
 
 type EventTransactionRepositoryImpl struct {
@@ -226,8 +227,9 @@ func (r *EventTransactionRepositoryImpl) UpdateVANo(ctx context.Context, tx pgx.
 	return
 }
 
-func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, transactionID string) (res entity.OrderDetails, err error) {
+func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, transactionID string) (resData dto.OrderDetails, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	var res entity.OrderDetails
 	defer cancel()
 	// return grand total, event time , venue place, ticket type , transaction quantity, transaction deadline, transaction status, virtual account number
 	query := `
@@ -243,7 +245,9 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	et.grand_total,
 	et.total_admin_fee,
 	et.total_tax,
-	et.total_price
+	et.total_price,
+	v.country,
+	v.city
 	FROM event_transactions et
 	JOIN events e ON et.event_id = e.id
 	JOIN venues v ON e.venue_id = v.id
@@ -253,7 +257,8 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	e.name, e.event_time, v.name,
 	et.payment_expired_at, et.transaction_status,
 	et.payment_additional_information, et.payment_method,
-	et.grand_total, et.total_admin_fee, et.total_tax, et.total_price
+	et.grand_total, et.total_admin_fee, et.total_tax, et.total_price, 
+	v.country, v.city
 	LIMIT 1;
 	`
 	if tx != nil {
@@ -270,6 +275,8 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.TotalAdminFee,
 			&res.TotalTax,
 			&res.TotalPrice,
+			&res.Country,
+			&res.City,
 		)
 	} else {
 		err = r.WrapDB.Postgres.QueryRow(ctx, query, transactionID).Scan(
@@ -285,14 +292,74 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.TotalAdminFee,
 			&res.TotalTax,
 			&res.TotalPrice,
+			&res.Country,
+			&res.City,
 		)
 	}
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return entity.OrderDetails{}, &lib.ErrorTransactionDetailsNotFound
+			return dto.OrderDetails{}, &lib.ErrorTransactionDetailsNotFound
 		}
 		return
+	}
+
+	var resAdditionalPayment []entity.AdditionalPaymentInfo
+	queryAdditionalPayment := `
+	SELECT name, is_tax, is_percentage, value
+	FROM additional_payment_info
+	WHERE transaction_id = $1
+	`
+	if tx != nil {
+		rows, err := tx.Query(ctx, queryAdditionalPayment, transactionID)
+		if err != nil {
+			return dto.OrderDetails{}, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var additionalPayment entity.AdditionalPaymentInfo
+			if err := rows.Scan(&additionalPayment.Name, &additionalPayment.IsTax, &additionalPayment.IsPercentage, &additionalPayment.Value); err != nil {
+				return dto.OrderDetails{}, err
+			}
+			resAdditionalPayment = append(resAdditionalPayment, additionalPayment)
+		}
+	} else {
+		rows, err := r.WrapDB.Postgres.Query(ctx, queryAdditionalPayment, transactionID)
+		if err != nil {
+			return dto.OrderDetails{}, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var additionalPayment entity.AdditionalPaymentInfo
+			if err := rows.Scan(&additionalPayment.Name, &additionalPayment.IsTax, &additionalPayment.IsPercentage, &additionalPayment.Value); err != nil {
+				return dto.OrderDetails{}, err
+			}
+			resAdditionalPayment = append(resAdditionalPayment, additionalPayment)
+		}
+	}
+	for i, obj := range resAdditionalPayment {
+		if obj.IsPercentage {
+			resAdditionalPayment[i].Value = (res.TotalPrice * obj.Value) / 100
+		} else {
+			resAdditionalPayment[i].Value = obj.Value
+		}
+	}
+	resData = dto.OrderDetails{
+		EventName:             res.EventName,
+		VenueName:             res.VenueName,
+		EventTime:             res.EventTime,
+		TransactionDeadline:   res.TransactionDeadline,
+		TransactionStatus:     res.TransactionStatus,
+		PaymentMethod:         res.PaymentMethod,
+		PaymentAdditionalInfo: res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
+		GrandTotal:            res.GrandTotal,
+		TotalAdminFee:         res.TotalAdminFee,
+		TotalTax:              res.TotalTax,
+		TotalPrice:            res.TotalPrice,
+		TransactionQuantity:   res.TransactionQuantity,
+		Country:               res.Country, // Assuming country and city are not available in this query
+		City:                  res.City,
+		AdditionalPayment:     resAdditionalPayment,
 	}
 
 	return

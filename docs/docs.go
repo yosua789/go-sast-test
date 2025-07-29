@@ -2267,6 +2267,14 @@ const docTemplate = `{
         "entity.OrderDetails": {
             "type": "object",
             "properties": {
+                "city": {
+                    "description": "event transaction -\u003e user -\u003e city",
+                    "type": "string"
+                },
+                "country": {
+                    "description": "event transaction -\u003e user -\u003e country",
+                    "type": "string"
+                },
                 "event_name": {
                     "description": "event transaction -\u003e event -\u003e name",
                     "type": "string"
