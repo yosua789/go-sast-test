@@ -25,6 +25,7 @@ type OrderItemEventTransaction struct {
 }
 
 type EventTransactionResponse struct {
+	TransactionID      string  `json:"transaction_id"`
 	InvoiceNumber      string  `json:"invoice_number"`
 	PaymentMethod      string  `json:"payment_method"`
 	TotalPrice         int     `json:"total_price"`
@@ -54,4 +55,7 @@ type EventPaymentMethodResponse struct {
 
 	PaymentType string `json:"payment_type"`
 	PaymentCode string `json:"payment_code"`
+}
+type GetTransactionDetails struct {
+	TransactionID string `uri:"transactionId" binding:"required,min=1,uuid"`
 }

@@ -18,10 +18,17 @@ func (m *MiddlewareImpl) TokenAuthMiddleware() gin.HandlerFunc {
 
 		err = helper.AccessTokenValid(c.Request, m.Env, token)
 		if err != nil {
-			lib.RespondError(c, http.StatusUnauthorized, "Unauthorized", err, 401, false)
+			lib.RespondError(c, http.StatusUnauthorized, "Unauthorized", err, 40101, false)
 			c.Abort()
 			return
 		}
+		transactionID, err := helper.GetDataFromAccessToken(c.Request, m.Env)
+		if err != nil {
+			lib.RespondError(c, http.StatusUnauthorized, "Unauthorized", err, 40102, false)
+			c.Abort()
+			return
+		}
+		c.Set("transaction_id", transactionID)
 
 		c.Next()
 

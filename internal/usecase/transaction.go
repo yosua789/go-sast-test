@@ -44,7 +44,7 @@ func (u *TransactionUsecase) SendBill(
 			Method:      transaction.PaymentMethod,
 			DisplayName: "Mandiri Virtual Account",
 			Code:        "CODE",
-			VANumber:    transaction.VANumber,
+			VANumber:    transaction.PaymentAdditionalInfo,
 			GrandTotal:  transaction.GrandTotal,
 		},
 		Status: transaction.Status,

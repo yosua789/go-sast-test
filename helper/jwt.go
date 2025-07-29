@@ -15,5 +15,4 @@ func SetAccessToken(c *gin.Context, token string) {
 		true,             // httpOnly (true = JS can't access)
 	)
 
-	c.JSON(200, gin.H{"message": "Token set in cookie"})
 }

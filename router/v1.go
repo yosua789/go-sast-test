@@ -48,6 +48,8 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 	r.GET("/:eventId/email-books/:email", h.EventTransaction.IsEmailAlreadyBook)
 	r.GET("/:eventId/payment-methods", h.EventTransaction.GetAvailablePaymentMethods)
 
+	r.GET("/transactions/:transactionId", h.Middleware.TokenAuthMiddleware(), h.EventTransaction.GetTransactionDetails)
+
 	EventTicketCategories(h, r)
 }
 
