@@ -606,10 +606,13 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 		NotifyURL:       s.Env.Api.Url + "/api/v1/external/paylabs/qris/callback", // Callback URL
 	}
 
+	log.Info().Msgf("Creating event transaction with ID: %s", requestID)
 	// Encode JSON body
 	jsonData, err := json.Marshal(jsonBody)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err).Msg("Failed to encode JSON body for Paylabs QRIS")
+		err = &lib.ErrorTransactionPaylabs
+		return
 	}
 
 	// Hash the JSON body
@@ -645,7 +648,7 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 		return
 	}
 	defer resp.Body.Close()
-
+	log.Info().Interface("response", resp)
 	// Decode response
 	var response map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
