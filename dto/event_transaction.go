@@ -25,6 +25,7 @@ type OrderItemEventTransaction struct {
 }
 
 type EventTransactionResponse struct {
+	TransactionID      string  `json:"transaction_id"`
 	InvoiceNumber      string  `json:"invoice_number"`
 	PaymentMethod      string  `json:"payment_method"`
 	TotalPrice         int     `json:"total_price"`

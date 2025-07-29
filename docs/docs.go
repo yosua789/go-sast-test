@@ -1879,6 +1879,9 @@ const docTemplate = `{
                 },
                 "total_tax": {
                     "type": "integer"
+                },
+                "transaction_id": {
+                    "type": "string"
                 }
             }
         },

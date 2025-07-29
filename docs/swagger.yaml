@@ -257,6 +257,8 @@ definitions:
         type: integer
       total_tax:
         type: integer
+      transaction_id:
+        type: string
     type: object
   dto.OrderItemEventTransaction:
     properties:

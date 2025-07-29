@@ -271,4 +271,8 @@ var (
 		Code: 40101,
 		Err:  errors.New("invalid JWT token"),
 	}
+	MissmatchTxIDParameterBearerError = TIXError{
+		Code: 40302,
+		Err:  errors.New("transaction ID in parameter does not match with the one in bearer token"),
+	}
 )

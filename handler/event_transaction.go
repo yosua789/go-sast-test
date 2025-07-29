@@ -255,6 +255,11 @@ func (h *EventTransactionHandlerImpl) GetTransactionDetails(ctx *gin.Context) {
 		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
 		return
 	}
+	bearerTransactionID := ctx.GetString("transaction_id")
+	if bearerTransactionID != uriParams.TransactionID {
+		lib.RespondError(ctx, http.StatusForbidden, "you are not allowed to access this transaction", nil, lib.MissmatchTxIDParameterBearerError.Code, h.Env.App.Debug)
+		return
+	}
 	res, err := h.EventTransactionService.FindById(ctx, uriParams.TransactionID)
 	if err != nil {
 		log.Error().Err(err).Msg("error finding transaction by id")

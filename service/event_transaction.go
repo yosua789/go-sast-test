@@ -539,6 +539,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		ExpiredAt:     transaction.PaymentExpiredAt,
 		CreatedAt:     transaction.CreatedAt,
 		AccessToken:   accessToken,
+		TransactionID: transaction.ID,
 	}
 
 	log.Info().Msg("success create transaction")
