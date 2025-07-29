@@ -50,6 +50,8 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 
 	r.GET("/transactions/:transactionId", h.Middleware.TokenAuthMiddleware(), h.EventTransaction.GetTransactionDetails)
 
+	r.GET("/transactions/:transactionId", h.Middleware.TokenAuthMiddleware(), h.EventTransaction.GetTransactionDetails)
+
 	EventTicketCategories(h, r)
 }
 
