@@ -3,6 +3,7 @@ package repository
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/entity"
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
@@ -19,6 +20,7 @@ type EventTransactionRepository interface {
 	FindByInvoiceNumber(ctx context.Context, tx pgx.Tx, invoiceNumber string) (res model.EventTransaction, err error)
 	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error)
 	UpdateVANo(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
+	FindById(ctx context.Context, tx pgx.Tx, transactionID string) (res entity.OrderDetails, err error)
 }
 
 type EventTransactionRepositoryImpl struct {
@@ -203,7 +205,7 @@ func (r *EventTransactionRepositoryImpl) UpdateVANo(ctx context.Context, tx pgx.
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
-	query := `UPDATE event_transactions SET virtual_account_number = $1 WHERE id = $2`
+	query := `UPDATE event_transactions SET payment_additional_information = $1 WHERE id = $2`
 	if tx != nil {
 		_, err = tx.Exec(ctx, query, vaNo, transactionID)
 	} else {
@@ -218,6 +220,77 @@ func (r *EventTransactionRepositoryImpl) UpdateVANo(ctx context.Context, tx pgx.
 			}
 		}
 
+		return
+	}
+
+	return
+}
+
+func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, transactionID string) (res entity.OrderDetails, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+	// return grand total, event time , venue place, ticket type , transaction quantity, transaction deadline, transaction status, virtual account number
+	query := `
+	SELECT 
+	e.name,
+	e.event_time,
+	v.name as venue_name,
+	et.payment_expired_at,
+	et.transaction_status,
+	et.payment_additional_information, 
+	et.payment_method,
+	COUNT(eti.id) AS item_count,
+	et.grand_total,
+	et.total_admin_fee,
+	et.total_tax,
+	et.total_price
+	FROM event_transactions et
+	JOIN events e ON et.event_id = e.id
+	JOIN venues v ON e.venue_id = v.id
+	LEFT JOIN event_transaction_items eti ON et.id = eti.transaction_id
+	WHERE et.id = $1
+	GROUP BY 
+	e.name, e.event_time, v.name,
+	et.payment_expired_at, et.transaction_status,
+	et.payment_additional_information, et.payment_method
+	LIMIT 1;
+	`
+	if tx != nil {
+		err = tx.QueryRow(ctx, query, transactionID).Scan(
+			&res.EventName,
+			&res.EventTime,
+			&res.VenueName,
+			&res.TransactionDeadline,
+			&res.TransactionStatus,
+			&res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
+			&res.PaymentMethod,
+			&res.TransactionQuantity,
+			&res.GrandTotal,
+			&res.TotalAdminFee,
+			&res.TotalTax,
+			&res.TotalPrice,
+		)
+	} else {
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, transactionID).Scan(
+			&res.EventName,
+			&res.EventTime,
+			&res.VenueName,
+			&res.TransactionDeadline,
+			&res.TransactionStatus,
+			&res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
+			&res.PaymentMethod,
+			&res.TransactionQuantity,
+			&res.GrandTotal,
+			&res.TotalAdminFee,
+			&res.TotalTax,
+			&res.TotalPrice,
+		)
+	}
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.OrderDetails{}, &lib.ErrorTransactionDetailsNotFound
+		}
 		return
 	}
 

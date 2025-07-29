@@ -38,3 +38,7 @@ type EventTransactionResponse struct {
 	ExpiredAt time.Time `json:"payment_expired_at"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type GetTransactionDetails struct {
+	TransactionID string `uri:"transactionId" binding:"required,min=1,uuid"`
+}

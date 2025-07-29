@@ -5,6 +5,7 @@ import (
 	"assist-tix/database"
 	"assist-tix/domain"
 	"assist-tix/dto"
+	"assist-tix/entity"
 	"assist-tix/helper"
 	"assist-tix/internal/job"
 	"assist-tix/internal/usecase"
@@ -12,6 +13,7 @@ import (
 	"assist-tix/model"
 	"assist-tix/repository"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
@@ -31,6 +33,7 @@ type EventTransactionService interface {
 	PaylabsVASnap(ctx *gin.Context) (err error)
 	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error)
 	ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error)
+	FindById(ctx context.Context, transactionID string) (res entity.OrderDetails, err error)
 }
 
 type EventTransactionServiceImpl struct {
@@ -405,7 +408,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		CustomerNo:          transaction.ID[:20],              // Fixed 20-digit value
 		VirtualAccountNo:    transaction.ID[:20] + merchantId, // 28-digit composite value
 		VirtualAccountName:  req.Fullname,                     // Payer name
-		VirtualAccountEmail: req.Email,
+		VirtualAccountEmail: req.Email,                        // Payer email
 		// VirtualAccountPhone: req.Items[0].PhoneNumber,  // Mobile phone number in Indonesian format
 		TrxID: transaction.InvoiceNumber, // Merchant transaction number
 		TotalAmount: dto.Amount{
@@ -477,7 +480,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	var virtualAccountData = responsePaylabs["virtualAccountData"].(map[string]interface{})
 	paylabsVaNumber, _ := virtualAccountData["virtualAccountNo"].(string)
-	transaction.VANumber = paylabsVaNumber
+	transaction.PaymentAdditionalInfo = paylabsVaNumber
 
 	err = s.EventTransactionRepo.UpdateVANo(ctx, tx, transaction.ID, paylabsVaNumber)
 	if err != nil {
@@ -545,6 +548,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 // static Eventtransaction without any business logic
 func (s *EventTransactionServiceImpl) PaylabsVASnap(ctx *gin.Context) (err error) {
+
 	date := time.Now().Format("2006-01-02T15:04:05.999+07:00")
 	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:]
 	partnerServiceId := s.Env.Paylabs.AccountID[:8]
@@ -719,4 +723,27 @@ func (s *EventTransactionServiceImpl) ValidateEmailIsAlreadyBook(ctx *gin.Contex
 	}
 
 	return nil
+}
+
+func (s *EventTransactionServiceImpl) FindById(ctx context.Context, transactionID string) (res entity.OrderDetails, err error) {
+	tx, err := s.DB.Postgres.Begin(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to begin transaction")
+		return
+	}
+	defer tx.Rollback(ctx)
+	log.Info().Str("transactionID", transactionID).Msg("find event transaction by id")
+	res, err = s.EventTransactionRepo.FindById(ctx, tx, transactionID)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to find event transaction by id")
+		return
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to commit transaction")
+		return
+	}
+	log.Info().Interface("OrderDetails", res).Msg("found event transaction by id")
+	return
 }

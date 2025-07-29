@@ -18,7 +18,7 @@ func (m *MiddlewareImpl) TokenAuthMiddleware() gin.HandlerFunc {
 
 		err = helper.AccessTokenValid(c.Request, m.Env, token)
 		if err != nil {
-			lib.RespondError(c, http.StatusUnauthorized, "Unauthorized", err, 401, false)
+			lib.RespondError(c, http.StatusUnauthorized, "Unauthorized", err, 40101, false)
 			c.Abort()
 			return
 		}

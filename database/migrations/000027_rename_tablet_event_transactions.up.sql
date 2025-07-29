@@ -1,0 +1,1 @@
+ALTER TABLE event_transactions RENAME COLUMN virtual_account_number TO payment_additional_information;

@@ -89,6 +89,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/events/transactions/{transactionId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get transaction details by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get transaction details by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID",
+                        "name": "transactionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/entity.OrderDetails"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction not found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/events/{eventId}": {
             "get": {
                 "description": "Get event By ID",
@@ -2141,6 +2205,59 @@ const docTemplate = `{
                 },
                 "is_available": {
                     "type": "boolean"
+                }
+            }
+        },
+        "entity.OrderDetails": {
+            "type": "object",
+            "properties": {
+                "event_name": {
+                    "description": "event transaction -\u003e event -\u003e name",
+                    "type": "string"
+                },
+                "event_time": {
+                    "description": "event transaction -\u003e event -\u003e event_time",
+                    "type": "string"
+                },
+                "grand_total": {
+                    "description": "event_transaction -\u003e transaction -\u003e grand total",
+                    "type": "integer"
+                },
+                "payment_additional_info": {
+                    "description": "e.g. VA Number, QR Code",
+                    "type": "string"
+                },
+                "payment_method": {
+                    "description": "if VA then return VA Number if qris return qr code string",
+                    "type": "string"
+                },
+                "total_admin_fee": {
+                    "description": "event_transaction -\u003e transaction -\u003e total admin fee",
+                    "type": "integer"
+                },
+                "total_price": {
+                    "description": "event_transaction -\u003e transaction -\u003e total price",
+                    "type": "integer"
+                },
+                "total_tax": {
+                    "description": "event_transaction -\u003e transaction -\u003e total tax",
+                    "type": "integer"
+                },
+                "transaction_deadline": {
+                    "description": "event_transactions.payment_expired_at",
+                    "type": "string"
+                },
+                "transaction_quantity": {
+                    "description": "event_transaction -\u003e transaction -\u003e item count",
+                    "type": "integer"
+                },
+                "transaction_status": {
+                    "description": "event_transaction -\u003e transaction -\u003e transaction status",
+                    "type": "string"
+                },
+                "venue_name": {
+                    "description": "event transaction -\u003e event -\u003e venue",
+                    "type": "string"
                 }
             }
         },
