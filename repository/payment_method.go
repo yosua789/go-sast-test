@@ -14,6 +14,7 @@ import (
 type PaymentMethodRepository interface {
 	GetGrouppedActivePaymentMethod(ctx context.Context, tx pgx.Tx) (grouppedPayments map[string][]model.PaymentMethod, err error)
 	ValidatePaymentCodeIsActive(ctx context.Context, tx pgx.Tx, paymentCode string) (paymentMethod model.PaymentMethod, err error)
+	FindPaymentMethodByPaymentCode(ctx context.Context, tx pgx.Tx, paymentCode string) (paymentMethod model.PaymentMethod, err error)
 }
 
 type PaymentMethodRepositoryImpl struct {
@@ -124,6 +125,76 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 }
 
 func (r *PaymentMethodRepositoryImpl) ValidatePaymentCodeIsActive(ctx context.Context, tx pgx.Tx, paymentCode string) (paymentMethod model.PaymentMethod, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := `SELECT
+		id, 
+		
+		name,
+		logo,
+
+		is_paused,
+		pause_message,
+		paused_at,
+
+		payment_type,
+		payment_group,
+		payment_code,
+		payment_channel,
+
+		created_at,
+		paused_at
+	FROM payment_methods
+	WHERE payment_code = $1 
+		AND is_active = true
+		AND is_paused = false
+	LIMIT 1`
+
+	if tx != nil {
+		err = tx.QueryRow(ctx, query, paymentCode).Scan(
+			&paymentMethod.ID,
+			&paymentMethod.Name,
+			&paymentMethod.Logo,
+			&paymentMethod.IsPaused,
+			&paymentMethod.PauseMessage,
+			&paymentMethod.PausedAt,
+			&paymentMethod.PaymentType,
+			&paymentMethod.PaymentGroup,
+			&paymentMethod.PaymentCode,
+			&paymentMethod.PaymentChannel,
+			&paymentMethod.CreatedAt,
+			&paymentMethod.UpdatedAt,
+		)
+	} else {
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, paymentCode).Scan(
+			&paymentMethod.ID,
+			&paymentMethod.Name,
+			&paymentMethod.Logo,
+			&paymentMethod.IsPaused,
+			&paymentMethod.PauseMessage,
+			&paymentMethod.PausedAt,
+			&paymentMethod.PaymentType,
+			&paymentMethod.PaymentGroup,
+			&paymentMethod.PaymentCode,
+			&paymentMethod.PaymentChannel,
+			&paymentMethod.CreatedAt,
+			&paymentMethod.UpdatedAt,
+		)
+	}
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return paymentMethod, &lib.ErrorPaymentMethodInvalid
+		}
+
+		return paymentMethod, err
+	}
+
+	return paymentMethod, nil
+}
+
+func (r *PaymentMethodRepositoryImpl) FindPaymentMethodByPaymentCode(ctx context.Context, tx pgx.Tx, paymentCode string) (paymentMethod model.PaymentMethod, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 

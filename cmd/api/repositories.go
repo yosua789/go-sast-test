@@ -20,6 +20,7 @@ type Repository struct {
 	EventSeatmapBookRepo          repository.EventSeatmapBookRepository
 	EventTransactionGarudaIDRepo  repository.EventTransactionGarudaIDRepository
 	EventOrderInformationBookRepo repository.EventOrderInformationBookRepository
+	EventTicketRepo               repository.EventTicketRepository
 	PaymentMethodRepository       repository.PaymentMethodRepository
 
 	// Storage Section
@@ -43,6 +44,7 @@ func Newrepository(
 		EventSeatmapBookRepo:          repository.NewEventSeatmapBookRepository(wrapDB, env),
 		EventTransactionGarudaIDRepo:  repository.NewEventTransactionGarudaIDRepository(wrapDB, env),
 		EventOrderInformationBookRepo: repository.NewEventOrderInformationBookRepository(wrapDB, env),
+		EventTicketRepo:               repository.NewEventTicketRepository(wrapDB, env),
 		PaymentMethodRepository:       repository.NewPaymentMethodRepository(wrapDB, env),
 		GcsStorageRepository:          repository.NewGCSFileRepositoryImpl(gcsClient, env),
 	}

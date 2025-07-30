@@ -13,6 +13,7 @@ import (
 
 type EventTransactionItemRepository interface {
 	CreateTransactionItems(ctx context.Context, tx pgx.Tx, reqs []model.EventTransactionItem) (err error)
+	GetTransactionItemsByTransactionId(ctx context.Context, tx pgx.Tx, transactionId string) (transactionItem []model.EventTransactionItem, err error)
 }
 
 type EventTransactionItemRepositoryImpl struct {
@@ -85,6 +86,61 @@ func (r *EventTransactionItemRepositoryImpl) CreateTransactionItems(ctx context.
 
 	if err != nil {
 		return
+	}
+
+	return
+}
+
+func (r *EventTransactionItemRepositoryImpl) GetTransactionItemsByTransactionId(ctx context.Context, tx pgx.Tx, transactionId string) (transactionItems []model.EventTransactionItem, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
+	defer cancel()
+
+	transactionItems = make([]model.EventTransactionItem, 0)
+
+	query := `SELECT
+		id,
+		transaction_id,
+		quantity,
+		seat_row,
+		seat_column,
+		garuda_id,
+		full_name,
+		email,
+		phone_number,
+		additional_information,
+		total_price,
+		created_at
+	FROM event_transaction_items 
+	WHERE transaction_id = $1`
+
+	var rows pgx.Rows
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, transactionId)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, transactionId)
+	}
+	if err != nil {
+		return
+	}
+
+	for rows.Next() {
+		var transactionItem model.EventTransactionItem
+		rows.Scan(
+			&transactionItem.ID,
+			&transactionItem.TransactionID,
+			&transactionItem.Quantity,
+			&transactionItem.SeatRow,
+			&transactionItem.SeatColumn,
+			&transactionItem.GarudaID,
+			&transactionItem.Fullname,
+			&transactionItem.Email,
+			&transactionItem.PhoneNumber,
+			&transactionItem.AdditionalInformation,
+			&transactionItem.TotalPrice,
+			&transactionItem.CreatedAt,
+		)
+
+		transactionItems = append(transactionItems, transactionItem)
 	}
 
 	return
