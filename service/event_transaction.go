@@ -253,6 +253,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 				return res, &lib.ErrorDuplicateGarudaIDPayload
 			}
 
+			usedGarudaID[item.GarudaID] = struct{}{}
 			// check internal database whether garuda id is hold
 			_, garudaIdErr := s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, tx, eventId, item.GarudaID)
 			if garudaIdErr == nil {
