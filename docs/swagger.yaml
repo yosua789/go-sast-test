@@ -244,7 +244,7 @@ definitions:
         type: string
       grand_total:
         type: integer
-      invoice_number:
+      order_number:
         type: string
       payment_expired_at:
         type: string
@@ -929,49 +929,6 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Create event ticket transaction
-      tags:
-      - events
-  /events/{eventId}/ticket-categories/{ticketCategoryId}/order/paylabs-vasnap:
-    post:
-      consumes:
-      - application/json
-      description: Create VA snap for event ticket transaction
-      parameters:
-      - description: Ticket Category ID
-        in: path
-        name: ticketCategoryId
-        required: true
-        type: string
-      - description: Event ID
-        in: path
-        name: eventId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: VA snap created
-          schema:
-            allOf:
-            - $ref: '#/definitions/lib.APIResponse'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "400":
-          description: Invalid request body
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-      summary: Create VA snap for event ticket transaction
       tags:
       - events
   /events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap:

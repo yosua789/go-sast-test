@@ -29,7 +29,7 @@ type OrderItemEventTransaction struct {
 
 type EventTransactionResponse struct {
 	TransactionID      string  `json:"transaction_id"`
-	InvoiceNumber      string  `json:"invoice_number"`
+	OrderNumber        string  `json:"order_number"`
 	PaymentMethod      string  `json:"payment_method"`
 	TotalPrice         int     `json:"total_price"`
 	TaxPercentage      float32 `json:"tax_percentage"`

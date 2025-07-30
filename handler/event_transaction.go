@@ -118,7 +118,7 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventNotFound, lib.ErrorTicketCategoryNotFound, lib.ErrorBookedSeatNotFound, lib.ErrorGarudaIDNotFound, lib.ErrorVenueSectorNotFound:
 				lib.RespondError(ctx, http.StatusNotFound, "error", err, tixErr.Code, h.Env.App.Debug)
-			case lib.ErrorGetGarudaID:
+			case lib.ErrorGetGarudaID, lib.ErrorTransactionPaylabs:
 				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, tixErr.Code, h.Env.App.Debug)
 			default:
 				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
@@ -171,7 +171,7 @@ func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 	var tixErr *lib.TIXError
 	if errors.As(err, &tixErr) {
 		switch *tixErr {
-		case lib.ErrorInvoiceIDNotFound:
+		case lib.ErrorOrderNotFound:
 			lib.RespondError(ctx, http.StatusNotFound, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
 			return
 		default:
@@ -221,6 +221,10 @@ func (h *EventTransactionHandlerImpl) IsEmailAlreadyBook(ctx *gin.Context) {
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {
 			switch *tixErr {
+			case lib.ErrorEventSaleAlreadyOver, lib.ErrorEventSaleIsNotStartedYet, lib.ErrorEventSaleIsPaused:
+				lib.RespondError(ctx, http.StatusForbidden, "error", tixErr, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorEventNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "error", tixErr, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorOrderInformationIsAlreadyBook:
 				lib.RespondError(ctx, http.StatusConflict, "error", tixErr, tixErr.Code, h.Env.App.Debug)
 			default:

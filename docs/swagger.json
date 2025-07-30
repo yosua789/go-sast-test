@@ -694,75 +694,6 @@
                 }
             }
         },
-        "/events/{eventId}/ticket-categories/{ticketCategoryId}/order/paylabs-vasnap": {
-            "post": {
-                "description": "Create VA snap for event ticket transaction",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "Create VA snap for event ticket transaction",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Ticket Category ID",
-                        "name": "ticketCategoryId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event ID",
-                        "name": "eventId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "VA snap created",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/lib.APIResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
         "/events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap": {
             "get": {
                 "description": "Get seatmap by event and ticket category id",
@@ -1906,7 +1837,7 @@
                 "grand_total": {
                     "type": "integer"
                 },
-                "invoice_number": {
+                "order_number": {
                     "type": "string"
                 },
                 "payment_expired_at": {

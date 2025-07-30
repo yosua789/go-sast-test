@@ -18,7 +18,7 @@ import (
 type EventTransactionRepository interface {
 	CreateTransaction(ctx context.Context, tx pgx.Tx, eventId, eventTicketCategoryId string, req model.EventTransaction) (res model.EventTransaction, err error)
 	IsEmailAlreadyBookEvent(ctx context.Context, tx pgx.Tx, eventId, email string) (id string, err error)
-	FindByInvoiceNumber(ctx context.Context, tx pgx.Tx, invoiceNumber string) (res model.EventTransaction, err error)
+	FindByOrderNumber(ctx context.Context, tx pgx.Tx, orderNumber string) (res model.EventTransaction, err error)
 	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error)
 	UpdatePaymentAdditionalInformation(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
 	FindById(ctx context.Context, tx pgx.Tx, transactionID string) (resData dto.OrderDetails, err error)
@@ -69,7 +69,7 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 	defer cancel()
 
 	query := `INSERT INTO event_transactions (
-		invoice_number,
+		order_number,
 		transaction_status,
 		transaction_status_information, 
 
@@ -95,7 +95,7 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query,
-			req.InvoiceNumber,
+			req.OrderNumber,
 			req.Status,
 			req.StatusInformation,
 			eventId,
@@ -115,7 +115,7 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 		).Scan(&req.ID, &req.CreatedAt)
 	} else {
 		err = r.WrapDB.Postgres.QueryRow(ctx, query,
-			req.InvoiceNumber,
+			req.OrderNumber,
 			req.Status,
 			req.StatusInformation,
 			eventId,
@@ -151,19 +151,19 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 	return
 }
 
-func (r *EventTransactionRepositoryImpl) FindByInvoiceNumber(ctx context.Context, tx pgx.Tx, invoiceNumber string) (res model.EventTransaction, err error) {
+func (r *EventTransactionRepositoryImpl) FindByOrderNumber(ctx context.Context, tx pgx.Tx, orderNumber string) (res model.EventTransaction, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
 	query := `
 	SELECT id 
 	FROM event_transactions 
-	WHERE invoice_number = $1 LIMIT 1`
+	WHERE order_number = $1 LIMIT 1`
 
 	if tx != nil {
-		err = tx.QueryRow(ctx, query, invoiceNumber).Scan(&res.ID)
+		err = tx.QueryRow(ctx, query, orderNumber).Scan(&res.ID)
 	} else {
-		err = r.WrapDB.Postgres.QueryRow(ctx, query, invoiceNumber).Scan(&res.ID)
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, orderNumber).Scan(&res.ID)
 	}
 
 	if err != nil {
