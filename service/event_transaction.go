@@ -245,6 +245,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		for i, item := range req.Items {
 
 			if item.GarudaID == "" {
+				log.Error().Msg("GarudaID is required")
 				return res, &lib.ErrorBadRequest
 			}
 			if _, ok := usedGarudaID[item.GarudaID]; ok {
@@ -308,6 +309,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	} else {
 		for _, item := range req.Items {
 			if !helper.IsValidEmail(item.Email) || !helper.ValidatePhoneNumber(item.PhoneNumber) || !helper.IsValidUsername(item.FullName) {
+				log.Error().Msg("Invalid email, phone number or full name")
 				return res, &lib.ErrorBadRequest
 			}
 		}
@@ -601,8 +603,8 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 		RequestID:       requestID,                                    // 20 characters //for lookup purposes
 		PaymentType:     "QRIS",                                       // Payment type
 		Amount:          strconv.Itoa(transaction.GrandTotal) + ".00", // Amount with 2 decimal
-		ProductName:     "Sepeda",
-		Expire:          int(s.Env.Transaction.ExpirationDuration),                // ISO-8601 formatted expiration
+		ProductName:     productName,
+		Expire:          int(s.Env.Transaction.ExpirationDuration.Seconds()),      // ISO-8601 formatted expiration
 		NotifyURL:       s.Env.Api.Url + "/api/v1/external/paylabs/qris/callback", // Callback URL
 	}
 
