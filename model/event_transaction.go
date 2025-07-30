@@ -3,8 +3,9 @@ package model
 import "time"
 
 type EventTransaction struct {
-	ID                string
-	InvoiceNumber     string
+	ID string
+
+	OrderNumber       string
 	Status            string
 	StatusInformation string
 	PaymentMethod     string
@@ -12,10 +13,10 @@ type EventTransaction struct {
 	PaymentExpiredAt  time.Time
 	PaidAt            *time.Time
 
-	TotalPrice int
-	// TaxPercentage      float32
-	TotalTax int
-	// AdminFeePercentage float32
+	TotalPrice           int
+	TaxPercentage        float32
+	TotalTax             int
+	AdminFeePercentage   float32
 	AdditionalFeeDetails string
 	TotalAdminFee        int
 	GrandTotal           int

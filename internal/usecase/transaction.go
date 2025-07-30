@@ -39,7 +39,7 @@ func (u *TransactionUsecase) SendBill(
 	log.Info().Msg("send email bill")
 	var transactionPayload = domainEvent.TransactionBill{
 		TransactionID: transaction.ID,
-		InvoiceNumber: transaction.InvoiceNumber,
+		OrderNumber:   transaction.OrderNumber,
 		Payment: domainEvent.PaymentInformation{
 			Method:      transaction.PaymentMethod,
 			DisplayName: "Mandiri Virtual Account",

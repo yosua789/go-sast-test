@@ -258,9 +258,9 @@ var (
 		Code: 40008,
 		Err:  errors.New("callback signature is invalid"),
 	}
-	ErrorInvoiceIDNotFound = TIXError{
+	ErrorOrderNotFound = TIXError{
 		Code: 40412,
-		Err:  errors.New("invoice id not found"),
+		Err:  errors.New("order not found"),
 	}
 	ErrorFailedToMarkTransactionAsSuccess = TIXError{
 		Code: 50005,

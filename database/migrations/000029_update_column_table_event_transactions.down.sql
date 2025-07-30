@@ -1,0 +1,1 @@
+ALTER TABLE event_transactions RENAME COLUMN order_number TO invoice_number;

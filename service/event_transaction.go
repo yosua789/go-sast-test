@@ -178,21 +178,21 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	now := time.Now()
-	expiryInvoice := now.Add(s.Env.Transaction.ExpirationDuration)
-	invoiceNumber := helper.GenerateInvoiceNumber()
-	log.Info().Str("InvoiceNumber", invoiceNumber).Msg("generated invoice number")
+	expiryOrder := now.Add(s.Env.Transaction.ExpirationDuration)
+	orderNumber := helper.GeneraeteOrderNumber()
+	log.Info().Str("OrderNumber", orderNumber).Msg("generated order number")
 
 	transaction := model.EventTransaction{
 		Fullname: req.Fullname, // request fullname ?
 		Email:    req.Email,
 		// PhoneNumber: req.PhoneNumber, // request phone number ?
 
-		InvoiceNumber: invoiceNumber,
-		Status:        lib.PaymentStatusPending,
+		OrderNumber: orderNumber,
+		Status:      lib.PaymentStatusPending,
 
 		PaymentMethod:    req.PaymentMethod,
 		PaymentChannel:   lib.PaymentChannelPaylabs,
-		PaymentExpiredAt: expiryInvoice,
+		PaymentExpiredAt: expiryOrder,
 	}
 
 	if venueSector.HasSeatmap {
@@ -245,6 +245,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		for i, item := range req.Items {
 
 			if item.GarudaID == "" {
+				log.Error().Msg("GarudaID is required")
 				return res, &lib.ErrorBadRequest
 			}
 			if _, ok := usedGarudaID[item.GarudaID]; ok {
@@ -252,6 +253,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 				return res, &lib.ErrorDuplicateGarudaIDPayload
 			}
 
+			usedGarudaID[item.GarudaID] = struct{}{}
 			// check internal database whether garuda id is hold
 			_, garudaIdErr := s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, tx, eventId, item.GarudaID)
 			if garudaIdErr == nil {
@@ -308,6 +310,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	} else {
 		for _, item := range req.Items {
 			if !helper.IsValidEmail(item.Email) || !helper.ValidatePhoneNumber(item.PhoneNumber) || !helper.IsValidUsername(item.FullName) {
+				log.Error().Msg("Invalid email, phone number or full name")
 				return res, &lib.ErrorBadRequest
 			}
 		}
@@ -321,15 +324,19 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		log.Error().Err(err).Msg("failed to find additional fees for event")
 		return
 	}
+	var totalTaxPercentage float64
+	var totalAdminFeePercentage float64
 	for _, fee := range additionalFees {
 		if fee.IsTax {
 			if fee.IsPercentage {
+				totalTaxPercentage += fee.Value
 				transaction.TotalTax += int(float64(transaction.TotalPrice) * fee.Value / 100)
 			} else {
 				transaction.TotalTax += int(fee.Value)
 			}
 		} else {
 			if fee.IsPercentage {
+				totalAdminFeePercentage += fee.Value
 				transaction.TotalAdminFee += int(float64(transaction.TotalPrice) * fee.Value / 100)
 			} else {
 				transaction.TotalAdminFee += int(fee.Value)
@@ -346,6 +353,8 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		additionalFeesDetails = string(additionalFeeStr)
 		transaction.AdditionalFeeDetails = additionalFeesDetails
 	}
+	transaction.AdminFeePercentage = float32(totalAdminFeePercentage)
+	transaction.TaxPercentage = float32(totalTaxPercentage)
 	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee
 	// transaction.AdminFeePercentage = float32(eventSettings.AdminFeePercentage)
 	// log.Info().Int("TotalAdminFee", totalAdminFee).Float32("AdminFeePercentage", transaction.AdminFeePercentage).Msg("calculate admin fee")
@@ -475,18 +484,18 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// helper.SetAccessToken(ctx, accessToken)
 	// TODO ADD JWT
 	res = dto.EventTransactionResponse{
-		InvoiceNumber: invoiceNumber,
-		PaymentMethod: req.PaymentMethod,
-		TotalPrice:    transaction.TotalPrice,
-		// TaxPercentage:      transaction.TaxPercentage,
-		TotalTax: transaction.TotalTax,
-		// AdminFeePercentage: transaction.AdminFeePercentage,
-		TotalAdminFee: transaction.TotalAdminFee,
-		GrandTotal:    transaction.GrandTotal,
-		ExpiredAt:     transaction.PaymentExpiredAt,
-		CreatedAt:     transaction.CreatedAt,
-		AccessToken:   accessToken,
-		TransactionID: transaction.ID,
+		OrderNumber:        orderNumber,
+		PaymentMethod:      req.PaymentMethod,
+		TotalPrice:         transaction.TotalPrice,
+		TaxPercentage:      transaction.TaxPercentage,
+		TotalTax:           transaction.TotalTax,
+		AdminFeePercentage: transaction.AdminFeePercentage,
+		TotalAdminFee:      transaction.TotalAdminFee,
+		GrandTotal:         transaction.GrandTotal,
+		ExpiredAt:          transaction.PaymentExpiredAt,
+		CreatedAt:          transaction.CreatedAt,
+		AccessToken:        accessToken,
+		TransactionID:      transaction.ID,
 	}
 
 	log.Info().Msg("success create transaction")
@@ -513,7 +522,7 @@ func (s *EventTransactionServiceImpl) paylabsVASnap(ctx *gin.Context, transactio
 		VirtualAccountName:  transaction.Fullname,             // Payer name
 		VirtualAccountEmail: transaction.Email,                // Payer email
 		// VirtualAccountPhone: req.Items[0].PhoneNumber,  // Mobile phone number in Indonesian format
-		TrxID: transaction.InvoiceNumber, // Merchant transaction number
+		TrxID: transaction.OrderNumber, // Merchant transaction number
 		TotalAmount: dto.Amount{
 			Value:    totalPriceStr, // Amount with 2 decimal
 			Currency: "IDR",         // Fixed currency
@@ -590,7 +599,7 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	currentTime := time.Now().Local() // UTC +07:00
 	date := currentTime.Format("2006-01-02T15:04:05.999+07:00")
 	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:] // 6 characters
-	requestID := transaction.InvoiceNumber                                 // 20 characters
+	requestID := transaction.OrderNumber                                   // 20 characters
 
 	path := "/qris/create"
 	privateKeyPem := s.Env.Paylabs.PrivateKey // Private key in PEM format
@@ -601,8 +610,8 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 		RequestID:       requestID,                                    // 20 characters //for lookup purposes
 		PaymentType:     "QRIS",                                       // Payment type
 		Amount:          strconv.Itoa(transaction.GrandTotal) + ".00", // Amount with 2 decimal
-		ProductName:     "Sepeda",
-		Expire:          int(s.Env.Transaction.ExpirationDuration),                // ISO-8601 formatted expiration
+		ProductName:     productName,
+		Expire:          int(s.Env.Transaction.ExpirationDuration.Seconds()),      // ISO-8601 formatted expiration
 		NotifyURL:       s.Env.Api.Url + "/api/v1/external/paylabs/qris/callback", // Callback URL
 	}
 
@@ -629,7 +638,7 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	}
 
 	// Send HTTP request
-	url := s.Env.Paylabs.BaseUrl + path
+	url := s.Env.Paylabs.BaseUrl + "/payment/v2" + path
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create new request for Paylabs QRIS")
@@ -696,14 +705,14 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		return errors.New("invalid signature")
 	}
 	//  actual callback processing
-	transactionData, err := s.EventTransactionRepo.FindByInvoiceNumber(ctx, tx, *req.TrxId)
+	transactionData, err := s.EventTransactionRepo.FindByOrderNumber(ctx, tx, *req.TrxId)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to find transaction by invoice number")
+		log.Error().Err(err).Msg("Failed to find transaction by order number")
 		return
 	}
 	if transactionData.ID == "" {
 		log.Error().Msg("Transaction not found")
-		return &lib.ErrorInvoiceIDNotFound
+		return &lib.ErrorOrderNotFound
 	}
 	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID)
 	if err != nil {
@@ -743,8 +752,27 @@ func (s *EventTransactionServiceImpl) ValidateEmailIsAlreadyBook(ctx *gin.Contex
 	}
 	defer tx.Rollback(ctx)
 
-	_, err = s.EventRepo.FindById(ctx, tx, eventId)
+	event, err := s.EventRepo.FindById(ctx, tx, eventId)
 	if err != nil {
+		return
+	}
+
+	if event.PublishStatus != lib.EventPublishStatusPublished {
+		err = &lib.ErrorEventNotFound
+		return
+	}
+
+	if event.IsSaleActive {
+		now := time.Now()
+		if now.After(event.EndSaleAt.Time) {
+			err = &lib.ErrorEventSaleAlreadyOver
+			return
+		} else if !(now.After(event.StartSaleAt.Time) && now.Before(event.EndSaleAt.Time)) {
+			err = &lib.ErrorEventSaleIsNotStartedYet
+			return
+		}
+	} else {
+		err = &lib.ErrorEventSaleIsPaused
 		return
 	}
 

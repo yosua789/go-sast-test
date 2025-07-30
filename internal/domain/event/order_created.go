@@ -5,7 +5,7 @@ import "time"
 // Order mean, transaction status `PENDING`
 type TransactionBill struct {
 	TransactionID     string                       `json:"transaction_id"`
-	InvoiceNumber     string                       `json:"invoice_number"`
+	OrderNumber       string                       `json:"order_number"`
 	Status            string                       `json:"status"`
 	Payment           PaymentInformation           `json:"payment"`
 	DetailInformation DetailInformationTransaction `json:"detail_information"`
