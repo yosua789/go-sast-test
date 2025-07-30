@@ -744,8 +744,8 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	go func() {
 		err = s.TransactionUseCase.SendInvoice(
 			ctx,
-			transactionData.Email,
-			transactionData.Fullname,
+			transactionDetail.Email,
+			transactionDetail.Fullname,
 			len(transactionItems),
 			transactionDetail,
 		)
