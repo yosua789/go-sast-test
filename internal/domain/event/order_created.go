@@ -9,10 +9,15 @@ type TransactionBill struct {
 	Status            string                       `json:"status"`
 	Payment           PaymentInformation           `json:"payment"`
 	DetailInformation DetailInformationTransaction `json:"detail_information"`
-	EventTime         time.Time                    `json:"event_time"`
+	Event             EventInformation             `json:"event"`
 	ItemCount         int                          `json:"item_count"`
 	ExpiredAt         time.Time                    `json:"expired_at"`
 	CreatedAt         time.Time                    `json:"created_at"`
+}
+
+type EventInformation struct {
+	Name string    `json:"name"`
+	Time time.Time `json:"time"`
 }
 
 type DetailInformationTransaction struct {
