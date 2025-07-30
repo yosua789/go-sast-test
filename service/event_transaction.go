@@ -629,7 +629,7 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	}
 
 	// Send HTTP request
-	url := s.Env.Paylabs.BaseUrl + path
+	url := s.Env.Paylabs.BaseUrl + "/payment/v2" + path
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create new request for Paylabs QRIS")
