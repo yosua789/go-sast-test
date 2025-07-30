@@ -22,6 +22,7 @@ type EventTransactionRepository interface {
 	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error)
 	UpdatePaymentAdditionalInformation(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
 	FindById(ctx context.Context, tx pgx.Tx, transactionID string) (resData dto.OrderDetails, err error)
+	FindTransactionDetailByTransactionId(ctx context.Context, tx pgx.Tx, transactionID string) (res entity.EventTransaction, err error)
 }
 
 type EventTransactionRepositoryImpl struct {
@@ -361,6 +362,248 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 		Country:               res.Country, // Assuming country and city are not available in this query
 		City:                  res.City,
 		AdditionalPayment:     resAdditionalPayment,
+	}
+
+	return
+}
+
+func (r *EventTransactionRepositoryImpl) FindTransactionDetailByTransactionId(ctx context.Context, tx pgx.Tx, transactionID string) (res entity.EventTransaction, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := `SELECT
+		et.id,
+		et.order_number,
+		et.transaction_status,
+		et.transaction_status_information,
+		et.payment_expired_at,
+		et.paid_at,
+		et.total_price,
+		et.tax_percentage,
+		et.total_tax,
+		et.admin_fee_percentage,
+		et.total_admin_fee,
+		et.grand_total,
+		et.full_name,
+		et.email,
+		et.is_compliment,
+
+		pm.id as payment_method_id,
+		pm.name as payment_method_name,
+		pm.is_paused as payment_method_is_paused,
+		pm.pause_message as payment_method_pause_message,
+		pm.paused_at as payment_method_paused_at,
+		pm.payment_type as payment_method_type,
+		pm.payment_group as payment_method_group,
+		pm.payment_code as payment_method_code,
+		pm.payment_channel as payment_method_channel,
+
+		et.event_id,
+		e.name as event_name,
+		e.description as event_description,
+		e.banner_filename as event_banner_filename,
+		e.event_time as event_time,
+		e.publish_status as event_publish_status,
+		e.additional_information as event_additional_information,
+		e.start_sale_at as event_start_sale_at,
+		e.end_sale_at as event_end_sale_at,
+		e.created_at as event_created_at,
+		e.updated_at as event_updated_at,
+
+		o.id as organizer_id,
+		o.name as organizer_name,
+		o.slug as organizer_slug,
+		o.logo as organizer_logo,
+
+		v.id as venue_id,
+		v.venue_type as venue_type,
+		v.name as venue_name,
+		v.country as venue_country,
+		v.city as venue_city,
+		v.capacity as venue_capacity,
+
+		etc.id as event_ticket_category_id,
+		etc.name as event_ticket_category_name,
+		etc.description as event_ticket_category_description,
+		etc.price as event_ticket_category_price,
+		etc.total_stock as event_ticket_category_total_stock,
+		etc.total_public_stock as event_ticket_category_total_public_stock,
+		etc.public_stock as event_ticket_category_public_stock,
+		etc.total_compliment_stock as event_ticket_category_total_compliment_stock,
+		etc.compliment_stock as event_ticket_category_compliment_stock,
+		etc.code as event_ticket_category_code,
+		etc.entrance as event_ticket_category_entrance,
+
+		vs.id as venue_sector_id,
+		vs.name as venue_sector_name,
+		vs.has_seatmap as venue_sector_has_seatmap,
+		vs.sector_color as venue_sector_color,
+		vs.area_code as venue_sector_area_code
+
+	FROM event_transactions et
+	LEFT JOIN payment_methods pm
+		ON et.payment_method = pm.payment_code
+	LEFT JOIN events e
+		ON et.event_id = e.id
+	LEFT JOIN organizers o
+		ON e.organizer_id = o.id
+	LEFT JOIN venues v
+		ON e.venue_id = v.id
+	LEFT JOIN event_ticket_categories etc
+		ON et.event_ticket_category_id = etc.id
+	LEFT JOIN venue_sectors vs
+		ON etc.venue_sector_id = vs.id
+	WHERE et.id = $1
+	LIMIT 1`
+
+	if tx != nil {
+		err = tx.QueryRow(ctx, query, transactionID).Scan(
+			&res.ID,
+			&res.OrderNumber,
+			&res.Status,
+			&res.StatusInformation,
+			&res.PaymentExpiredAt,
+			&res.PaidAt,
+			&res.TotalPrice,
+			&res.TaxPercentage,
+			&res.TotalTax,
+			&res.AdminFeePercentage,
+			&res.TotalAdminFee,
+			&res.GrandTotal,
+			&res.Fullname,
+			&res.Email,
+			&res.IsCompliment,
+
+			&res.PaymentMethod.ID,
+			&res.PaymentMethod.Name,
+			&res.PaymentMethod.IsPaused,
+			&res.PaymentMethod.PauseMessage,
+			&res.PaymentMethod.PausedAt,
+			&res.PaymentMethod.PaymentType,
+			&res.PaymentMethod.PaymentGroup,
+			&res.PaymentMethod.PaymentCode,
+			&res.PaymentMethod.PaymentChannel,
+
+			&res.Event.ID,
+			&res.Event.Name,
+			&res.Event.Description,
+			&res.Event.Banner,
+			&res.Event.EventTime,
+			&res.Event.PublishStatus,
+			&res.Event.AdditionalInformation,
+			&res.Event.StartSaleAt,
+			&res.Event.EndSaleAt,
+			&res.Event.CreatedAt,
+			&res.Event.UpdatedAt,
+
+			&res.Event.Organizer.ID,
+			&res.Event.Organizer.Name,
+			&res.Event.Organizer.Slug,
+			&res.Event.Organizer.Logo,
+
+			&res.Event.Venue.ID,
+			&res.Event.Venue.VenueType,
+			&res.Event.Venue.Name,
+			&res.Event.Venue.Country,
+			&res.Event.Venue.City,
+			&res.Event.Venue.Capacity,
+
+			&res.TicketCategory.ID,
+			&res.TicketCategory.Name,
+			&res.TicketCategory.Description,
+			&res.TicketCategory.Price,
+			&res.TicketCategory.TotalStock,
+			&res.TicketCategory.TotalPublicStock,
+			&res.TicketCategory.PublicStock,
+			&res.TicketCategory.TotalComplimentStock,
+			&res.TicketCategory.ComplimentStock,
+			&res.TicketCategory.Code,
+			&res.TicketCategory.Entrance,
+
+			&res.VenueSector.ID,
+			&res.VenueSector.Name,
+			&res.VenueSector.HasSeatmap,
+			&res.VenueSector.SectorColor,
+			&res.VenueSector.AreaCode,
+		)
+	} else {
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, transactionID).Scan(
+			&res.ID,
+			&res.OrderNumber,
+			&res.Status,
+			&res.StatusInformation,
+			&res.PaymentExpiredAt,
+			&res.PaidAt,
+			&res.TotalPrice,
+			&res.TaxPercentage,
+			&res.TotalTax,
+			&res.AdminFeePercentage,
+			&res.TotalAdminFee,
+			&res.GrandTotal,
+			&res.Fullname,
+			&res.Email,
+			&res.IsCompliment,
+
+			&res.PaymentMethod.ID,
+			&res.PaymentMethod.Name,
+			&res.PaymentMethod.IsPaused,
+			&res.PaymentMethod.PauseMessage,
+			&res.PaymentMethod.PausedAt,
+			&res.PaymentMethod.PaymentType,
+			&res.PaymentMethod.PaymentGroup,
+			&res.PaymentMethod.PaymentCode,
+			&res.PaymentMethod.PaymentChannel,
+
+			&res.Event.ID,
+			&res.Event.Name,
+			&res.Event.Description,
+			&res.Event.Banner,
+			&res.Event.EventTime,
+			&res.Event.PublishStatus,
+			&res.Event.AdditionalInformation,
+			&res.Event.StartSaleAt,
+			&res.Event.EndSaleAt,
+			&res.Event.CreatedAt,
+			&res.Event.UpdatedAt,
+
+			&res.Event.Organizer.ID,
+			&res.Event.Organizer.Name,
+			&res.Event.Organizer.Slug,
+			&res.Event.Organizer.Logo,
+
+			&res.Event.Venue.ID,
+			&res.Event.Venue.VenueType,
+			&res.Event.Venue.Name,
+			&res.Event.Venue.Country,
+			&res.Event.Venue.City,
+			&res.Event.Venue.Capacity,
+
+			&res.TicketCategory.ID,
+			&res.TicketCategory.Name,
+			&res.TicketCategory.Description,
+			&res.TicketCategory.Price,
+			&res.TicketCategory.TotalStock,
+			&res.TicketCategory.TotalPublicStock,
+			&res.TicketCategory.PublicStock,
+			&res.TicketCategory.TotalComplimentStock,
+			&res.TicketCategory.ComplimentStock,
+			&res.TicketCategory.Code,
+			&res.TicketCategory.Entrance,
+
+			&res.VenueSector.ID,
+			&res.VenueSector.Name,
+			&res.VenueSector.HasSeatmap,
+			&res.VenueSector.SectorColor,
+			&res.VenueSector.AreaCode,
+		)
+	}
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return res, &lib.ErrorTransactionDetailsNotFound
+		}
+
+		return res, err
 	}
 
 	return

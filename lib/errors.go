@@ -287,3 +287,15 @@ var (
 		Err:  errors.New("transaction ID in parameter does not match with the one in bearer token"),
 	}
 )
+
+// Event tickets
+var (
+	FailedToCreateEventTIcket = TIXError{
+		Code: 50007,
+		Err:  errors.New("failed to create event ticket"),
+	}
+	EventTicketNotFound = TIXError{
+		Code: 40414,
+		Err:  errors.New("event ticket not found"),
+	}
+)
