@@ -250,7 +250,7 @@ func (h *EventTransactionHandlerImpl) CallbackQRISPaylabs(ctx *gin.Context) {
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshal response")
 	}
-	_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), strconv.Itoa(tixErr.Code), tixErr.Error())
+	_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), "", "")
 	ctx.JSON(http.StatusOK, res)
 }
 
