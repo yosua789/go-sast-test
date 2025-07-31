@@ -182,7 +182,12 @@ type QRISCallbackRequest struct {
 }
 
 type QRISPaymentMethodInfo struct {
-	RRN string `json:"rrn"`
+	NMID        string `json:"nmid"`                  // National Merchant ID (Required)
+	RRN         string `json:"rrn,omitempty"`         // Payment success's code
+	TID         string `json:"tid,omitempty"`         // Terminal ID (Only in QRIS Payment)
+	Payer       string `json:"payer,omitempty"`       // Payer's name
+	PhoneNumber string `json:"phoneNumber,omitempty"` // Payer's phone number
+	IssuerID    string `json:"issuerId,omitempty"`    // Issuer's Application ID
 }
 
 type QRISCallbackResponse struct {
