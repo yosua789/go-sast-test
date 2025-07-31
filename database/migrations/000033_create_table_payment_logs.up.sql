@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS payment_logs (
     response text not null,
     created_at timestamp with time zone default now(),
     error_response text,    
-    error_code text,
+    error_code text
 );
