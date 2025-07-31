@@ -185,6 +185,7 @@ func (u *TransactionUsecase) SendETicket(
 	var transactionPayload = domainEvent.TransactionETicket{
 		TransactionID: transactionDetail.ID,
 		TicketNumber:  eventTicket.TicketNumber,
+		TicketCode:    eventTicket.TicketCode,
 		Payment: domainEvent.PaymentInformation{
 			// Method:                       transactionDetail.PaymentMethod.PaymentCode,
 			DisplayName:                  transactionDetail.PaymentMethod.Name,
