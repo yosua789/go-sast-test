@@ -497,16 +497,16 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		return
 	}
 
-	// Send email send bill job
-	err = s.TransactionUseCase.SendBill(ctx, req.Email, req.Fullname, len(transactionItems), paymentMethod, event, transaction, ticketCategory, venueSector)
-	if err != nil {
-		log.Warn().Err(err).Msg("error send bill to email")
-		return
-	}
-
 	accessToken, err := helper.GenerateAccessToken(s.Env, transaction.ID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to generate access token")
+		return
+	}
+
+	// Send email send bill job
+	err = s.TransactionUseCase.SendBill(ctx, req.Email, req.Fullname, len(transactionItems), accessToken, paymentMethod, event, transaction, ticketCategory, venueSector)
+	if err != nil {
+		log.Warn().Err(err).Msg("error send bill to email")
 		return
 	}
 
