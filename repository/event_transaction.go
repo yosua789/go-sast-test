@@ -21,7 +21,7 @@ type EventTransactionRepository interface {
 	CreateTransaction(ctx context.Context, tx pgx.Tx, eventId, eventTicketCategoryId string, req model.EventTransaction) (res model.EventTransaction, err error)
 	IsEmailAlreadyBookEvent(ctx context.Context, tx pgx.Tx, eventId, email string) (id string, err error)
 	FindByOrderNumber(ctx context.Context, tx pgx.Tx, orderNumber string) (res model.EventTransaction, err error)
-	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error)
+	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string, successTime time.Time) (res model.EventTransaction, err error)
 	UpdatePaymentAdditionalInformation(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
 	FindById(ctx context.Context, tx pgx.Tx, transactionID string) (resData dto.OrderDetails, err error)
 	FindTransactionDetailByTransactionId(ctx context.Context, tx pgx.Tx, transactionID string) (res entity.EventTransaction, err error)
@@ -179,7 +179,7 @@ func (r *EventTransactionRepositoryImpl) FindByOrderNumber(ctx context.Context, 
 	return
 }
 
-func (r *EventTransactionRepositoryImpl) MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error) {
+func (r *EventTransactionRepositoryImpl) MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string, successTime time.Time) (res model.EventTransaction, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	currentTime := time.Now()
 	defer cancel()

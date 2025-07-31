@@ -32,4 +32,6 @@ type EventTransaction struct {
 
 	PaymentAdditionalInfo string // Virtual Account Number
 	ChannelTransactionID  string // For lookup purposes
+
+	PGOrderID string
 }
