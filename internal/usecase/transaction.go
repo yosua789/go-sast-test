@@ -31,6 +31,7 @@ func (u *TransactionUsecase) SendBill(
 	ctx context.Context,
 	email, name string,
 	itemCount int,
+	trxAccessToken string,
 	paymentMethod model.PaymentMethod,
 	event model.Event,
 	transaction model.EventTransaction,
@@ -39,8 +40,9 @@ func (u *TransactionUsecase) SendBill(
 ) (err error) {
 	log.Info().Msg("send email bill")
 	var transactionPayload = domainEvent.TransactionBill{
-		TransactionID: transaction.ID,
-		OrderNumber:   transaction.OrderNumber,
+		TransactionID:          transaction.ID,
+		OrderNumber:            transaction.OrderNumber,
+		TransactionAccessToken: trxAccessToken,
 		Payment: domainEvent.PaymentInformation{
 			Type:                         paymentMethod.PaymentType,
 			Group:                        paymentMethod.PaymentGroup,
@@ -70,6 +72,7 @@ func (u *TransactionUsecase) SendBill(
 			},
 		},
 		Event: domainEvent.EventInformation{
+			ID:   event.ID,
 			Name: event.Name,
 			Time: event.EventTime,
 		},
