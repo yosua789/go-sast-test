@@ -9,10 +9,12 @@ import (
 	"assist-tix/model"
 	"context"
 	"errors"
+
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/rs/zerolog/log"
 )
 
 type EventTransactionRepository interface {
@@ -327,6 +329,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	} else {
 		rows, err := r.WrapDB.Postgres.Query(ctx, queryAdditionalPayment, transactionID)
 		if err != nil {
+			log.Error().Err(err).Msg("Failed to query additional payment information")
 			return dto.OrderDetails{}, err
 		}
 		defer rows.Close()
