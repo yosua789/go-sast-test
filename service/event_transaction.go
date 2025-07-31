@@ -534,6 +534,10 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 	for _, val := range transactionItems {
 	// 		if val.Email.Valid && val.Fullname.Valid {
 	// 			ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
+	// 			ticketCode, err := helper.GenerateTicketCode()
+	// 			if err != nil {
+	// 				return
+	// 			}
 
 	// 			eventTicket := model.EventTicket{
 	// 				EventID:          transactionDetail.Event.ID,
@@ -545,7 +549,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 				TicketOwnerPhoneNumber: val.PhoneNumber,
 	// 				TicketOwnerGarudaId:    val.GarudaID,
 	// 				TicketNumber:           ticketNumber,
-	// 				TicketCode:             "sekarang masih kosong",
+	// 				TicketCode:             ticketCode,
 
 	// 				EventTime:    transactionDetail.Event.EventTime,
 	// 				EventVenue:   transactionDetail.VenueSector.Venue.Name,
@@ -554,9 +558,9 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 				SectorName:   transactionDetail.VenueSector.Name,
 	// 				AreaCode:     transactionDetail.VenueSector.AreaCode.String,
 	// 				Entrance:     transactionDetail.TicketCategory.Entrance,
-	// 				SeatRow:      1,
-	// 				SeatColumn:   1,
-	// 				SeatLabel:    "125",
+	// 				SeatRow:      val.SeatRow,
+	// 				SeatColumn:   val.SeatColumn,
+	// 				SeatLabel:    val.SeatLabel,
 	// 				IsCompliment: false,
 	// 			}
 	// 			ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
