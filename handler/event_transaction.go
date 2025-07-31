@@ -168,7 +168,7 @@ func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 	log.Info().Msgf("Received callback: %+v", req)
 
 	// This is a placeholder for the actual implementation
-	err := h.EventTransactionService.CallbackVASnap(ctx, req)
+	res, err := h.EventTransactionService.CallbackVASnap(ctx, req)
 	var tixErr *lib.TIXError
 	if errors.As(err, &tixErr) {
 		switch *tixErr {
@@ -183,21 +183,23 @@ func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 			return
 		}
 	}
-	lib.RespondSuccess(ctx, http.StatusOK, "Callback received successfully", nil)
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (h *EventTransactionHandlerImpl) CallbackQRISPaylabs(ctx *gin.Context) {
 	// Implement the callback logic here
+
 	var req dto.QRISCallbackRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Error().Err(err).Msg("error binding JSON for callback")
 		lib.RespondError(ctx, http.StatusBadRequest, "invalid request body", err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
 		return
 	}
+
 	log.Info().Msgf("Received callback: %+v", req)
 
 	// This is a placeholder for the actual implementation
-	err := h.EventTransactionService.CallbackQRISPaylabs(ctx, req)
+	res, err := h.EventTransactionService.CallbackQRISPaylabs(ctx, req)
 	var tixErr *lib.TIXError
 	if errors.As(err, &tixErr) {
 		switch *tixErr {
@@ -212,7 +214,8 @@ func (h *EventTransactionHandlerImpl) CallbackQRISPaylabs(ctx *gin.Context) {
 			return
 		}
 	}
-	lib.RespondSuccess(ctx, http.StatusOK, "Callback received successfully", nil)
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 // @Summary validate email for booking is used or not
