@@ -165,3 +165,22 @@ type PaylabsQRISRequest struct {
 	Expire          int    `json:"expire"` // in second
 	NotifyURL       string `json:"notifyUrl"`
 }
+
+type QRISCallbackRequest struct {
+	MerchantID        string                `json:"merchantId"`
+	RequestID         string                `json:"requestId"`
+	ErrCode           string                `json:"errCode"`
+	PaymentType       string                `json:"paymentType"`
+	Amount            string                `json:"amount"`
+	CreateTime        string                `json:"createTime"`
+	SuccessTime       string                `json:"successTime"`
+	MerchantTradeNo   string                `json:"merchantTradeNo"`
+	PlatformTradeNo   string                `json:"platformTradeNo"`
+	Status            string                `json:"status"`
+	PaymentMethodInfo QRISPaymentMethodInfo `json:"paymentMethodInfo"`
+	ProductName       string                `json:"productName"`
+}
+
+type QRISPaymentMethodInfo struct {
+	RRN string `json:"rrn"`
+}

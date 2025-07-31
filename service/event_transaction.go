@@ -32,6 +32,7 @@ type EventTransactionService interface {
 	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error)
 	ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error)
 	GetAvailablePaymentMethods(ctx *gin.Context, eventId string) (res []dto.EventGrouppedPaymentMethodsResponse, err error)
+	CallbackQRISPaylabs(ctx *gin.Context, req dto.QRISCallbackRequest) (err error)
 	FindById(ctx context.Context, transactionID string) (res dto.OrderDetails, err error)
 }
 
@@ -935,4 +936,56 @@ func (s *EventTransactionServiceImpl) FindById(ctx context.Context, transactionI
 	}
 	log.Info().Interface("OrderDetails", res).Msg("found event transaction by id")
 	return
+}
+
+func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req dto.QRISCallbackRequest) (err error) {
+	log.Info().Msg("Processing Paylabs VA snap callback")
+	header := map[string]interface{}{}
+	tx, err := s.DB.Postgres.Begin(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to begin transaction")
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	for key, value := range ctx.Request.Header {
+		header[key] = value
+	}
+	log.Info().Msgf("Headers: %v", header)
+
+	rawPayload := ctx.GetString("rawPayload")
+	var buf bytes.Buffer
+	json.Compact(&buf, []byte(rawPayload))
+	log.Info().Msgf("Raw Payload: %s", buf.String())
+	log.Info().Msgf("Request URL: %v", req)
+	isValid := helper.IsValidPaylabsRequest(ctx, ctx.FullPath(), buf.String(), s.Env.Paylabs.PublicKey)
+	if !isValid {
+		return &lib.ErrorCallbackSignatureInvalid
+	}
+	//  actual callback processing
+	transactionData, err := s.EventTransactionRepo.FindByOrderNumber(ctx, tx, req.RequestID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to find transaction by order number")
+		return
+	}
+	if transactionData.ID == "" {
+		log.Error().Msg("Transaction not found")
+		return &lib.ErrorOrderNotFound
+	}
+	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to mark transaction as success")
+		return
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return
+	}
+	// sent email to users
+
+	log.Info().Msgf("Transaction marked as success: %v", markResult)
+
+	return
+
 }
