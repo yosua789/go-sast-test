@@ -47,6 +47,7 @@ type EventTransactionServiceImpl struct {
 	EventSeatmapBookRepo          repository.EventSeatmapBookRepository
 	EventTransactionGarudaIDRepo  repository.EventTransactionGarudaIDRepository
 	EventOrderInformationBookRepo repository.EventOrderInformationBookRepository
+	EventTicketRepo               repository.EventTicketRepository
 	VenueSectorRepo               repository.VenueSectorRepository
 	PaymentMethodRepo             repository.PaymentMethodRepository
 
@@ -67,6 +68,7 @@ func NewEventTransactionService(
 	EventOrderInformationBookRepo repository.EventOrderInformationBookRepository,
 	venueSectorRepo repository.VenueSectorRepository,
 	eventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository,
+	eventTicketRepo repository.EventTicketRepository,
 	paymentMethodRepo repository.PaymentMethodRepository,
 
 	checkStatusTransactionJob job.CheckStatusTransactionJob,
@@ -86,6 +88,7 @@ func NewEventTransactionService(
 		VenueSectorRepo:               venueSectorRepo,
 		EventTransactionGarudaIDRepo:  eventTransactionGarudaIDRepo,
 		PaymentMethodRepo:             paymentMethodRepo,
+		EventTicketRepo:               eventTicketRepo,
 
 		CheckStatusTransactionJob: checkStatusTransactionJob,
 
@@ -715,6 +718,18 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		log.Error().Msg("Transaction not found")
 		return &lib.ErrorOrderNotFound
 	}
+
+	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transactionData.ID)
+	if err != nil {
+		return
+	}
+
+	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transactionData.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to find transaction by order number")
+		return
+	}
+
 	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to mark transaction as success")
@@ -725,7 +740,87 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	if err != nil {
 		return
 	}
-	// sent email to users
+
+	// sent invoice email to users with goroutine
+	go func() {
+		err = s.TransactionUseCase.SendInvoice(
+			ctx,
+			transactionDetail.Email,
+			transactionDetail.Fullname,
+			len(transactionItems),
+			transactionDetail,
+		)
+		if err != nil {
+			log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
+		}
+	}()
+
+	// Request generate eticket with goroutine
+	go func() {
+		tx, err := s.DB.Postgres.Begin(ctx)
+		if err != nil {
+			return
+		}
+		defer tx.Rollback(ctx)
+
+		var eventTickets []model.EventTicket
+
+		for _, val := range transactionItems {
+			if val.Email.Valid && val.Fullname.Valid {
+				ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
+
+				eventTicket := model.EventTicket{
+					EventID:          transactionDetail.Event.ID,
+					TicketCategoryID: transactionDetail.TicketCategory.ID,
+					TransactionID:    transactionDetail.ID,
+
+					TicketOwnerEmail:       val.Email.String,
+					TicketOwnerFullname:    val.Fullname.String,
+					TicketOwnerPhoneNumber: val.PhoneNumber,
+					TicketOwnerGarudaId:    val.GarudaID,
+					TicketNumber:           ticketNumber,
+					TicketCode:             "sekarang masih kosong",
+
+					EventTime:    transactionDetail.Event.EventTime,
+					EventVenue:   transactionDetail.VenueSector.Venue.Name,
+					EventCity:    transactionDetail.VenueSector.Venue.City,
+					EventCountry: transactionDetail.VenueSector.Venue.Country,
+					SectorName:   transactionDetail.VenueSector.Name,
+					AreaCode:     transactionDetail.VenueSector.AreaCode.String,
+					Entrance:     transactionDetail.TicketCategory.Entrance,
+					SeatRow:      1,
+					SeatColumn:   1,
+					SeatLabel:    "125",
+					IsCompliment: false,
+				}
+				ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
+				if err != nil {
+					log.Error().Err(err).Msg("failed to create data eticket")
+					return
+				}
+				eventTicket.ID = ticketId
+				eventTickets = append(eventTickets, eventTicket)
+			}
+		}
+
+		err = tx.Commit(ctx)
+		if err != nil {
+			log.Warn().Err(err).Msg("failed to create eticket")
+		}
+
+		for _, val := range eventTickets {
+			err = s.TransactionUseCase.SendETicket(
+				ctx,
+				val.TicketOwnerEmail,
+				val.TicketOwnerFullname,
+				val,
+				transactionDetail,
+			)
+			if err != nil {
+				log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
+			}
+		}
+	}()
 
 	log.Info().Msgf("Transaction marked as success: %v", markResult)
 
