@@ -13,6 +13,7 @@ type EventTransactionItem struct {
 
 	SeatRow    int
 	SeatColumn int
+	SeatLabel  sql.NullString
 
 	GarudaID sql.NullString
 

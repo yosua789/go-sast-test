@@ -5,6 +5,7 @@ import (
 	"assist-tix/database"
 	"assist-tix/domain"
 	"assist-tix/dto"
+	"assist-tix/entity"
 	"assist-tix/helper"
 	"assist-tix/internal/job"
 	"assist-tix/internal/usecase"
@@ -199,6 +200,8 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		PaymentExpiredAt: expiryOrder,
 	}
 
+	// If venue doesn't have seatmap it will always empty
+	var selectedSectorSeatmap map[string]entity.EventVenueSector
 	if venueSector.HasSeatmap {
 		log.Info().Msg("venueSector in ticket category has seatmap")
 		var seatParams []domain.SeatmapParam
@@ -215,6 +218,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		if sectorSeatmapErr != nil {
 			return
 		}
+		selectedSectorSeatmap = sectorSeatmap
 
 		for _, val := range req.Items {
 			seat, ok := sectorSeatmap[helper.ConvertRowColumnKey(val.SeatRow, val.SeatColumn)]
@@ -398,7 +402,14 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		var email sql.NullString = helper.ToSQLString(item.Email)
 		var phoneNumber sql.NullString = helper.ToSQLString(item.PhoneNumber)
 
-		transactionItems = append(transactionItems, model.EventTransactionItem{
+		var seatLabel sql.NullString
+
+		seat, ok := selectedSectorSeatmap[helper.ConvertRowColumnKey(item.SeatRow, item.SeatColumn)]
+		if ok {
+			seatLabel = sql.NullString{String: seat.Label, Valid: true}
+		}
+
+		transactionItem := model.EventTransactionItem{
 			TransactionID: transaction.ID,
 			// TicketCategoryID:      ticketCategoryId,
 
@@ -406,6 +417,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 			SeatRow:    item.SeatRow,
 			SeatColumn: item.SeatColumn,
+			SeatLabel:  seatLabel,
 
 			GarudaID:    garudaId,
 			Fullname:    fullName,
@@ -416,7 +428,9 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 			TotalPrice:            ticketCategory.Price,
 
 			CreatedAt: transaction.CreatedAt,
-		})
+		}
+
+		transactionItems = append(transactionItems, transactionItem)
 	}
 	log.Info().Str("transactionId", transaction.ID).Int("count", len(transactionItems)).Msg("create transaction item")
 
@@ -475,7 +489,9 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	// Kickin check status transaction
-	err = s.CheckStatusTransactionJob.EnqueueCheckTransaction(ctx, transaction.ID, s.Env.Transaction.ExpirationDuration)
+	marginTimeReleaseData := 30 * time.Second
+
+	err = s.CheckStatusTransactionJob.EnqueueCheckTransaction(ctx, transaction.ID, s.Env.Transaction.ExpirationDuration+marginTimeReleaseData)
 	if err != nil {
 		log.Error().Err(err).Str("TransactionId", transaction.ID).Msg("failed to kick job check status transaction")
 		return
@@ -857,6 +873,11 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		for _, val := range transactionItems {
 			if val.Email.Valid && val.Fullname.Valid {
 				ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
+				ticketCode, err := helper.GenerateTicketCode()
+				if err != nil {
+					log.Warn().Err(err).Msg("failed to generate ticket code")
+					return
+				}
 
 				eventTicket := model.EventTicket{
 					EventID:          transactionDetail.Event.ID,
@@ -868,7 +889,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 					TicketOwnerPhoneNumber: val.PhoneNumber,
 					TicketOwnerGarudaId:    val.GarudaID,
 					TicketNumber:           ticketNumber,
-					TicketCode:             "sekarang masih kosong",
+					TicketCode:             ticketCode,
 
 					EventTime:    transactionDetail.Event.EventTime,
 					EventVenue:   transactionDetail.VenueSector.Venue.Name,
@@ -877,9 +898,9 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 					SectorName:   transactionDetail.VenueSector.Name,
 					AreaCode:     transactionDetail.VenueSector.AreaCode.String,
 					Entrance:     transactionDetail.TicketCategory.Entrance,
-					SeatRow:      1,
-					SeatColumn:   1,
-					SeatLabel:    "125",
+					SeatRow:      val.SeatRow,
+					SeatColumn:   val.SeatColumn,
+					SeatLabel:    val.SeatLabel,
 					IsCompliment: false,
 				}
 				ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
