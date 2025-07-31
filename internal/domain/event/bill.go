@@ -4,18 +4,20 @@ import "time"
 
 // Order mean, transaction status `PENDING`
 type TransactionBill struct {
-	TransactionID     string                       `json:"transaction_id"`
-	OrderNumber       string                       `json:"order_number"`
-	Status            string                       `json:"status"`
-	Payment           PaymentInformation           `json:"payment"`
-	DetailInformation DetailInformationTransaction `json:"detail_information"`
-	Event             EventInformation             `json:"event"`
-	ItemCount         int                          `json:"item_count"`
-	ExpiredAt         time.Time                    `json:"expired_at"`
-	CreatedAt         time.Time                    `json:"created_at"`
+	TransactionID          string                       `json:"transaction_id"`
+	OrderNumber            string                       `json:"order_number"`
+	Status                 string                       `json:"status"`
+	Payment                PaymentInformation           `json:"payment"`
+	DetailInformation      DetailInformationTransaction `json:"detail_information"`
+	Event                  EventInformation             `json:"event"`
+	TransactionAccessToken string                       `json:"transaction_access_token"`
+	ItemCount              int                          `json:"item_count"`
+	ExpiredAt              time.Time                    `json:"expired_at"`
+	CreatedAt              time.Time                    `json:"created_at"`
 }
 
 type EventInformation struct {
+	ID   string    `json:"id"`
 	Name string    `json:"name"`
 	Time time.Time `json:"time"`
 }
@@ -46,9 +48,15 @@ type TicketSector struct {
 }
 
 type PaymentInformation struct {
-	Method      string `json:"method"`
+	// Method      string `json:"method"`
+	Type    string `json:"type"`
+	Group   string `json:"group"`
+	Code    string `json:"code"`
+	Channel string `json:"channel"`
+
 	DisplayName string `json:"display_name"`
-	Code        string `json:"code"`
-	VANumber    string `json:"va_number"`
-	GrandTotal  int    `json:"grand_total"`
+
+	PaymentAdditionalInformation string `json:"payment_additional_information"`
+
+	GrandTotal int `json:"grand_total"`
 }

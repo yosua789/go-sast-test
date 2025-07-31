@@ -31,7 +31,7 @@ type EventTicket struct {
 
 	SeatRow    int
 	SeatColumn int
-	SeatLabel  string
+	SeatLabel  sql.NullString
 
 	IsCompliment bool
 

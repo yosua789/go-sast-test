@@ -32,3 +32,5 @@ CREATE TABLE IF NOT EXISTS event_tickets (
     created_at timestamptz not null,
     updated_at timestamptz
 );
+
+ALTER TABLE event_tickets ADD CONSTRAINT unique_event_tickets UNIQUE (event_id, ticket_category_id, ticket_number, ticket_code);

@@ -30,6 +30,7 @@ type EventTicketCategoryRepository interface {
 	SoftDelete(ctx context.Context, tx pgx.Tx, ticketCategoryId string) (err error)
 	FindLowestPriceTicketByEventIds(ctx context.Context, tx pgx.Tx, eventIds ...string) (res map[string]int, err error)
 	FindTotalSaleTicketByEventIds(ctx context.Context, tx pgx.Tx, eventIds ...string) (res map[string]int, err error)
+	FindSeatByRowsColumnsEventSectorId(ctx context.Context, tx pgx.Tx, eventId, sectorId string, seatmaps ...domain.SeatmapParam) (seats map[string]entity.EventVenueSector, err error)
 }
 
 type EventTicketCategoryRepositoryImpl struct {
@@ -605,6 +606,82 @@ func (r *EventTicketCategoryRepositoryImpl) FindTotalSaleTicketByEventIds(ctx co
 		)
 
 		res[eventId] = totalPublicSale
+	}
+
+	return
+}
+
+// It doesn't check seat is booked or not
+func (r *EventTicketCategoryRepositoryImpl) FindSeatByRowsColumnsEventSectorId(ctx context.Context, tx pgx.Tx, eventId, sectorId string, seatmaps ...domain.SeatmapParam) (seats map[string]entity.EventVenueSector, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	var conditions []string
+	var args []interface{}
+	argIndex := 1
+
+	query := `SELECT 
+		vssm.id, 
+		vssm.seat_row, 
+		vssm.seat_column, 
+		CASE 
+			WHEN vssm.label != evssm.label THEN evssm.label
+			ELSE vssm.label
+		END AS seat_final_label,
+		CASE 
+			WHEN vssm.status != evssm.status THEN 
+				CASE 
+					WHEN evssm.status IN ('PREBOOK', 'COMPLIMENT') THEN 'UNAVAILABLE'
+					ELSE evssm.status
+				END 
+			ELSE vssm.status
+		END AS seat_final_status
+	FROM venue_sector_seatmap_matrix vssm 
+	LEFT JOIN event_venue_sector_seatmap_matrix evssm 
+		ON vssm.sector_id = evssm.sector_id 
+		AND vssm.seat_row = evssm.seat_row 
+		AND vssm.seat_column = evssm.seat_column
+		AND evssm.event_id = $1
+	WHERE vssm.sector_id = $2
+		AND (vssm.seat_row, vssm.seat_column) IN (`
+
+	args = append(args, eventId, sectorId)
+	argIndex += 2
+
+	for _, seat := range seatmaps {
+		conditions = append(conditions, fmt.Sprintf(`($%d, $%d)`, argIndex, argIndex+1))
+		args = append(args, seat.SeatRow, seat.SeatColumn)
+		argIndex += 2
+	}
+
+	query += strings.Join(conditions, ",")
+	query += `) ORDER BY vssm.seat_row ASC, vssm.seat_column ASC`
+
+	var rows pgx.Rows
+
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, args...)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, args...)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var sectorSeatmap entity.EventVenueSector
+		rows.Scan(
+			&sectorSeatmap.ID,
+			&sectorSeatmap.SeatRow,
+			&sectorSeatmap.SeatColumn,
+			&sectorSeatmap.Label,
+			&sectorSeatmap.Status,
+		)
+
+		seats[helper.ConvertRowColumnKey(sectorSeatmap.SeatRow, sectorSeatmap.SeatColumn)] = sectorSeatmap
 	}
 
 	return

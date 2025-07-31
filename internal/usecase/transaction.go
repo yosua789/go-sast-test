@@ -31,6 +31,7 @@ func (u *TransactionUsecase) SendBill(
 	ctx context.Context,
 	email, name string,
 	itemCount int,
+	trxAccessToken string,
 	paymentMethod model.PaymentMethod,
 	event model.Event,
 	transaction model.EventTransaction,
@@ -39,14 +40,17 @@ func (u *TransactionUsecase) SendBill(
 ) (err error) {
 	log.Info().Msg("send email bill")
 	var transactionPayload = domainEvent.TransactionBill{
-		TransactionID: transaction.ID,
-		OrderNumber:   transaction.OrderNumber,
+		TransactionID:          transaction.ID,
+		OrderNumber:            transaction.OrderNumber,
+		TransactionAccessToken: trxAccessToken,
 		Payment: domainEvent.PaymentInformation{
-			Method:      transaction.PaymentMethod,
-			DisplayName: paymentMethod.Name,
-			Code:        paymentMethod.PaymentCode,
-			VANumber:    transaction.PaymentAdditionalInfo,
-			GrandTotal:  transaction.GrandTotal,
+			Type:                         paymentMethod.PaymentType,
+			Group:                        paymentMethod.PaymentGroup,
+			Channel:                      paymentMethod.PaymentChannel,
+			Code:                         paymentMethod.PaymentCode,
+			PaymentAdditionalInformation: transaction.PaymentAdditionalInfo,
+			DisplayName:                  paymentMethod.Name,
+			GrandTotal:                   transaction.GrandTotal,
 		},
 		Status: transaction.Status,
 		DetailInformation: domainEvent.DetailInformationTransaction{
@@ -68,6 +72,7 @@ func (u *TransactionUsecase) SendBill(
 			},
 		},
 		Event: domainEvent.EventInformation{
+			ID:   event.ID,
 			Name: event.Name,
 			Time: event.EventTime,
 		},
@@ -112,11 +117,13 @@ func (u *TransactionUsecase) SendInvoice(
 		TransactionID: transactionDetail.ID,
 		OrderNumber:   transactionDetail.OrderNumber,
 		Payment: domainEvent.PaymentInformation{
-			Method:      transactionDetail.PaymentMethod.PaymentCode,
-			DisplayName: transactionDetail.PaymentMethod.Name,
-			Code:        transactionDetail.PaymentMethod.PaymentCode,
-			VANumber:    transactionDetail.PaymentAdditionalInfo,
-			GrandTotal:  transactionDetail.GrandTotal,
+			DisplayName:                  transactionDetail.PaymentMethod.Name,
+			Type:                         transactionDetail.PaymentMethod.PaymentType,
+			Group:                        transactionDetail.PaymentMethod.PaymentGroup,
+			Channel:                      transactionDetail.PaymentMethod.PaymentChannel,
+			Code:                         transactionDetail.PaymentMethod.PaymentCode,
+			PaymentAdditionalInformation: transactionDetail.PaymentAdditionalInfo,
+			GrandTotal:                   transactionDetail.GrandTotal,
 		},
 		Status: transactionDetail.Status,
 		DetailInformation: domainEvent.DetailInformationTransaction{
@@ -181,12 +188,13 @@ func (u *TransactionUsecase) SendETicket(
 	var transactionPayload = domainEvent.TransactionETicket{
 		TransactionID: transactionDetail.ID,
 		TicketNumber:  eventTicket.TicketNumber,
+		TicketCode:    eventTicket.TicketCode,
 		Payment: domainEvent.PaymentInformation{
-			Method:      transactionDetail.PaymentMethod.PaymentCode,
-			DisplayName: transactionDetail.PaymentMethod.Name,
-			Code:        transactionDetail.PaymentMethod.PaymentCode,
-			VANumber:    transactionDetail.PaymentAdditionalInfo,
-			GrandTotal:  transactionDetail.GrandTotal,
+			// Method:                       transactionDetail.PaymentMethod.PaymentCode,
+			DisplayName:                  transactionDetail.PaymentMethod.Name,
+			Code:                         transactionDetail.PaymentMethod.PaymentCode,
+			PaymentAdditionalInformation: transactionDetail.PaymentAdditionalInfo,
+			GrandTotal:                   transactionDetail.GrandTotal,
 		},
 		DetailInformation: domainEvent.DetailInformationTransaction{
 			BookEmail: email,

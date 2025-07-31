@@ -303,3 +303,10 @@ var (
 		Err:  errors.New("event ticket not found"),
 	}
 )
+
+var (
+	ErrorCreatePaymentLog = TIXError{
+		Code: 50008,
+		Err:  errors.New("failed to create payment log"),
+	}
+)
