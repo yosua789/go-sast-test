@@ -5,8 +5,10 @@ import (
 	"assist-tix/dto"
 	"assist-tix/lib"
 	"assist-tix/service"
+	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -26,17 +28,20 @@ type EventTransactionHandler interface {
 type EventTransactionHandlerImpl struct {
 	Env                     *config.EnvironmentVariable
 	EventTransactionService service.EventTransactionService
+	PaymentLogsService      service.PaymentLogsService
 	Validator               *validator.Validate
 }
 
 func NewEventTransactionHandler(
 	env *config.EnvironmentVariable,
 	eventTransactionService service.EventTransactionService,
+	paymentLogsService service.PaymentLogsService,
 	validator *validator.Validate,
 ) EventTransactionHandler {
 	return &EventTransactionHandlerImpl{
 		Env:                     env,
 		EventTransactionService: eventTransactionService,
+		PaymentLogsService:      paymentLogsService,
 		Validator:               validator,
 	}
 }
@@ -174,15 +179,32 @@ func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 		switch *tixErr {
 		case lib.ErrorOrderNotFound:
 			lib.RespondError(ctx, http.StatusNotFound, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
-			return
+			// return
 		case lib.ErrorCallbackSignatureInvalid:
 			lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
-			return
+			// return
 		default:
 			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
-			return
+			// return
 		}
+		headerString := ctx.GetString("headers")
+		bodyString := ctx.GetString("rawPayload")
+		respString, err := json.Marshal(res)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to marshal response")
+		}
+		_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), strconv.Itoa(tixErr.Code), tixErr.Error())
+		return
 	}
+	headerString := ctx.GetString("headers")
+	bodyString := ctx.GetString("rawPayload")
+	respString, err := json.Marshal(res)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal response")
+		return
+	}
+	_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), "", "")
+
 	ctx.JSON(http.StatusOK, res)
 }
 
@@ -205,16 +227,30 @@ func (h *EventTransactionHandlerImpl) CallbackQRISPaylabs(ctx *gin.Context) {
 		switch *tixErr {
 		case lib.ErrorOrderNotFound:
 			lib.RespondError(ctx, http.StatusNotFound, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
-			return
+			// return
 		case lib.ErrorCallbackSignatureInvalid:
 			lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
-			return
+			// return
 		default:
 			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
-			return
+			// return
 		}
+		headerString := ctx.GetString("headers")
+		bodyString := ctx.GetString("rawPayload")
+		respString, err := json.Marshal(res)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to marshal response")
+		}
+		_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), strconv.Itoa(tixErr.Code), tixErr.Error())
+		return
 	}
-
+	headerString := ctx.GetString("headers")
+	bodyString := ctx.GetString("rawPayload")
+	respString, err := json.Marshal(res)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal response")
+	}
+	_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), strconv.Itoa(tixErr.Code), tixErr.Error())
 	ctx.JSON(http.StatusOK, res)
 }
 

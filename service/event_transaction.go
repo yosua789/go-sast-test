@@ -51,6 +51,7 @@ type EventTransactionServiceImpl struct {
 	EventTicketRepo               repository.EventTicketRepository
 	VenueSectorRepo               repository.VenueSectorRepository
 	PaymentMethodRepo             repository.PaymentMethodRepository
+	PaymentLogsRepo               repository.PaymentLogRepository
 
 	CheckStatusTransactionJob job.CheckStatusTransactionJob
 
@@ -71,9 +72,8 @@ func NewEventTransactionService(
 	eventTransactionGarudaIDRepo repository.EventTransactionGarudaIDRepository,
 	eventTicketRepo repository.EventTicketRepository,
 	paymentMethodRepo repository.PaymentMethodRepository,
-
 	checkStatusTransactionJob job.CheckStatusTransactionJob,
-
+	paymentLogsRepo repository.PaymentLogRepository,
 	transactionUseCase usecase.TransactionUsecase,
 ) EventTransactionService {
 	return &EventTransactionServiceImpl{
@@ -90,6 +90,7 @@ func NewEventTransactionService(
 		EventTransactionGarudaIDRepo:  eventTransactionGarudaIDRepo,
 		PaymentMethodRepo:             paymentMethodRepo,
 		EventTicketRepo:               eventTicketRepo,
+		PaymentLogsRepo:               paymentLogsRepo,
 
 		CheckStatusTransactionJob: checkStatusTransactionJob,
 
@@ -712,14 +713,14 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	currentTime := time.Now().Local() // UTC +07:00
 	date := currentTime.Format("2006-01-02T15:04:05.999+07:00")
 	merchantId := s.Env.Paylabs.AccountID[len(s.Env.Paylabs.AccountID)-6:] // 6 characters
-	requestID := transaction.OrderNumber                                   // 20 characters
-
+	merchantTradeNo := transaction.OrderNumber                             // 20 characters
+	requestID := helper.GenerateRequestID()
 	path := "/qris/create"
 	privateKeyPem := s.Env.Paylabs.PrivateKey // Private key in PEM format
 	// VA
 	var jsonBody = dto.PaylabsQRISRequest{
 		MerchantID:      merchantId,                                   // 6 characters
-		MerchantTradeNo: requestID,                                    // 8 characters
+		MerchantTradeNo: merchantTradeNo,                              // 8 characters
 		RequestID:       requestID,                                    // 20 characters //for lookup purposes
 		PaymentType:     "QRIS",                                       // Payment type
 		Amount:          strconv.Itoa(transaction.GrandTotal) + ".00", // Amount with 2 decimal
@@ -806,6 +807,13 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	for key, value := range ctx.Request.Header {
 		header[key] = value
 	}
+	headerString, err := json.Marshal(header)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal headers")
+		return
+	}
+	ctx.Set("headers", string(headerString))
+
 	log.Info().Msgf("Headers: %v", header)
 
 	rawPayload := ctx.GetString("rawPayload")
@@ -838,8 +846,13 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		log.Error().Err(err).Msg("Failed to find transaction by order number")
 		return
 	}
+	transactionTime, err := time.Parse(time.RFC3339, *req.TrxDateTime)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to parse transaction time")
+		return
+	}
 
-	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID)
+	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, transactionTime, req.PaymentRequestId)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to mark transaction as success")
 		return
@@ -1069,6 +1082,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 
 	log.Info().Msg("Processing Paylabs VA snap callback")
 	header := map[string]interface{}{}
+
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to begin transaction")
@@ -1079,6 +1093,13 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	for key, value := range ctx.Request.Header {
 		header[key] = value
 	}
+
+	headerString, err := json.Marshal(header)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal headers")
+		return
+	}
+	ctx.Set("headers", string(headerString))
 	log.Info().Msgf("Headers: %v", header)
 
 	rawPayload := ctx.GetString("rawPayload")
@@ -1100,7 +1121,22 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 		log.Error().Msg("Transaction not found")
 		return res, &lib.ErrorOrderNotFound
 	}
-	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID)
+
+	layout := "20060102150405"
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to load location")
+		return
+	}
+
+	// Parse the time string in Asia/Jakarta location
+	t, err := time.ParseInLocation(layout, req.SuccessTime, loc)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to parse transaction time")
+		return
+	}
+
+	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, t, req.PaymentMethodInfo.RRN)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to mark transaction as success")
 		return

@@ -21,7 +21,7 @@ type EventTransactionRepository interface {
 	CreateTransaction(ctx context.Context, tx pgx.Tx, eventId, eventTicketCategoryId string, req model.EventTransaction) (res model.EventTransaction, err error)
 	IsEmailAlreadyBookEvent(ctx context.Context, tx pgx.Tx, eventId, email string) (id string, err error)
 	FindByOrderNumber(ctx context.Context, tx pgx.Tx, orderNumber string) (res model.EventTransaction, err error)
-	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error)
+	MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string, successTime time.Time, pgOrderID string) (res model.EventTransaction, err error)
 	UpdatePaymentAdditionalInformation(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
 	FindById(ctx context.Context, tx pgx.Tx, transactionID string) (resData dto.OrderDetails, err error)
 	FindTransactionDetailByTransactionId(ctx context.Context, tx pgx.Tx, transactionID string) (res entity.EventTransaction, err error)
@@ -71,7 +71,8 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()
 
-	query := `INSERT INTO event_transactions (
+	query := `
+		INSERT INTO event_transactions (
 		order_number,
 		transaction_status,
 		transaction_status_information, 
@@ -179,16 +180,16 @@ func (r *EventTransactionRepositoryImpl) FindByOrderNumber(ctx context.Context, 
 	return
 }
 
-func (r *EventTransactionRepositoryImpl) MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string) (res model.EventTransaction, err error) {
+func (r *EventTransactionRepositoryImpl) MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string, successTime time.Time, pgOrderID string) (res model.EventTransaction, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	currentTime := time.Now()
 	defer cancel()
 
-	query := `UPDATE event_transactions SET transaction_status = $1, updated_at = $2 WHERE id = $3 RETURNING id, created_at`
+	query := `UPDATE event_transactions SET transaction_status = $1, updated_at = $2, pg_order_id = $3 WHERE id = $4 RETURNING id, created_at`
 	if tx != nil {
-		err = tx.QueryRow(ctx, query, lib.EventTransactionStatusSuccess, currentTime, transactionID).Scan(&res.ID, &res.CreatedAt)
+		err = tx.QueryRow(ctx, query, lib.EventTransactionStatusSuccess, currentTime, pgOrderID, transactionID).Scan(&res.ID, &res.CreatedAt)
 	} else {
-		err = r.WrapDB.Postgres.QueryRow(ctx, query, lib.EventTransactionStatusSuccess, currentTime, transactionID).Scan(&res.ID, &res.CreatedAt)
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, lib.EventTransactionStatusSuccess, currentTime, pgOrderID, transactionID).Scan(&res.ID, &res.CreatedAt)
 	}
 
 	if err != nil {
