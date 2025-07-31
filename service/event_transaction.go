@@ -972,7 +972,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 		return &lib.ErrorCallbackSignatureInvalid
 	}
 	//  actual callback processing
-	transactionData, err := s.EventTransactionRepo.FindByOrderNumber(ctx, tx, req.RequestID)
+	transactionData, err := s.EventTransactionRepo.FindByOrderNumber(ctx, tx, req.MerchantTradeNo)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to find transaction by order number")
 		return
