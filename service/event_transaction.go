@@ -493,6 +493,86 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		log.Error().Err(err).Msg("failed to generate access token")
 		return
 	}
+
+	// Testing in local purposes
+	// go func() {
+	// 	tx, err := s.DB.Postgres.Begin(ctx)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// 	defer tx.Rollback(ctx)
+
+	// 	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transaction.ID)
+	// 	if err != nil {
+	// 		return
+	// 	}
+
+	// 	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transaction.ID)
+	// 	if err != nil {
+	// 		log.Error().Err(err).Msg("Failed to find transaction by order number")
+	// 		return
+	// 	}
+
+	// 	var eventTickets []model.EventTicket
+
+	// 	for _, val := range transactionItems {
+	// 		if val.Email.Valid && val.Fullname.Valid {
+	// 			ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
+
+	// 			eventTicket := model.EventTicket{
+	// 				EventID:          transactionDetail.Event.ID,
+	// 				TicketCategoryID: transactionDetail.TicketCategory.ID,
+	// 				TransactionID:    transactionDetail.ID,
+
+	// 				TicketOwnerEmail:       val.Email.String,
+	// 				TicketOwnerFullname:    val.Fullname.String,
+	// 				TicketOwnerPhoneNumber: val.PhoneNumber,
+	// 				TicketOwnerGarudaId:    val.GarudaID,
+	// 				TicketNumber:           ticketNumber,
+	// 				TicketCode:             "sekarang masih kosong",
+
+	// 				EventTime:    transactionDetail.Event.EventTime,
+	// 				EventVenue:   transactionDetail.VenueSector.Venue.Name,
+	// 				EventCity:    transactionDetail.VenueSector.Venue.City,
+	// 				EventCountry: transactionDetail.VenueSector.Venue.Country,
+	// 				SectorName:   transactionDetail.VenueSector.Name,
+	// 				AreaCode:     transactionDetail.VenueSector.AreaCode.String,
+	// 				Entrance:     transactionDetail.TicketCategory.Entrance,
+	// 				SeatRow:      1,
+	// 				SeatColumn:   1,
+	// 				SeatLabel:    "125",
+	// 				IsCompliment: false,
+	// 			}
+	// 			ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
+	// 			if err != nil {
+	// 				log.Error().Err(err).Msg("failed to create data eticket")
+	// 				return
+	// 			}
+	// 			eventTicket.ID = ticketId
+	// 			eventTickets = append(eventTickets, eventTicket)
+	// 		}
+	// 	}
+
+	// 	err = tx.Commit(ctx)
+	// 	if err != nil {
+	// 		log.Warn().Err(err).Msg("failed to create eticket")
+	// 	}
+
+	// 	for _, val := range eventTickets {
+	// 		err = s.TransactionUseCase.SendETicket(
+	// 			ctx,
+	// 			val.TicketOwnerEmail,
+	// 			val.TicketOwnerFullname,
+	// 			val,
+	// 			transactionDetail,
+	// 		)
+	// 		if err != nil {
+	// 			log.Warn().Str("email", transaction.Email).Err(err).Msg("failed to send job invoice")
+	// 		}
+	// 	}
+
+	// }()
+
 	// set via cookie
 	// helper.SetAccessToken(ctx, accessToken)
 	// TODO ADD JWT
