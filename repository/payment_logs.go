@@ -33,7 +33,7 @@ func NewPaymentLogRepository(
 func (r *PaymentLogRepositoryImpl) Create(ctx context.Context, tx pgx.Tx, paymentLog model.PaymentLog) (res model.PaymentLog, err error) {
 	res = paymentLog
 	// Create a new payment log in the database
-	query := `INSERT INTO payment_logs ( header, body, response,  error_response, path, error_code)
+	query := `INSERT INTO payment_logs ( header, body, response,  error_response, endpoint_path, error_code)
 			 VALUES ($1, $2, $3, $4, $5, $6) returning id`
 	if tx != nil {
 		err = tx.QueryRow(ctx, query,
