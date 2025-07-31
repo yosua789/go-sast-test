@@ -17,6 +17,7 @@ type EventTransactionHandler interface {
 	CreateTransaction(ctx *gin.Context)
 	// PaylabsVASnap(ctx *gin.Context)
 	CallbackVASnap(ctx *gin.Context)
+	CallbackQRISPaylabs(ctx *gin.Context)
 	IsEmailAlreadyBook(ctx *gin.Context)
 	GetAvailablePaymentMethods(ctx *gin.Context)
 	GetTransactionDetails(ctx *gin.Context)
@@ -112,7 +113,7 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 			switch *tixErr {
 			case lib.ErrorEventSaleIsPaused, lib.ErrorEventSaleIsNotStartedYet, lib.ErrorEventSaleAlreadyOver:
 				lib.RespondError(ctx, http.StatusForbidden, "error", err, tixErr.Code, h.Env.App.Debug)
-			case lib.ErrorSeatIsAlreadyBooked, lib.ErrorTicketIsOutOfStock, lib.ErrorPurchaseQuantityExceedTheLimit, lib.ErrorOrderInformationIsAlreadyBook, lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed, lib.ErrorDuplicateGarudaIDPayload:
+			case lib.ErrorSeatIsAlreadyBooked, lib.ErrorTicketIsOutOfStock, lib.ErrorPurchaseQuantityExceedTheLimit, lib.ErrorOrderInformationIsAlreadyBook, lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed, lib.ErrorDuplicateGarudaIDPayload, lib.TransactionWithoutAdultError:
 				lib.RespondError(ctx, http.StatusConflict, "error", err, tixErr.Code, h.Env.App.Debug)
 			case lib.ErrorEventIdInvalid, lib.ErrorTicketCategoryInvalid, lib.ErrorFailedToBookSeat, lib.ErrorPaymentMethodInvalid, lib.ErrorBadRequest:
 				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
@@ -173,6 +174,38 @@ func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 		switch *tixErr {
 		case lib.ErrorOrderNotFound:
 			lib.RespondError(ctx, http.StatusNotFound, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
+			return
+		case lib.ErrorCallbackSignatureInvalid:
+			lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
+			return
+		default:
+			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			return
+		}
+	}
+	lib.RespondSuccess(ctx, http.StatusOK, "Callback received successfully", nil)
+}
+
+func (h *EventTransactionHandlerImpl) CallbackQRISPaylabs(ctx *gin.Context) {
+	// Implement the callback logic here
+	var req dto.QRISCallbackRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Error().Err(err).Msg("error binding JSON for callback")
+		lib.RespondError(ctx, http.StatusBadRequest, "invalid request body", err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+	log.Info().Msgf("Received callback: %+v", req)
+
+	// This is a placeholder for the actual implementation
+	err := h.EventTransactionService.CallbackQRISPaylabs(ctx, req)
+	var tixErr *lib.TIXError
+	if errors.As(err, &tixErr) {
+		switch *tixErr {
+		case lib.ErrorOrderNotFound:
+			lib.RespondError(ctx, http.StatusNotFound, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
+			return
+		case lib.ErrorCallbackSignatureInvalid:
+			lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
 			return
 		default:
 			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
