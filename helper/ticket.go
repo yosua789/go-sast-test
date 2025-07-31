@@ -1,18 +1,35 @@
 package helper
 
 import (
+	"crypto/rand"
+	"encoding/base32"
 	"fmt"
-	"time"
 )
 
 const PREFIX_TICKET_NUMBER = "TKT"
 
 func GenerateTicketNumber(prefix string) string {
-	// Current timestamp as YYYY
-	timestamp := time.Now().Format("20060102150405")
+	return fmt.Sprintf("%s-%s", prefix, RandomUpperAlphaNumeric(10))
+}
 
-	// Generate a random 6-digit number
-	randomID := rng.Intn(900000) + 100000
+// Returning 50 character
+func GenerateTicketCode() (string, error) {
+	const targetLength = 50
+	const entropyBytes = 32 // start with 32 bytes
 
-	return fmt.Sprintf("%s-%s-%d", prefix, timestamp, randomID)
+	for {
+		raw := make([]byte, entropyBytes)
+		_, err := rand.Read(raw)
+		if err != nil {
+			return "", err
+		}
+
+		code := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(raw)
+		if len(code) >= targetLength {
+			return code[:targetLength], nil
+		}
+
+		// Jika terlalu pendek, tambahkan entropi dan ulang
+		// (opsional: entropyBytes += 1)
+	}
 }

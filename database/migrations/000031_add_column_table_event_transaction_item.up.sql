@@ -1,0 +1,1 @@
+ALTER TABLE event_transaction_items ADD COLUMN seat_label varchar(50);

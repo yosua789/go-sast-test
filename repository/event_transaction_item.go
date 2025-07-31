@@ -47,6 +47,7 @@ func (r *EventTransactionItemRepositoryImpl) CreateTransactionItems(ctx context.
 
 		seat_row,
 		seat_column,
+		seat_label,
 
 		additional_information,
 		total_price,
@@ -57,9 +58,9 @@ func (r *EventTransactionItemRepositoryImpl) CreateTransactionItems(ctx context.
 	var placeholders []string
 
 	for i, req := range reqs {
-		base := i * 10
-		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, NOW())",
-			base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
+		base := i * 11
+		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, NOW())",
+			base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11))
 
 		args = append(args,
 			req.TransactionID,
@@ -71,6 +72,7 @@ func (r *EventTransactionItemRepositoryImpl) CreateTransactionItems(ctx context.
 			// req.TicketCategoryID,
 			req.SeatRow,
 			req.SeatColumn,
+			req.SeatLabel,
 			req.AdditionalInformation,
 			req.TotalPrice,
 		)
@@ -103,6 +105,7 @@ func (r *EventTransactionItemRepositoryImpl) GetTransactionItemsByTransactionId(
 		quantity,
 		seat_row,
 		seat_column,
+		seat_label,
 		garuda_id,
 		full_name,
 		email,
@@ -131,6 +134,7 @@ func (r *EventTransactionItemRepositoryImpl) GetTransactionItemsByTransactionId(
 			&transactionItem.Quantity,
 			&transactionItem.SeatRow,
 			&transactionItem.SeatColumn,
+			&transactionItem.SeatLabel,
 			&transactionItem.GarudaID,
 			&transactionItem.Fullname,
 			&transactionItem.Email,
