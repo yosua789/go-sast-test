@@ -46,9 +46,15 @@ type TicketSector struct {
 }
 
 type PaymentInformation struct {
-	Method      string `json:"method"`
+	// Method      string `json:"method"`
+	Type    string `json:"type"`
+	Group   string `json:"group"`
+	Code    string `json:"code"`
+	Channel string `json:"channel"`
+
 	DisplayName string `json:"display_name"`
-	Code        string `json:"code"`
-	VANumber    string `json:"va_number"`
-	GrandTotal  int    `json:"grand_total"`
+
+	PaymentAdditionalInformation string `json:"payment_additional_information"`
+
+	GrandTotal int `json:"grand_total"`
 }
