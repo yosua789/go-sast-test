@@ -27,12 +27,12 @@ import (
 
 type EventTransactionService interface {
 	CreateEventTransaction(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
-	paylabsVASnap(ctx *gin.Context, transaction model.EventTransaction) (vaNo string, err error)
+	paylabsVASnap(ctx *gin.Context, transaction model.EventTransaction, eventName string) (vaNo string, err error)
 	paylabsQris(ctx *gin.Context, transaction model.EventTransaction, productName string) (barcode string, err error)
-	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error)
+	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (res dto.CallbackSnapResponse, err error)
 	ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error)
 	GetAvailablePaymentMethods(ctx *gin.Context, eventId string) (res []dto.EventGrouppedPaymentMethodsResponse, err error)
-	CallbackQRISPaylabs(ctx *gin.Context, req dto.QRISCallbackRequest) (err error)
+	CallbackQRISPaylabs(ctx *gin.Context, req dto.QRISCallbackRequest) (res dto.QRISCallbackResponse, err error)
 	FindById(ctx context.Context, transactionID string) (res dto.OrderDetails, err error)
 }
 
@@ -431,7 +431,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	if helper.IsVA(transaction.PaymentMethod) {
 		log.Info().Msg("payment method is VA, calling paylabs snap")
 		var errPaylabs error
-		paymentAdditionalInformation, errPaylabs = s.paylabsVASnap(ctx, transaction)
+		paymentAdditionalInformation, errPaylabs = s.paylabsVASnap(ctx, transaction, event.Name+" - "+ticketCategory.Name)
 		if errPaylabs != nil {
 			log.Error().Err(errPaylabs).Msg("failed to get paylabs va number")
 			err = &lib.ErrorTransactionPaylabs
@@ -597,7 +597,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 }
 
 // static Eventtransaction without any business logic
-func (s *EventTransactionServiceImpl) paylabsVASnap(ctx *gin.Context, transaction model.EventTransaction) (vaNo string, err error) {
+func (s *EventTransactionServiceImpl) paylabsVASnap(ctx *gin.Context, transaction model.EventTransaction, eventName string) (vaNo string, err error) {
 	//  VA SNAP Init
 	expiredDate := transaction.PaymentExpiredAt.Format("2006-01-02T15:04:05+07:00")
 	date := time.Now().Format("2006-01-02T15:04:05.999+07:00")
@@ -773,13 +773,13 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	return barcode, nil
 }
 
-func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (err error) {
+func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (res dto.CallbackSnapResponse, err error) {
 	log.Info().Msg("Processing Paylabs VA snap callback")
 	header := map[string]interface{}{}
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to begin transaction")
-		return err
+		return
 	}
 	defer tx.Rollback(ctx)
 
@@ -795,7 +795,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	log.Info().Msgf("Request URL: %v", req)
 	isValid := helper.IsValidPaylabsRequest(ctx, "/transfer-va/payment", buf.String(), s.Env.Paylabs.PublicKey)
 	if !isValid {
-		return errors.New("invalid signature")
+		return dto.CallbackSnapResponse{}, &lib.ErrorCallbackSignatureInvalid
 	}
 	//  actual callback processing
 	transactionData, err := s.EventTransactionRepo.FindByOrderNumber(ctx, tx, *req.TrxId)
@@ -805,7 +805,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	}
 	if transactionData.ID == "" {
 		log.Error().Msg("Transaction not found")
-		return &lib.ErrorOrderNotFound
+		return res, &lib.ErrorOrderNotFound
 	}
 
 	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transactionData.ID)
@@ -910,7 +910,20 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 			}
 		}
 	}()
+	serviceCode := "25"
+	caseCode := "00"
+	res.ResponseCode = "200" + serviceCode + caseCode
+	res.ResponseMessage = "Transaction marked as success"
+	res.VirtualAccountData.CustomerNo = transactionData.ID[:20] // 20 characters
+	res.VirtualAccountData.VirtualAccountNo = req.VirtualAccountNo
+	res.VirtualAccountData.VirtualAccountName = transactionData.Fullname
+	res.VirtualAccountData.VirtualAccountEmail = &transactionData.Email
+	res.VirtualAccountData.PaymentRequestId = req.PaymentRequestId
+	// res.VirtualAccountData.PaidAmount.Value = strconv.Itoa(transactionData.GrandTotal) + ".00" // Amount with 2 decimal
+	// res.VirtualAccountData.PaidAmount.Currency = "IDR" // Fixed currency
 
+	ctx.Header("Content-Type", "application/json")
+	ctx.Header("X-TIMESTAMP", time.Now().Format("2006-01-02T15:04:05.999+07:00"))
 	log.Info().Msgf("Transaction marked as success: %v", markResult)
 
 	return
@@ -1027,13 +1040,14 @@ func (s *EventTransactionServiceImpl) FindById(ctx context.Context, transactionI
 	return
 }
 
-func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req dto.QRISCallbackRequest) (err error) {
+func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req dto.QRISCallbackRequest) (res dto.QRISCallbackResponse, err error) {
+
 	log.Info().Msg("Processing Paylabs VA snap callback")
 	header := map[string]interface{}{}
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to begin transaction")
-		return err
+		return
 	}
 	defer tx.Rollback(ctx)
 
@@ -1049,7 +1063,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	log.Info().Msgf("Request URL: %v", req)
 	isValid := helper.IsValidPaylabsRequest(ctx, ctx.FullPath(), buf.String(), s.Env.Paylabs.PublicKey)
 	if !isValid {
-		return &lib.ErrorCallbackSignatureInvalid
+		return res, &lib.ErrorCallbackSignatureInvalid
 	}
 	//  actual callback processing
 	transactionData, err := s.EventTransactionRepo.FindByOrderNumber(ctx, tx, req.MerchantTradeNo)
@@ -1059,7 +1073,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 	if transactionData.ID == "" {
 		log.Error().Msg("Transaction not found")
-		return &lib.ErrorOrderNotFound
+		return res, &lib.ErrorOrderNotFound
 	}
 	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID)
 	if err != nil {
@@ -1069,11 +1083,36 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 
 	err = tx.Commit(ctx)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to commit transaction")
 		return
 	}
 	// sent email to users
-
+	// -----------------signature recipe----------
+	date := time.Now().Format("2006-01-02T15:04:05.999+07:00")
+	path := ctx.FullPath()
+	partnerID := s.Env.Paylabs.AccountID
+	privateKey := s.Env.Paylabs.PrivateKey
+	requestID := helper.GenerateRequestID()
+	// -----------------signature recipe----------
 	log.Info().Msgf("Transaction marked as success: %v", markResult)
+	res.MerchantID = s.Env.Paylabs.AccountID
+	req.ErrCode = "0"
+	req.RequestID = requestID
+	jsonData, err := json.Marshal(res)
+	if err != nil {
+		log.Error().Err(err)
+		return
+	}
+	log.Info().Msgf("JSON Payload: %s", jsonData)
+
+	// Hash the JSON body
+	shaJson := sha256.Sum256(jsonData)
+	signature := helper.GenerateSignature(shaJson, path, date, privateKey)
+	ctx.Header("X-PARTNER-ID", partnerID)
+	ctx.Header("X-REQUEST-ID", requestID)
+	ctx.Header("X-TIMESTAMP", date)
+	ctx.Header("X-SIGNATURE", signature)
+	ctx.Header("Content-Type", "application/json;charset=utf-8")
 
 	return
 
