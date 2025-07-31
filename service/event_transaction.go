@@ -245,6 +245,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	// TODO: Checking bulk garuda id
 	if eventSettings.GarudaIdVerification {
+		var hasAdult bool
 		// Verify garuda id
 		for i, item := range req.Items {
 
@@ -302,6 +303,9 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 						return
 					}
 				}
+				if externalResp.Data.Age > s.Env.GarudaID.MinimumAge {
+					hasAdult = true
+				}
 				//  append garuda id to transaction item
 				req.Items[i].GarudaID = item.GarudaID
 				req.Items[i].FullName = externalResp.Data.Name
@@ -309,6 +313,11 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 				req.Items[i].PhoneNumber = externalResp.Data.PhoneNumber
 
 				log.Info().Interface("externalResp", externalResp).Msg("garuda id validation response")
+			}
+			if !hasAdult {
+				err = &lib.TransactionWithoutAdultError
+				log.Error().Err(err).Msg("transaction must contain at least one adult ticket")
+				return res, err
 			}
 		}
 	} else {

@@ -150,6 +150,7 @@ type EnvironmentVariable struct {
 		BaseUrl string `mapstructure:"BASE_URL"`
 		ApiKey  string `mapstructure:"API_KEY"`
 		// IsMock?  bool   `mapstructure:"IS_MOCK"`
+		MinimumAge int `mapstructure:"MINIMUM_AGE"` // Minimum age in years for Garuda ID verification
 	} `mapstructure:"GARUDA_ID"`
 }
 

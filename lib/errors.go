@@ -188,6 +188,10 @@ var (
 		Code: 50004,
 		Err:  errors.New("failed to create transaction on paylabs, please try again"),
 	}
+	TransactionWithoutAdultError = TIXError{
+		Code: 40914,
+		Err:  errors.New("transaction must contain at least one adult ticket"),
+	}
 )
 
 var (
