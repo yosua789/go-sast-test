@@ -38,6 +38,9 @@ spec:
             - name: secrets-paylabs
               readOnly: true
               mountPath: "/secrets/paylabs"
+            - name: secrets-garuda-id
+              readOnly: true
+              mountPath: "/secrets/garuda-id"
           readinessProbe:
             failureThreshold: 3
             httpGet:
@@ -62,3 +65,6 @@ spec:
         - name: secrets-paylabs
           secret:
             secretName: secrets-paylabs
+        - name: secrets-garuda-id
+          secret:
+            secretName: secrets-garuda-id
