@@ -213,37 +213,41 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 			})
 		}
 
-		// Checking choosen seat is in available status
-		log.Info().Msg("checking choosen seat is in available status")
-		sectorSeatmap, sectorSeatmapErr := s.EventTicketCategoryRepo.FindSeatmapStatusByEventSectorId(ctx, tx, eventId, ticketCategory.VenueSectorId, seatParams)
-		if sectorSeatmapErr != nil {
-			return
-		}
-		selectedSectorSeatmap = sectorSeatmap
-
-		for _, val := range req.Items {
-			seat, ok := sectorSeatmap[helper.ConvertRowColumnKey(val.SeatRow, val.SeatColumn)]
-			if !ok {
-				err = &lib.ErrorBookedSeatNotFound
+		if s.Env.App.AutoAssignSeat {
+			// TODO: Add assign seat
+		} else {
+			// Checking choosen seat is in available status
+			log.Info().Msg("checking choosen seat is in available status")
+			sectorSeatmap, sectorSeatmapErr := s.EventTicketCategoryRepo.FindSeatmapStatusByEventSectorId(ctx, tx, eventId, ticketCategory.VenueSectorId, seatParams)
+			if sectorSeatmapErr != nil {
 				return
-			} else {
-				switch seat.Status {
-				case lib.SeatmapStatusUnavailable:
-					err = &lib.ErrorSeatIsAlreadyBooked
-					return
-				case lib.SeatmapStatusDisable:
-					// err = &lib.ErrorFailedToBookSeat
+			}
+			selectedSectorSeatmap = sectorSeatmap
+
+			for _, val := range req.Items {
+				seat, ok := sectorSeatmap[helper.ConvertRowColumnKey(val.SeatRow, val.SeatColumn)]
+				if !ok {
 					err = &lib.ErrorBookedSeatNotFound
 					return
+				} else {
+					switch seat.Status {
+					case lib.SeatmapStatusUnavailable:
+						err = &lib.ErrorSeatIsAlreadyBooked
+						return
+					case lib.SeatmapStatusDisable:
+						// err = &lib.ErrorFailedToBookSeat
+						err = &lib.ErrorBookedSeatNotFound
+						return
+					}
 				}
 			}
-		}
 
-		// Checking seat is already booked by try to insert
-		log.Info().Msg("checking seat is already booked by try to insert")
-		err = s.EventSeatmapBookRepo.CreateSeatBook(ctx, tx, eventId, ticketCategory.VenueSectorId, seatParams)
-		if err != nil {
-			return
+			// Checking seat is already booked by try to insert
+			log.Info().Msg("checking seat is already booked by try to insert")
+			err = s.EventSeatmapBookRepo.CreateSeatBook(ctx, tx, eventId, ticketCategory.VenueSectorId, seatParams)
+			if err != nil {
+				return
+			}
 		}
 	}
 	usedGarudaID := make(map[string]interface{})
