@@ -375,13 +375,24 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		additionalFeesDetails = string(additionalFeeStr)
 		transaction.AdditionalFeeDetails = additionalFeesDetails
 	}
+
 	transaction.AdminFeePercentage = float32(totalAdminFeePercentage)
 	transaction.TaxPercentage = float32(totalTaxPercentage)
 	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee
 	// transaction.AdminFeePercentage = float32(eventSettings.AdminFeePercentage)
 	// log.Info().Int("TotalAdminFee", totalAdminFee).Float32("AdminFeePercentage", transaction.AdminFeePercentage).Msg("calculate admin fee")
-
-	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee
+	var pgAdditionalFee int
+	if paymentMethod.AdditionalFee > 0 {
+		if paymentMethod.IsPercentage {
+			pgAdditionalFee = int(float64(transaction.TotalPrice) * paymentMethod.AdditionalFee / 100)
+		} else {
+			pgAdditionalFee = int(paymentMethod.AdditionalFee)
+		}
+		transaction.PGAdditionalFee = pgAdditionalFee
+	} else {
+		transaction.PGAdditionalFee = 0
+	}
+	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee + transaction.PGAdditionalFee
 	log.Info().Int("GrandTotal", transaction.GrandTotal).Msg("got grand total price")
 
 	log.Info().Msg("create transaction to database")

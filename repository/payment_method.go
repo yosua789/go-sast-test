@@ -152,7 +152,9 @@ func (r *PaymentMethodRepositoryImpl) ValidatePaymentCodeIsActive(ctx context.Co
 		payment_channel,
 
 		created_at,
-		paused_at
+		paused_at,
+		is_percentage,
+		additional_fee
 	FROM payment_methods
 	WHERE payment_code = $1 
 		AND is_active = true
@@ -173,6 +175,8 @@ func (r *PaymentMethodRepositoryImpl) ValidatePaymentCodeIsActive(ctx context.Co
 			&paymentMethod.PaymentChannel,
 			&paymentMethod.CreatedAt,
 			&paymentMethod.UpdatedAt,
+			&paymentMethod.IsPercentage,
+			&paymentMethod.AdditionalFee,
 		)
 	} else {
 		err = r.WrapDB.Postgres.QueryRow(ctx, query, paymentCode).Scan(
@@ -188,6 +192,8 @@ func (r *PaymentMethodRepositoryImpl) ValidatePaymentCodeIsActive(ctx context.Co
 			&paymentMethod.PaymentChannel,
 			&paymentMethod.CreatedAt,
 			&paymentMethod.UpdatedAt,
+			&paymentMethod.IsPercentage,
+			&paymentMethod.AdditionalFee,
 		)
 	}
 

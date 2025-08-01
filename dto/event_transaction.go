@@ -81,4 +81,5 @@ type OrderDetails struct {
 	Country               string                         `json:"country"`                 // event transaction -> user -> country
 	City                  string                         `json:"city"`                    // event transaction -> user -> city
 	AdditionalPayment     []entity.AdditionalPaymentInfo `json:"additional_payment"`      // event transaction -> transaction -> additional payment info
+	PGAdditionalFee       int                            `json:"pg_additional_fee"`       // event transaction -> transaction -> additional fee for payment gateway
 }

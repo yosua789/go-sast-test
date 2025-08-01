@@ -277,7 +277,8 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	et.total_tax,
 	et.total_price,
 	v.country,
-	v.city
+	v.city,
+	et.pg_additional_fee
 	FROM event_transactions et
 	JOIN events e ON et.event_id = e.id
 	JOIN venues v ON e.venue_id = v.id
@@ -288,7 +289,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	et.payment_expired_at, et.transaction_status,
 	et.payment_additional_information, et.payment_method,
 	et.grand_total, et.total_admin_fee, et.total_tax, et.total_price, 
-	v.country, v.city
+	v.country, v.city, et.pg_additional_fee
 	LIMIT 1;
 	`
 	if tx != nil {
@@ -307,6 +308,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.TotalPrice,
 			&res.Country,
 			&res.City,
+			&res.PGAdditionalFee, // Additional fee for payment gateway
 		)
 	} else {
 		err = r.WrapDB.Postgres.QueryRow(ctx, query, transactionID).Scan(
@@ -324,6 +326,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.TotalPrice,
 			&res.Country,
 			&res.City,
+			&res.PGAdditionalFee, // Additional fee for payment gateway
 		)
 	}
 

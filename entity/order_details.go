@@ -19,6 +19,7 @@ type OrderDetails struct {
 	TransactionQuantity   int       `json:"transaction_quantity"`    // event_transaction -> transaction -> item count
 	Country               string    `json:"country"`                 // event transaction -> user -> country
 	City                  string    `json:"city"`                    // event transaction -> user -> city
+	PGAdditionalFee       int       `json:"pg_additional_fee"`       // event transaction -> transaction -> additional fee for payment gateway
 } // start from event_transaction
 
 type AdditionalPaymentInfo struct {
