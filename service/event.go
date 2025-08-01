@@ -376,7 +376,7 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 		}, &lib.ErrorGarudaIDAlreadyUsed
 	}
 
-	externalResp, err := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, garudaID)
+	externalResp, err := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, garudaID, s.Env.GarudaID.ApiKey)
 	if err != nil {
 		return resp, &lib.ErrorGetGarudaID
 	}

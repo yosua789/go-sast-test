@@ -25,6 +25,7 @@ type EventTransactionRepository interface {
 	UpdatePaymentAdditionalInformation(ctx context.Context, tx pgx.Tx, transactionID, vaNo string) (err error)
 	FindById(ctx context.Context, tx pgx.Tx, transactionID string) (resData dto.OrderDetails, err error)
 	FindTransactionDetailByTransactionId(ctx context.Context, tx pgx.Tx, transactionID string) (res entity.EventTransaction, err error)
+	MarkTransactionAsFailed(ctx context.Context, tx pgx.Tx, transactionID string, pgOrderID string) (res model.EventTransaction, err error)
 }
 
 type EventTransactionRepositoryImpl struct {
@@ -182,14 +183,39 @@ func (r *EventTransactionRepositoryImpl) FindByOrderNumber(ctx context.Context, 
 
 func (r *EventTransactionRepositoryImpl) MarkTransactionAsSuccess(ctx context.Context, tx pgx.Tx, transactionID string, successTime time.Time, pgOrderID string) (res model.EventTransaction, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
-	currentTime := time.Now()
 	defer cancel()
 
 	query := `UPDATE event_transactions SET transaction_status = $1, paid_at = $2, pg_order_id = $3 WHERE id = $4 RETURNING id, created_at`
 	if tx != nil {
-		err = tx.QueryRow(ctx, query, lib.EventTransactionStatusSuccess, currentTime, pgOrderID, transactionID).Scan(&res.ID, &res.CreatedAt)
+		err = tx.QueryRow(ctx, query, lib.EventTransactionStatusSuccess, successTime, pgOrderID, transactionID).Scan(&res.ID, &res.CreatedAt)
 	} else {
-		err = r.WrapDB.Postgres.QueryRow(ctx, query, lib.EventTransactionStatusSuccess, currentTime, pgOrderID, transactionID).Scan(&res.ID, &res.CreatedAt)
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, lib.EventTransactionStatusSuccess, successTime, pgOrderID, transactionID).Scan(&res.ID, &res.CreatedAt)
+	}
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				err = &lib.ErrorFailedToMarkTransactionAsSuccess
+			}
+		}
+
+		return
+	}
+
+	return
+}
+
+func (r *EventTransactionRepositoryImpl) MarkTransactionAsFailed(ctx context.Context, tx pgx.Tx, transactionID string, pgOrderID string) (res model.EventTransaction, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
+	currentTime := time.Now()
+	defer cancel()
+
+	query := `UPDATE event_transactions SET transaction_status = $1,  pg_order_id = $2,updated_at = $3 WHERE id = $4 RETURNING id, created_at`
+	if tx != nil {
+		err = tx.QueryRow(ctx, query, lib.EventTransactionStatusFailed, pgOrderID, currentTime, transactionID).Scan(&res.ID, &res.CreatedAt)
+	} else {
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, lib.EventTransactionStatusFailed, pgOrderID, currentTime, transactionID).Scan(&res.ID, &res.CreatedAt)
 	}
 
 	if err != nil {

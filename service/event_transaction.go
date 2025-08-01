@@ -286,7 +286,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 			if tixErr == &lib.ErrorGarudaIDNotFound {
 
 				// Verify garuda id Validity  by external service
-				externalResp, errExternal := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, item.GarudaID)
+				externalResp, errExternal := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, item.GarudaID, s.Env.GarudaID.ApiKey)
 				if errExternal != nil {
 					log.Error().Err(errExternal).Msg("failed to verify garuda id")
 					err = &lib.ErrorGetGarudaID
@@ -1115,6 +1115,12 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	if !isValid {
 		return res, &lib.ErrorCallbackSignatureInvalid
 	}
+	var isSuccess bool
+	if req.Status == "02" {
+		isSuccess = true
+	} else {
+		isSuccess = false
+	}
 	//  actual callback processing
 	transactionData, err := s.EventTransactionRepo.FindByOrderNumber(ctx, tx, req.MerchantTradeNo)
 	if err != nil {
@@ -1134,16 +1140,25 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 
 	// Parse the time string in Asia/Jakarta location
-	t, err := time.ParseInLocation(layout, req.SuccessTime, loc)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to parse transaction time")
-		return
-	}
 
-	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, t, req.PaymentMethodInfo.RRN)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to mark transaction as success")
-		return
+	var markResult model.EventTransaction
+	if isSuccess {
+		t, errConvertTime := time.ParseInLocation(layout, req.SuccessTime, loc)
+		if errConvertTime != nil {
+			log.Error().Err(errConvertTime).Msg("Failed to parse transaction time")
+			return
+		}
+		markResult, err = s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, t, req.PaymentMethodInfo.RRN)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to mark transaction as success")
+			return
+		}
+	} else {
+		markResult, err = s.EventTransactionRepo.MarkTransactionAsFailed(ctx, tx, transactionData.ID, req.PaymentMethodInfo.RRN)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to mark transaction as failed")
+			return
+		}
 	}
 
 	err = tx.Commit(ctx)

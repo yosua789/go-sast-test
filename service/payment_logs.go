@@ -37,6 +37,7 @@ func (s *PaymentLogsServiceImpl) Create(ctx *gin.Context, request, header, respo
 		Header:        header,
 		Body:          request,
 		Response:      response,
+		Path:          ctx.FullPath(),
 		ErrorCode:     errCode,
 		ErrorResponse: errResponse,
 	}
