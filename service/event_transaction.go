@@ -1040,13 +1040,15 @@ func (s *EventTransactionServiceImpl) GetAvailablePaymentMethods(ctx *gin.Contex
 
 		for _, payment := range paymentMethods {
 			payments = append(payments, dto.EventPaymentMethodResponse{
-				Name:         payment.Name,
-				Logo:         payment.Logo,
-				IsPaused:     payment.IsPaused,
-				PauseMessage: payment.PauseMessage,
-				PausedAt:     helper.ConvertNullTimeToPointer(payment.PausedAt),
-				PaymentType:  payment.PaymentType,
-				PaymentCode:  payment.PaymentCode,
+				Name:          payment.Name,
+				Logo:          payment.Logo,
+				IsPaused:      payment.IsPaused,
+				PauseMessage:  payment.PauseMessage,
+				PausedAt:      helper.ConvertNullTimeToPointer(payment.PausedAt),
+				PaymentType:   payment.PaymentType,
+				PaymentCode:   payment.PaymentCode,
+				AdditionalFee: payment.AdditionalFee,
+				IsPercentage:  payment.IsPercentage,
 			})
 		}
 

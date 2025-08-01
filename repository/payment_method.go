@@ -54,7 +54,9 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 		payment_channel,
 
 		created_at,
-		paused_at
+		paused_at,
+		is_percentage,
+		additional_fee
 	FROM payment_methods
 	WHERE is_active = true
 	ORDER BY created_at ASC`
@@ -85,6 +87,8 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 			&paymentMethod.PaymentChannel,
 			&paymentMethod.CreatedAt,
 			&paymentMethod.UpdatedAt,
+			&paymentMethod.IsPercentage,
+			&paymentMethod.AdditionalFee,
 		)
 
 		_, ok := grouppedPayments[paymentMethod.PaymentGroup]
@@ -102,6 +106,8 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 				PaymentGroup:   paymentMethod.PaymentGroup,
 				PaymentCode:    paymentMethod.PaymentCode,
 				PaymentChannel: paymentMethod.PaymentChannel,
+				IsPercentage:   paymentMethod.IsPercentage,
+				AdditionalFee:  paymentMethod.AdditionalFee,
 			})
 		} else {
 			grouppedPayments[paymentMethod.PaymentGroup] = append(grouppedPayments[paymentMethod.PaymentGroup], model.PaymentMethod{
@@ -117,6 +123,8 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 				PaymentGroup:   paymentMethod.PaymentGroup,
 				PaymentCode:    paymentMethod.PaymentCode,
 				PaymentChannel: paymentMethod.PaymentChannel,
+				IsPercentage:   paymentMethod.IsPercentage,
+				AdditionalFee:  paymentMethod.AdditionalFee,
 			})
 		}
 	}

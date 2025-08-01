@@ -56,8 +56,10 @@ type EventPaymentMethodResponse struct {
 	PauseMessage string     `json:"pause_message"`
 	PausedAt     *time.Time `json:"paused_at"`
 
-	PaymentType string `json:"payment_type"`
-	PaymentCode string `json:"payment_code"`
+	PaymentType   string  `json:"payment_type"`
+	PaymentCode   string  `json:"payment_code"`
+	AdditionalFee float64 `json:"additional_fee"`
+	IsPercentage  bool    `json:"is_percentage"`
 }
 type GetTransactionDetails struct {
 	TransactionID string `uri:"transactionId" binding:"required,min=1,uuid"`

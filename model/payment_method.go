@@ -20,6 +20,8 @@ type PaymentMethod struct {
 	PaymentCode    string
 	PaymentChannel string
 
-	CreatedAt time.Time
-	UpdatedAt sql.NullTime
+	CreatedAt     time.Time
+	UpdatedAt     sql.NullTime
+	AdditionalFee float64
+	IsPercentage  bool
 }
