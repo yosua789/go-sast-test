@@ -1157,8 +1157,8 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	// -----------------signature recipe----------
 	log.Info().Msgf("Transaction marked as success: %v", markResult)
 	res.MerchantID = s.Env.Paylabs.AccountID
-	req.ErrCode = "0"
-	req.RequestID = requestID
+	res.ErrCode = "0"
+	res.RequestID = requestID
 	jsonData, err := json.Marshal(res)
 	if err != nil {
 		log.Error().Err(err)
