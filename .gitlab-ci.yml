@@ -26,24 +26,60 @@ sast-job:
   - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
   allow_failure: true
 
-build-job: 
+### BUILD JOB ###
+
+build-job-staging: 
   stage: build
   only:
     - staging
   tags:
     - registry
+  environment: staging
   script:
     - docker build -t registry.assistx.dev/assist-tix/backend-api:staging .   
     - docker push registry.assistx.dev/assist-tix/backend-api:staging
 
-deploy-job: 
+build-job-main: 
+  stage: build
+  only:
+    - main
+  tags:
+    - registry
+  environment: production
+  script:
+    - docker build -t registry.assistx.dev/assist-tix/backend-api:latest .   
+    - docker push registry.assistx.dev/assist-tix/backend-api:latest
+
+### DEPLOY JOB ###
+
+deploy-job-staging: 
   stage: deploy
   only:
     - staging
   tags:
     - dev-server-new
+  variables:
+    GIT_STRATEGY: none
+  environment: staging
   script:
     - cd ~/tix
     - docker compose pull api 
     - docker compose up -d 
     - docker image prune -f
+
+deploy-job-main: 
+  stage: deploy
+  only:
+    - main
+  tags:
+    - prod-assistxticket-k8s
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  variables:
+    KUBE_CONTEXT_PROD: kecilin-id/kubernetes-agent-config:k8s-assistxticket-prod
+  environment: production
+  script:
+    - kubectl config use-context "$KUBE_CONTEXT_PROD"
+    - kubectl apply -n default -f $CI_PROJECT_DIR/kubernetes/prod
+    - kubectl rollout restart -n default -f $CI_PROJECT_DIR/kubernetes/prod || true
