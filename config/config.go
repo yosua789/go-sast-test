@@ -74,6 +74,8 @@ type EnvironmentVariable struct {
 		Port  int    `mapstructure:"PORT"`
 		Mode  string `mapstructure:"MODE"`
 		Debug bool   `mapstructure:"DEBUG"`
+
+		AutoAssignSeat bool `mapstructure:"AUTO_ASSIGN_SEAT"` // It will disable validation seat
 	} `mapstructure:"APP"`
 	Api struct {
 		CorsEnable bool   `mapstructure:"CORS_ENABLE"`
