@@ -346,6 +346,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	for i, obj := range resAdditionalPayment {
 		if obj.IsPercentage {
 			resAdditionalPayment[i].Value = (float64(res.TotalPrice) * obj.Value) / 100
+			resAdditionalPayment[i].IsPercentage = false
 		} else {
 			resAdditionalPayment[i].Value = obj.Value
 		}
