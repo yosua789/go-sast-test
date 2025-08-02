@@ -22,6 +22,7 @@ type GetGarudaIDByIdParams struct {
 type VerifyGarudaIDResponse struct {
 	GarudaID    string `json:"garuda_id"`
 	IsAvailable bool   `json:"is_available"`
+	IsAdult     bool   `json:"is_adult"`
 }
 
 type ApiResponseGarudaIDService struct {
@@ -43,4 +44,13 @@ type RequestFansIDResponse struct {
 type BulkGarudaIDRequest struct {
 	EventID   string   `json:"event_id" validate:"required,uuid"`
 	GarudaIDs []string `json:"garuda_ids" validate:"required,dive,max=20"`
+}
+type BulkGarudaIDResponse struct {
+	EventID                string                   `json:"event_id"`
+	GarudaIDStatusResponse []GarudaIDStatusResponse `json:"garuda_id_status_response"`
+}
+
+type GarudaIDStatusResponse struct {
+	GarudaID  string `json:"garuda_id"`
+	ErrorCode string `json:"error_code"`
 }

@@ -1202,6 +1202,104 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 	log.Info().Msgf("JSON Payload: %s", jsonData)
 
+	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transactionData.ID)
+	if err != nil {
+		return
+	}
+
+	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transactionData.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to find transaction by order number")
+		return
+	}
+	// sent invoice email to users with goroutine
+	if isSuccess {
+		go func() {
+			err = s.TransactionUseCase.SendInvoice(
+				ctx,
+				transactionDetail.Email,
+				transactionDetail.Fullname,
+				len(transactionItems),
+				transactionDetail,
+			)
+			if err != nil {
+				log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
+			}
+		}()
+
+		// Request generate eticket with goroutine
+		go func() {
+			tx, err := s.DB.Postgres.Begin(ctx)
+			if err != nil {
+				return
+			}
+			defer tx.Rollback(ctx)
+
+			var eventTickets []model.EventTicket
+
+			for _, val := range transactionItems {
+				if val.Email.Valid && val.Fullname.Valid {
+					ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
+					ticketCode, err := helper.GenerateTicketCode()
+					if err != nil {
+						log.Warn().Err(err).Msg("failed to generate ticket code")
+						return
+					}
+
+					eventTicket := model.EventTicket{
+						EventID:          transactionDetail.Event.ID,
+						TicketCategoryID: transactionDetail.TicketCategory.ID,
+						TransactionID:    transactionDetail.ID,
+
+						TicketOwnerEmail:       val.Email.String,
+						TicketOwnerFullname:    val.Fullname.String,
+						TicketOwnerPhoneNumber: val.PhoneNumber,
+						TicketOwnerGarudaId:    val.GarudaID,
+						TicketNumber:           ticketNumber,
+						TicketCode:             ticketCode,
+
+						EventTime:    transactionDetail.Event.EventTime,
+						EventVenue:   transactionDetail.VenueSector.Venue.Name,
+						EventCity:    transactionDetail.VenueSector.Venue.City,
+						EventCountry: transactionDetail.VenueSector.Venue.Country,
+						SectorName:   transactionDetail.VenueSector.Name,
+						AreaCode:     transactionDetail.VenueSector.AreaCode.String,
+						Entrance:     transactionDetail.TicketCategory.Entrance,
+						SeatRow:      val.SeatRow,
+						SeatColumn:   val.SeatColumn,
+						SeatLabel:    val.SeatLabel,
+						IsCompliment: false,
+					}
+					ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
+					if err != nil {
+						log.Error().Err(err).Msg("failed to create data eticket")
+						return
+					}
+					eventTicket.ID = ticketId
+					eventTickets = append(eventTickets, eventTicket)
+				}
+			}
+
+			err = tx.Commit(ctx)
+			if err != nil {
+				log.Warn().Err(err).Msg("failed to create eticket")
+			}
+
+			for _, val := range eventTickets {
+				err = s.TransactionUseCase.SendETicket(
+					ctx,
+					val.TicketOwnerEmail,
+					val.TicketOwnerFullname,
+					val,
+					transactionDetail,
+				)
+				if err != nil {
+					log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
+				}
+			}
+		}()
+
+	}
 	// Hash the JSON body
 	shaJson := sha256.Sum256(jsonData)
 	signature := helper.GenerateSignature(shaJson, path, date, privateKey)
