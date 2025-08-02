@@ -22,6 +22,9 @@ type WrapDatabase struct {
 const MIGRATION_LOCATIONS = "database/migrations"
 
 func NewDBConnection(env *config.EnvironmentVariable) *pgxpool.Pool {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		env.Database.Postgres.User,
 		env.Database.Postgres.Password,
@@ -35,19 +38,24 @@ func NewDBConnection(env *config.EnvironmentVariable) *pgxpool.Pool {
 		log.Fatal().Err(err).Str("database", env.Database.Postgres.Name).Msg("[x] failed to parse connection config for postgres")
 		panic(err)
 	}
+
 	config.MaxConns = int32(env.Database.Postgres.MaxConnections)
 	config.MaxConnIdleTime = time.Minute * time.Duration(env.Database.Postgres.MaxIdleTime)
 
-	conn, err := pgxpool.New(context.Background(), config.ConnString())
+	log.Info().Msgf("Connecting to Postgres at %s", connStr)
+	conn, err := pgxpool.New(ctx, config.ConnString())
 	if err != nil {
 		log.Fatal().Err(err).Str("database", env.Database.Postgres.Name).Msg("[x] failed to connect to postgres")
 		panic(err)
 	}
+	log.Info().Msgf("[+] Successfully connected to Postgres at %s", connStr)
 
-	if err := conn.Ping(context.Background()); err != nil {
+	log.Info().Msgf("Pinging Postgres at %s", connStr)
+	if err := conn.Ping(ctx); err != nil {
 		log.Fatal().Err(err).Str("database", env.Database.Postgres.Name).Msg("[x] failed to ping postgres")
 		panic(err)
 	}
+	log.Info().Msgf("[+] Successfully pinged Postgres at %s", connStr)
 
 	return conn
 }
