@@ -397,8 +397,13 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 			return resp, &lib.ErrorGetGarudaID
 		}
 	}
+	var IsAdult bool = false
+	if externalResp != nil && externalResp.Data.Age > s.Env.GarudaID.MinimumAge {
+		IsAdult = true
+	}
 	resp.IsAvailable = true
 	resp.GarudaID = garudaID
+	resp.IsAdult = IsAdult
 	return resp, nil
 }
 
