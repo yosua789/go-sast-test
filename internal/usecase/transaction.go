@@ -30,6 +30,7 @@ func NewTransactionUsecase(
 func (u *TransactionUsecase) SendBill(
 	ctx context.Context,
 	email, name string,
+	useGarudaId bool,
 	itemCount int,
 	trxAccessToken string,
 	paymentMethod model.PaymentMethod,
@@ -55,6 +56,8 @@ func (u *TransactionUsecase) SendBill(
 		Status: transaction.Status,
 		DetailInformation: domainEvent.DetailInformationTransaction{
 			BookEmail: email,
+			BookName:  name,
+
 			TicketCategory: domainEvent.TicketCategoryInformation{
 				Code:     ticketCategory.Code,
 				Price:    ticketCategory.Price,
@@ -72,9 +75,10 @@ func (u *TransactionUsecase) SendBill(
 			},
 		},
 		Event: domainEvent.EventInformation{
-			ID:   event.ID,
-			Name: event.Name,
-			Time: event.EventTime,
+			ID:             event.ID,
+			BannerFilename: event.Banner,
+			Name:           event.Name,
+			Time:           event.EventTime,
 		},
 		ItemCount: itemCount,
 		ExpiredAt: transaction.PaymentExpiredAt,
@@ -109,6 +113,7 @@ func (u *TransactionUsecase) SendBill(
 func (u *TransactionUsecase) SendInvoice(
 	ctx context.Context,
 	email, name string,
+	useGarudaId bool,
 	itemCount int,
 	transactionDetail entity.EventTransaction,
 ) (err error) {
@@ -145,8 +150,10 @@ func (u *TransactionUsecase) SendInvoice(
 			},
 		},
 		Event: domainEvent.EventInformation{
-			Name: transactionDetail.Event.Name,
-			Time: transactionDetail.Event.EventTime,
+			ID:             transactionDetail.Event.ID,
+			BannerFilename: transactionDetail.Event.Banner,
+			Name:           transactionDetail.Event.Name,
+			Time:           transactionDetail.Event.EventTime,
 		},
 		ItemCount: itemCount,
 		ExpiredAt: transactionDetail.PaymentExpiredAt,
@@ -180,15 +187,16 @@ func (u *TransactionUsecase) SendInvoice(
 
 func (u *TransactionUsecase) SendETicket(
 	ctx context.Context,
-	email, name string,
+	useGarudaId bool,
 	eventTicket model.EventTicket,
 	transactionDetail entity.EventTransaction,
 ) (err error) {
 	log.Info().Msg("send email eticket")
 	var transactionPayload = domainEvent.TransactionETicket{
-		TransactionID: transactionDetail.ID,
-		TicketNumber:  eventTicket.TicketNumber,
-		TicketCode:    eventTicket.TicketCode,
+		TransactionID:   transactionDetail.ID,
+		TicketNumber:    eventTicket.TicketNumber,
+		TicketCode:      eventTicket.TicketCode,
+		TicketSeatLabel: eventTicket.SeatLabel.String,
 		Payment: domainEvent.PaymentInformation{
 			// Method:                       transactionDetail.PaymentMethod.PaymentCode,
 			DisplayName:                  transactionDetail.PaymentMethod.Name,
@@ -197,7 +205,11 @@ func (u *TransactionUsecase) SendETicket(
 			GrandTotal:                   transactionDetail.GrandTotal,
 		},
 		DetailInformation: domainEvent.DetailInformationTransaction{
-			BookEmail: email,
+			BookEmail:       eventTicket.TicketOwnerEmail,
+			BookName:        eventTicket.TicketOwnerFullname,
+			BookPhoneNumber: eventTicket.TicketOwnerPhoneNumber.String,
+			BookGarudaID:    eventTicket.TicketOwnerGarudaId.String,
+			UseGarudaId:     useGarudaId,
 			TicketCategory: domainEvent.TicketCategoryInformation{
 				Code:     transactionDetail.TicketCategory.Code,
 				Price:    transactionDetail.TicketCategory.Price,
@@ -215,16 +227,18 @@ func (u *TransactionUsecase) SendETicket(
 			},
 		},
 		Event: domainEvent.EventInformation{
-			Name: transactionDetail.Event.Name,
-			Time: transactionDetail.Event.EventTime,
+			ID:             transactionDetail.Event.ID,
+			Name:           transactionDetail.Event.Name,
+			BannerFilename: transactionDetail.Event.Banner,
+			Time:           transactionDetail.Event.EventTime,
 		},
 		CreatedAt: transactionDetail.CreatedAt,
 	}
 
 	var emailPayload = domainEvent.RequestSendEmail{
 		Recipient: domainEvent.Recipient{
-			Email: email,
-			Name:  name,
+			Email: eventTicket.TicketOwnerEmail,
+			Name:  eventTicket.TicketOwnerFullname,
 		},
 		Data: transactionPayload,
 	}

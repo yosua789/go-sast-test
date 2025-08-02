@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RouterApiV1(debug bool, h Handler, rg *gin.RouterGroup) {
+func RouterApiV1(mode string, h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/v1")
 
 	OrganizerRouter(h, r)

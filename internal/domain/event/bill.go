@@ -17,13 +17,19 @@ type TransactionBill struct {
 }
 
 type EventInformation struct {
-	ID   string    `json:"id"`
-	Name string    `json:"name"`
-	Time time.Time `json:"time"`
+	ID             string    `json:"id"`
+	BannerFilename string    `json:"banner_filename"`
+	Name           string    `json:"name"`
+	Time           time.Time `json:"time"`
 }
 
 type DetailInformationTransaction struct {
-	BookEmail      string                    `json:"book_email"`
+	BookEmail       string `json:"book_email"`
+	BookName        string `json:"book_name"`
+	BookPhoneNumber string `json:"book_phone_number,omitempty"`
+	BookGarudaID    string `json:"book_garuda_id,omitempty"`
+	UseGarudaId     bool   `json:"use_garuda_id"`
+
 	TicketCategory TicketCategoryInformation `json:"ticket_category"`
 	Location       LocationInformation       `json:"location"`
 }
