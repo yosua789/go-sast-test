@@ -2193,6 +2193,9 @@ const docTemplate = `{
                 "garuda_id": {
                     "type": "string"
                 },
+                "is_adult": {
+                    "type": "boolean"
+                },
                 "is_available": {
                     "type": "boolean"
                 }
