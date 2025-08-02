@@ -25,7 +25,7 @@ func NewDBConnection(env *config.EnvironmentVariable) *pgxpool.Pool {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		env.Database.Postgres.User,
 		env.Database.Postgres.Password,
 		env.Database.Postgres.Host,
