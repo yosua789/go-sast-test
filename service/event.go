@@ -262,6 +262,7 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 
 	paginationDB := domain.PaginationParam{
 		TargetPage: pagination.TargetPage,
+		Order:      "DESC",
 	}
 
 	tx, err := s.DB.Postgres.Begin(ctx)
