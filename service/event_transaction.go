@@ -1170,6 +1170,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 			log.Error().Err(err).Msg("Failed to mark transaction as success")
 			return
 		}
+		isSuccess = true
 	} else {
 		markResult, err = s.EventTransactionRepo.MarkTransactionAsFailed(ctx, tx, transactionData.ID, req.PaymentMethodInfo.RRN)
 		if err != nil {
@@ -1312,7 +1313,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	ctx.Header("X-TIMESTAMP", date)
 	ctx.Header("X-SIGNATURE", signature)
 	ctx.Header("Content-Type", "application/json;charset=utf-8")
-
+	log.Info().Msg("success process callback qris paylabs")
 	return
 
 }
