@@ -17,6 +17,8 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 
+	SetDefaultConfig(viper.GetViper())
+
 	err = viper.ReadInConfig()
 	if err != nil {
 		log.Error().Err(err).Msg("viper error read config")
@@ -26,6 +28,8 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 	if err != nil {
 		log.Error().Err(err).Msg("viper error unmarshal config")
 	}
+
+	fmt.Println(env.Database.Timeout)
 
 	// Check credential is filename
 	var credential dto.GCPServiceAccount
@@ -63,7 +67,7 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 }
 
 func SetDefaultConfig(v *viper.Viper) {
-	v.SetDefault("DATABASE.TIMEOUT.PING", "5s")
+	v.SetDefault("DATABASE.TIMEOUT.PING", "1s")
 	v.SetDefault("DATABASE.TIMEOUT.READ", "5s")
 	v.SetDefault("DATABASE.TIMEOUT.WRITE", "5s")
 }
@@ -105,7 +109,7 @@ type EnvironmentVariable struct {
 		Timeout struct {
 			Ping  time.Duration `mapstructure:"PING"`
 			Read  time.Duration `mapstructure:"READ"`
-			Write time.Duration `mapstructure:"Write"`
+			Write time.Duration `mapstructure:"WRITE"`
 		} `mapstructure:"TIMEOUT"`
 	} `mapstructure:"DATABASE"`
 	Nats struct {

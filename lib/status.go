@@ -47,3 +47,11 @@ const (
 	EventTransactionStatusExpired = "EXPIRED"
 	EventTransactionStatusFailed  = "FAILED"
 )
+
+type EventTicketStatus string
+
+const (
+	EventTicketStatusInProgress EventTicketStatus = "IN PROGRESS"
+	EventTicketStatusFailed     EventTicketStatus = "FAILED"
+	EventTicketStatusSuccess    EventTicketStatus = "SUCCESS"
+)
