@@ -1214,6 +1214,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 	// sent invoice email to users with goroutine
 	if isSuccess {
+		log.Info().Msg("Transaction is success, sending invoice and eticket")
 		go func() {
 			err = s.TransactionUseCase.SendInvoice(
 				ctx,
@@ -1225,6 +1226,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 			if err != nil {
 				log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
 			}
+			log.Info().Msg("success send invoice email")
 		}()
 
 		// Request generate eticket with goroutine
@@ -1278,6 +1280,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 					eventTicket.ID = ticketId
 					eventTickets = append(eventTickets, eventTicket)
 				}
+				log.Info().Msgf("created eticket for %s", val.Email.String)
 			}
 
 			err = tx.Commit(ctx)
@@ -1296,6 +1299,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 				if err != nil {
 					log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
 				}
+				log.Info().Msgf("success send eticket to %s", val.TicketOwnerEmail)
 			}
 		}()
 
