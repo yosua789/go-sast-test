@@ -527,7 +527,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	// Send email send bill job
-	err = s.TransactionUseCase.SendBill(ctx, req.Email, req.Fullname, len(transactionItems), accessToken, paymentMethod, event, transaction, ticketCategory, venueSector)
+	err = s.TransactionUseCase.SendBill(ctx, req.Email, req.Fullname, eventSettings.GarudaIdVerification, len(transactionItems), accessToken, paymentMethod, event, transaction, ticketCategory, venueSector)
 	if err != nil {
 		log.Warn().Err(err).Msg("error send bill to email")
 		return
@@ -535,6 +535,10 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	// Testing in local purposes
 	// go func() {
+	// 	if err != nil {
+	// 		log.Warn().Str("email", transaction.Email).Err(err).Msg("failed to send job invoice")
+	// 	}
+
 	// 	tx, err := s.DB.Postgres.Begin(ctx)
 	// 	if err != nil {
 	// 		return
@@ -549,6 +553,19 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transaction.ID)
 	// 	if err != nil {
 	// 		log.Error().Err(err).Msg("Failed to find transaction by order number")
+	// 		return
+	// 	}
+
+	// 	err = s.TransactionUseCase.SendInvoice(
+	// 		ctx,
+	// 		req.Email,
+	// 		req.Fullname,
+	// 		eventSettings.GarudaIdVerification,
+	// 		len(transactionItems),
+	// 		transactionDetail,
+	// 	)
+	// 	if err != nil {
+	// 		log.Error().Err(err).Msg("failed to send invoice")
 	// 		return
 	// 	}
 
@@ -604,8 +621,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 	for _, val := range eventTickets {
 	// 		err = s.TransactionUseCase.SendETicket(
 	// 			ctx,
-	// 			val.TicketOwnerEmail,
-	// 			val.TicketOwnerFullname,
+	// 			eventSettings.GarudaIdVerification,
 	// 			val,
 	// 			transactionDetail,
 	// 		)
@@ -863,6 +879,12 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	if err != nil {
 		return
 	}
+	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, tx, transactionDetail.Event.ID)
+	if err != nil {
+		return
+	}
+
+	eventSettings := lib.MapEventSettings(rawEventSettings)
 
 	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transactionData.ID)
 	if err != nil {
@@ -892,6 +914,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 			ctx,
 			transactionDetail.Email,
 			transactionDetail.Fullname,
+			eventSettings.GarudaIdVerification,
 			len(transactionItems),
 			transactionDetail,
 		)
@@ -961,8 +984,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		for _, val := range eventTickets {
 			err = s.TransactionUseCase.SendETicket(
 				ctx,
-				val.TicketOwnerEmail,
-				val.TicketOwnerFullname,
+				eventSettings.GarudaIdVerification,
 				val,
 				transactionDetail,
 			)
@@ -1217,6 +1239,13 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 	log.Info().Msgf("JSON Payload: %s", jsonData)
 
+	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, tx, transactionData.ID)
+	if err != nil {
+		return
+	}
+
+	eventSettings := lib.MapEventSettings(rawEventSettings)
+
 	// sent invoice email to users with goroutine
 	if isSuccess {
 		log.Info().Msg("Transaction is success, sending invoice and eticket")
@@ -1225,6 +1254,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 				ctx,
 				transactionDetail.Email,
 				transactionDetail.Fullname,
+				eventSettings.GarudaIdVerification,
 				len(transactionItems),
 				transactionDetail,
 			)
@@ -1297,8 +1327,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 			for _, val := range eventTickets {
 				err = s.TransactionUseCase.SendETicket(
 					ctx,
-					val.TicketOwnerEmail,
-					val.TicketOwnerFullname,
+					eventSettings.GarudaIdVerification,
 					val,
 					transactionDetail,
 				)

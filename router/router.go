@@ -55,7 +55,7 @@ func NewRouter(handler Handler) *gin.Engine {
 		SwaggerRouter(apiRouterGroup)
 	}
 
-	RouterApiV1(handler.Env.App.Debug, handler, apiRouterGroup)
+	RouterApiV1(handler.Env.App.Mode, handler, apiRouterGroup)
 
 	return router
 
