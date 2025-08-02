@@ -1852,6 +1852,9 @@ const docTemplate = `{
                 "payment_method": {
                     "type": "string"
                 },
+                "pg_additional_fee": {
+                    "type": "integer"
+                },
                 "tax_percentage": {
                     "type": "number"
                 },
@@ -2225,6 +2228,10 @@ const docTemplate = `{
                 "payment_method": {
                     "description": "if VA then return VA Number if qris return qr code string",
                     "type": "string"
+                },
+                "pg_additional_fee": {
+                    "description": "event transaction -\u003e transaction -\u003e additional fee for payment gateway",
+                    "type": "integer"
                 },
                 "total_admin_fee": {
                     "description": "event_transaction -\u003e transaction -\u003e total admin fee",

@@ -250,6 +250,8 @@ definitions:
         type: string
       payment_method:
         type: string
+      pg_additional_fee:
+        type: integer
       tax_percentage:
         type: number
       total_admin_fee:
@@ -503,6 +505,10 @@ definitions:
       payment_method:
         description: if VA then return VA Number if qris return qr code string
         type: string
+      pg_additional_fee:
+        description: event transaction -> transaction -> additional fee for payment
+          gateway
+        type: integer
       total_admin_fee:
         description: event_transaction -> transaction -> total admin fee
         type: integer
