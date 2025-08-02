@@ -95,8 +95,9 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 
 		is_compliment,
 
-		created_at
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW()) RETURNING id, created_at`
+		created_at,
+		pg_additional_fee
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), $16) RETURNING id, created_at`
 
 	if tx != nil {
 		err = tx.QueryRow(ctx, query,
@@ -117,6 +118,7 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 			req.Email,
 			req.Fullname,
 			req.IsCompliment,
+			req.PGAdditionalFee, // Additional fee for payment gateway
 		).Scan(&req.ID, &req.CreatedAt)
 	} else {
 		err = r.WrapDB.Postgres.QueryRow(ctx, query,
@@ -137,6 +139,7 @@ func (r *EventTransactionRepositoryImpl) CreateTransaction(ctx context.Context, 
 			req.Email,
 			req.Fullname,
 			req.IsCompliment,
+			req.PGAdditionalFee, // Additional fee for payment gateway
 		).Scan(&req.ID, &req.CreatedAt)
 	}
 

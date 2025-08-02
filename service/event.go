@@ -402,6 +402,9 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 	return resp, nil
 }
 
+// todo find bulk garuda id
+
+// todo find bulk garuda id
 func (s *EventServiceImpl) GetActiveSettingByEventId(ctx context.Context, eventId string) (res dto.EventSettingsResponse, err error) {
 	_, err = s.EventRepo.FindById(ctx, nil, eventId)
 	if err != nil {
