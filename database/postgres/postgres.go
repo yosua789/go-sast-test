@@ -34,6 +34,7 @@ func NewDBConnection(env *config.EnvironmentVariable) *pgxpool.Pool {
 		log.Fatal().Err(err).Str("database", env.Database.Postgres.Name).Msg("[x] failed to parse connection config for postgres")
 		panic(err)
 	}
+	config.MaxConns = int32(env.Database.Postgres.MaxConnections)
 
 	conn, err := pgxpool.New(context.Background(), config.ConnString())
 	if err != nil {

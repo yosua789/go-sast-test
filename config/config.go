@@ -98,13 +98,14 @@ type EnvironmentVariable struct {
 	} `mapstructure:"REDIS"`
 	Database struct {
 		Postgres struct {
-			UseMigration bool   `mapstructure:"USE_MIGRATION"`
-			Scheme       string `mapstructure:"SCHEME"`
-			Host         string `mapstructure:"HOST"`
-			Port         string `mapstructure:"PORT"`
-			User         string `mapstructure:"USER"`
-			Password     string `mapstructure:"PASSWORD"`
-			Name         string `mapstructure:"NAME"`
+			UseMigration   bool   `mapstructure:"USE_MIGRATION"`
+			Scheme         string `mapstructure:"SCHEME"`
+			Host           string `mapstructure:"HOST"`
+			Port           string `mapstructure:"PORT"`
+			User           string `mapstructure:"USER"`
+			Password       string `mapstructure:"PASSWORD"`
+			Name           string `mapstructure:"NAME"`
+			MaxConnections int    `mapstructure:"MAX_CONNECTIONS"`
 		} `mapstructure:"POSTGRES"`
 		Timeout struct {
 			Ping  time.Duration `mapstructure:"PING"`
