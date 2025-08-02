@@ -628,6 +628,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		CreatedAt:          transaction.CreatedAt,
 		AccessToken:        accessToken,
 		TransactionID:      transaction.ID,
+		PgAdditionalFee:    transaction.PGAdditionalFee,
 	}
 
 	log.Info().Msg("success create transaction")
