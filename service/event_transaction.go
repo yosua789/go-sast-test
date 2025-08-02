@@ -381,18 +381,21 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee
 	// transaction.AdminFeePercentage = float32(eventSettings.AdminFeePercentage)
 	// log.Info().Int("TotalAdminFee", totalAdminFee).Float32("AdminFeePercentage", transaction.AdminFeePercentage).Msg("calculate admin fee")
-	var pgAdditionalFee int
-	if paymentMethod.AdditionalFee > 0 {
-		if paymentMethod.IsPercentage {
-			pgAdditionalFee = int(float64(transaction.TotalPrice) * paymentMethod.AdditionalFee / 100)
-		} else {
-			pgAdditionalFee = int(paymentMethod.AdditionalFee)
-		}
-		transaction.PGAdditionalFee = pgAdditionalFee
+	pgAdditionalFee := 0
+
+	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee
+	if paymentMethod.IsPercentage {
+		log.Info().Msg("payment method is percentage, calculating additional fee")
+		pgAdditionalFee = int(float64(transaction.GrandTotal) * paymentMethod.AdditionalFee / 100)
+
 	} else {
-		transaction.PGAdditionalFee = 0
+		pgAdditionalFee = int(paymentMethod.AdditionalFee)
+		log.Info().Int("pgAdditionalFee", pgAdditionalFee).Msg("payment method is fixed additional fee")
 	}
-	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee + transaction.PGAdditionalFee
+	transaction.PGAdditionalFee = pgAdditionalFee
+	log.Info().Int("PGAdditionalFee", pgAdditionalFee).Msg("payment method additional fee")
+	transaction.GrandTotal += pgAdditionalFee
+
 	log.Info().Int("GrandTotal", transaction.GrandTotal).Msg("got grand total price")
 
 	log.Info().Msg("create transaction to database")
