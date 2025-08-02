@@ -106,6 +106,7 @@ type EnvironmentVariable struct {
 			Password       string `mapstructure:"PASSWORD"`
 			Name           string `mapstructure:"NAME"`
 			MaxConnections int    `mapstructure:"MAX_CONNECTIONS"`
+			MaxIdleTime    int    `mapstructure:"MAX_IDLE_TIME"`
 		} `mapstructure:"POSTGRES"`
 		Timeout struct {
 			Ping  time.Duration `mapstructure:"PING"`

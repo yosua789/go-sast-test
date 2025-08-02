@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -35,6 +36,7 @@ func NewDBConnection(env *config.EnvironmentVariable) *pgxpool.Pool {
 		panic(err)
 	}
 	config.MaxConns = int32(env.Database.Postgres.MaxConnections)
+	config.MaxConnIdleTime = time.Minute * time.Duration(env.Database.Postgres.MaxIdleTime)
 
 	conn, err := pgxpool.New(context.Background(), config.ConnString())
 	if err != nil {
