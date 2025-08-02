@@ -60,6 +60,7 @@ definitions:
         type: string
       fullname:
         maxLength: 255
+        minLength: 3
         type: string
       items:
         items:
@@ -243,12 +244,14 @@ definitions:
         type: string
       grand_total:
         type: integer
-      invoice_number:
+      order_number:
         type: string
       payment_expired_at:
         type: string
       payment_method:
         type: string
+      pg_additional_fee:
+        type: integer
       tax_percentage:
         type: number
       total_admin_fee:
@@ -476,11 +479,19 @@ definitions:
     properties:
       garuda_id:
         type: string
+      is_adult:
+        type: boolean
       is_available:
         type: boolean
     type: object
   entity.OrderDetails:
     properties:
+      city:
+        description: event transaction -> user -> city
+        type: string
+      country:
+        description: event transaction -> user -> country
+        type: string
       event_name:
         description: event transaction -> event -> name
         type: string
@@ -496,6 +507,10 @@ definitions:
       payment_method:
         description: if VA then return VA Number if qris return qr code string
         type: string
+      pg_additional_fee:
+        description: event transaction -> transaction -> additional fee for payment
+          gateway
+        type: integer
       total_admin_fee:
         description: event_transaction -> transaction -> total admin fee
         type: integer
@@ -726,6 +741,37 @@ paths:
       summary: validate email for booking is used or not
       tags:
       - events
+  /events/{eventId}/payment-methods:
+    get:
+      description: Get available payment methods
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success get available payment methods
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Get available payment methods
+      tags:
+      - events
   /events/{eventId}/ticket-categories:
     get:
       description: Get event By ID
@@ -891,49 +937,6 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Create event ticket transaction
-      tags:
-      - events
-  /events/{eventId}/ticket-categories/{ticketCategoryId}/order/paylabs-vasnap:
-    post:
-      consumes:
-      - application/json
-      description: Create VA snap for event ticket transaction
-      parameters:
-      - description: Ticket Category ID
-        in: path
-        name: ticketCategoryId
-        required: true
-        type: string
-      - description: Event ID
-        in: path
-        name: eventId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: VA snap created
-          schema:
-            allOf:
-            - $ref: '#/definitions/lib.APIResponse'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "400":
-          description: Invalid request body
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/lib.HTTPError'
-      summary: Create VA snap for event ticket transaction
       tags:
       - events
   /events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap:

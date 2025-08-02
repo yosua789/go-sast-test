@@ -1,0 +1,1 @@
+ALTER TABLE event_transactions DROP COLUMN pg_additional_fee;

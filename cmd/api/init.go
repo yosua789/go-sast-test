@@ -35,6 +35,8 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	}
 	env.Paylabs.PrivateKey = helper.GetKeyFileString(env.Paylabs.PrivateKey)
 	env.Paylabs.PublicKey = helper.GetKeyFileString(env.Paylabs.PublicKey)
+	env.GarudaID.ApiKey = helper.GetKeyFileString(env.GarudaID.ApiKey)
+	env.GarudaID.ApiKey = helper.Hash256Key(env.GarudaID.ApiKey)
 
 	validate := validator.New()
 	custValidator.InitCustomValidator(validate)

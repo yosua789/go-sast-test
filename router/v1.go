@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RouterApiV1(debug bool, h Handler, rg *gin.RouterGroup) {
+func RouterApiV1(mode string, h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/v1")
 
 	OrganizerRouter(h, r)
@@ -46,6 +46,7 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 
 	// Validate book email
 	r.GET("/:eventId/email-books/:email", h.EventTransaction.IsEmailAlreadyBook)
+	r.GET("/:eventId/payment-methods", h.EventTransaction.GetAvailablePaymentMethods)
 
 	r.GET("/transactions/:transactionId", h.Middleware.TokenAuthMiddleware(), h.EventTransaction.GetTransactionDetails)
 
@@ -62,11 +63,12 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 	rg.GET("/:eventId/ticket-categories/:ticketCategoryId/seatmap", h.EventTicketCategoryHandler.GetSeatmap)
 
 	rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
-	rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/paylabs-vasnap", h.EventTransaction.PaylabsVASnap)
+	// rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/paylabs-vasnap", h.EventTransaction.PaylabsVASnap)
 }
 
 func ExternalRouter(h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/external")
 
 	r.POST("/paylabs/va-snap/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackVASnap)
+	r.POST("/paylabs/qris/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackQRISPaylabs)
 }

@@ -7,18 +7,31 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
-func VerifyUserGarudaIDByID(baseURL, id string) (*dto.ApiResponseGarudaIDService, error) {
+func VerifyUserGarudaIDByID(baseURL, id, privateKey string) (*dto.ApiResponseGarudaIDService, error) {
 	url := fmt.Sprintf("%s/v1/user/verify/%s", baseURL, id)
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-
-	resp, err := client.Get(url)
+	req, err := http.NewRequest("GET", url, nil) // Replace with actual URL
 	if err != nil {
-		return nil, fmt.Errorf("failed to make GET request: %w", err)
+		log.Printf("Error creating request: %v", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	headerKey, err := HashBcryptKey(privateKey)
+	if err != nil {
+		log.Printf("Error hashing private key: %v", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Add("X-API-Key", headerKey)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	defer resp.Body.Close()
 

@@ -27,6 +27,6 @@ func Newhandler(
 		SectorHandler:              handler.NewSectorHandler(env, s.VenueService, validator),
 		EventHandler:               handler.NewEventHandler(env, s.EventService, validator),
 		EventTicketCategoryHandler: handler.NewEventTicketCategoryHandler(env, s.EventTicketCategoryService, validator),
-		EventTransactionHandler:    handler.NewEventTransactionHandler(env, s.EventTransactionService, validator),
+		EventTransactionHandler:    handler.NewEventTransactionHandler(env, s.EventTransactionService, s.PaymentLogsService, validator),
 	}
 }

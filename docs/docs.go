@@ -377,6 +377,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/events/{eventId}/payment-methods": {
+            "get": {
+                "description": "Get available payment methods",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get available payment methods",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success get available payment methods",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/events/{eventId}/ticket-categories": {
             "get": {
                 "description": "Get event By ID",
@@ -621,75 +673,6 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/dto.EventTransactionResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/lib.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
-        "/events/{eventId}/ticket-categories/{ticketCategoryId}/order/paylabs-vasnap": {
-            "post": {
-                "description": "Create VA snap for event ticket transaction",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "Create VA snap for event ticket transaction",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Ticket Category ID",
-                        "name": "ticketCategoryId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event ID",
-                        "name": "eventId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "VA snap created",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/lib.APIResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
                                         }
                                     }
                                 }
@@ -1592,7 +1575,8 @@ const docTemplate = `{
                 },
                 "fullname": {
                     "type": "string",
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "minLength": 3
                 },
                 "items": {
                     "type": "array",
@@ -1859,7 +1843,7 @@ const docTemplate = `{
                 "grand_total": {
                     "type": "integer"
                 },
-                "invoice_number": {
+                "order_number": {
                     "type": "string"
                 },
                 "payment_expired_at": {
@@ -1867,6 +1851,9 @@ const docTemplate = `{
                 },
                 "payment_method": {
                     "type": "string"
+                },
+                "pg_additional_fee": {
+                    "type": "integer"
                 },
                 "tax_percentage": {
                     "type": "number"
@@ -2206,6 +2193,9 @@ const docTemplate = `{
                 "garuda_id": {
                     "type": "string"
                 },
+                "is_adult": {
+                    "type": "boolean"
+                },
                 "is_available": {
                     "type": "boolean"
                 }
@@ -2214,6 +2204,14 @@ const docTemplate = `{
         "entity.OrderDetails": {
             "type": "object",
             "properties": {
+                "city": {
+                    "description": "event transaction -\u003e user -\u003e city",
+                    "type": "string"
+                },
+                "country": {
+                    "description": "event transaction -\u003e user -\u003e country",
+                    "type": "string"
+                },
                 "event_name": {
                     "description": "event transaction -\u003e event -\u003e name",
                     "type": "string"
@@ -2233,6 +2231,10 @@ const docTemplate = `{
                 "payment_method": {
                     "description": "if VA then return VA Number if qris return qr code string",
                     "type": "string"
+                },
+                "pg_additional_fee": {
+                    "description": "event transaction -\u003e transaction -\u003e additional fee for payment gateway",
+                    "type": "integer"
                 },
                 "total_admin_fee": {
                     "description": "event_transaction -\u003e transaction -\u003e total admin fee",

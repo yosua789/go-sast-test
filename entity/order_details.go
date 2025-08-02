@@ -17,4 +17,15 @@ type OrderDetails struct {
 	TotalTax              int       `json:"total_tax"`               // event_transaction -> transaction -> total tax
 	TotalPrice            int       `json:"total_price"`             // event_transaction -> transaction -> total price
 	TransactionQuantity   int       `json:"transaction_quantity"`    // event_transaction -> transaction -> item count
+	Country               string    `json:"country"`                 // event transaction -> user -> country
+	City                  string    `json:"city"`                    // event transaction -> user -> city
+	PGAdditionalFee       int       `json:"pg_additional_fee"`       // event transaction -> transaction -> additional fee for payment gateway
 } // start from event_transaction
+
+type AdditionalPaymentInfo struct {
+	Name            string  `json:"name"`
+	IsTax           bool    `json:"is_tax"`
+	IsPercentage    bool    `json:"is_percentage"`
+	Value           float64 `json:"value"`
+	CalculatedValue float64 `json:"calculated_value"` // calculated value based on total price
+}

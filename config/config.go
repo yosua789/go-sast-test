@@ -17,6 +17,8 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 
+	SetDefaultConfig(viper.GetViper())
+
 	err = viper.ReadInConfig()
 	if err != nil {
 		log.Error().Err(err).Msg("viper error read config")
@@ -26,6 +28,8 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 	if err != nil {
 		log.Error().Err(err).Msg("viper error unmarshal config")
 	}
+
+	fmt.Println(env.Database.Timeout)
 
 	// Check credential is filename
 	var credential dto.GCPServiceAccount
@@ -63,7 +67,7 @@ func LoadEnv() (env *EnvironmentVariable, err error) {
 }
 
 func SetDefaultConfig(v *viper.Viper) {
-	v.SetDefault("DATABASE.TIMEOUT.PING", "5s")
+	v.SetDefault("DATABASE.TIMEOUT.PING", "1s")
 	v.SetDefault("DATABASE.TIMEOUT.READ", "5s")
 	v.SetDefault("DATABASE.TIMEOUT.WRITE", "5s")
 }
@@ -74,6 +78,8 @@ type EnvironmentVariable struct {
 		Port  int    `mapstructure:"PORT"`
 		Mode  string `mapstructure:"MODE"`
 		Debug bool   `mapstructure:"DEBUG"`
+
+		AutoAssignSeat bool `mapstructure:"AUTO_ASSIGN_SEAT"` // It will disable validation seat
 	} `mapstructure:"APP"`
 	Api struct {
 		CorsEnable bool   `mapstructure:"CORS_ENABLE"`
@@ -103,7 +109,7 @@ type EnvironmentVariable struct {
 		Timeout struct {
 			Ping  time.Duration `mapstructure:"PING"`
 			Read  time.Duration `mapstructure:"READ"`
-			Write time.Duration `mapstructure:"Write"`
+			Write time.Duration `mapstructure:"WRITE"`
 		} `mapstructure:"TIMEOUT"`
 	} `mapstructure:"DATABASE"`
 	Nats struct {
@@ -136,6 +142,7 @@ type EnvironmentVariable struct {
 		PublicKey       string `mapstructure:"PUBLIC_KEY"`       // paylabs public key in PEM format
 		PrivateKey      string `mapstructure:"PRIVATE_KEY"`      // our private key in PEM format
 		PaymentDuration int    `mapstructure:"PAYMENT_DURATION"` // Duration in seconds
+		ActivePayment   bool   `mapstructure:"ACTIVE_PAYMENT"`   // Enable or disable payment
 	} `mapstructure:"PAYLABS"`
 	Storage struct {
 		Type string `mapstructure:"TYPE"`
@@ -150,6 +157,7 @@ type EnvironmentVariable struct {
 		BaseUrl string `mapstructure:"BASE_URL"`
 		ApiKey  string `mapstructure:"API_KEY"`
 		// IsMock?  bool   `mapstructure:"IS_MOCK"`
+		MinimumAge int `mapstructure:"MINIMUM_AGE"` // Minimum age in years for Garuda ID verification
 	} `mapstructure:"GARUDA_ID"`
 }
 

@@ -154,3 +154,110 @@ type SnapCallbackPaymentRequest struct {
 	FreeTexts               []SnapCallbackFreeText      `json:"freeTexts,omitempty"`               // * Max 25 items
 	AdditionalInfo          *SnapCallbackAdditionalInfo `json:"additionalInfo"`                    // * Nested object
 }
+
+type PaylabsQRISRequest struct {
+	MerchantID      string `json:"merchantId"`
+	MerchantTradeNo string `json:"merchantTradeNo"`
+	RequestID       string `json:"requestId"`
+	PaymentType     string `json:"paymentType"`
+	Amount          string `json:"amount"`
+	ProductName     string `json:"productName"`
+	Expire          int    `json:"expire"` // in second
+	NotifyURL       string `json:"notifyUrl"`
+}
+
+type QRISCallbackRequest struct {
+	MerchantID        string                `json:"merchantId"`
+	RequestID         string                `json:"requestId"`
+	ErrCode           string                `json:"errCode"`
+	PaymentType       string                `json:"paymentType"`
+	Amount            string                `json:"amount"`
+	CreateTime        string                `json:"createTime"`
+	SuccessTime       string                `json:"successTime"`
+	MerchantTradeNo   string                `json:"merchantTradeNo"`
+	PlatformTradeNo   string                `json:"platformTradeNo"`
+	Status            string                `json:"status"`
+	PaymentMethodInfo QRISPaymentMethodInfo `json:"paymentMethodInfo"`
+	ProductName       string                `json:"productName"`
+}
+
+type QRISPaymentMethodInfo struct {
+	NMID        string `json:"nmid"`                  // National Merchant ID (Required)
+	RRN         string `json:"rrn,omitempty"`         // Payment success's code
+	TID         string `json:"tid,omitempty"`         // Terminal ID (Only in QRIS Payment)
+	Payer       string `json:"payer,omitempty"`       // Payer's name
+	PhoneNumber string `json:"phoneNumber,omitempty"` // Payer's phone number
+	IssuerID    string `json:"issuerId,omitempty"`    // Issuer's Application ID
+}
+
+type QRISCallbackResponse struct {
+	ErrCode    string `json:"errCode"`
+	ErrCodeDes string `json:"errCodeDes,omitempty"`
+	MerchantID string `json:"merchantId"`
+	StoreID    string `json:"storeId,omitempty"`
+	RequestID  string `json:"requestId"`
+}
+
+// callback va snap response
+type CallbackSnapResponse struct {
+	ResponseCode       string                          `json:"responseCode"`                // M
+	ResponseMessage    string                          `json:"responseMessage"`             // M
+	VirtualAccountData CallbackSnapVirtualAccount      `json:"virtualAccountData"`          // M
+	PaymentFlagReason  *CallbackSnapMultiLangReason    `json:"paymentFlagReason,omitempty"` // O
+	PaidAmount         *CallbackSnapAmount             `json:"paidAmount,omitempty"`        // O
+	PaidBills          string                          `json:"paidBills,omitempty"`         // O
+	TotalAmount        *CallbackSnapAmount             `json:"totalAmount,omitempty"`       // O
+	TrxDateTime        *string                         `json:"trxDateTime,omitempty"`       // O
+	ReferenceNo        *string                         `json:"referenceNo,omitempty"`       // O
+	JournalNum         *string                         `json:"journalNum,omitempty"`        // O
+	PaymentType        *string                         `json:"paymentType,omitempty"`       // O
+	FlagAdvise         *string                         `json:"flagAdvise,omitempty"`        // O
+	PaymentFlagStatus  *string                         `json:"paymentFlagStatus,omitempty"` // O
+	BillDetails        []CallbackSnapBillDetail        `json:"billDetails,omitempty"`       // O
+	FreeTexts          []CallbackSnapFreeText          `json:"freeTexts,omitempty"`         // O
+	AdditionalInfo     *CallbackSnapBillAdditionalInfo `json:"additionalInfo,omitempty"`    // O
+}
+
+type CallbackSnapVirtualAccount struct {
+	PartnerServiceId    string              `json:"partnerServiceId"`              // M
+	CustomerNo          string              `json:"customerNo"`                    // M
+	VirtualAccountNo    string              `json:"virtualAccountNo"`              // M
+	VirtualAccountName  string              `json:"virtualAccountName"`            // M
+	VirtualAccountEmail *string             `json:"virtualAccountEmail,omitempty"` // O
+	VirtualAccountPhone *string             `json:"virtualAccountPhone,omitempty"` // O
+	TrxId               *string             `json:"trxId,omitempty"`               // O
+	PaymentRequestId    string              `json:"paymentRequestId"`              // M
+	PaidAmount          *CallbackSnapAmount `json:"paidAmount,omitempty"`          // O
+}
+
+type CallbackSnapMultiLangReason struct {
+	English   *string `json:"english,omitempty"`   // O
+	Indonesia *string `json:"indonesia,omitempty"` // O
+}
+
+type CallbackSnapAmount struct {
+	Value    string `json:"value"`    // M
+	Currency string `json:"currency"` // M (e.g., IDR)
+}
+
+type CallbackSnapBillDetail struct {
+	BillerReferenceId *string                         `json:"billerReferenceId,omitempty"` // O
+	BillCode          *string                         `json:"billCode,omitempty"`          // O
+	BillNo            *string                         `json:"billNo,omitempty"`            // O
+	BillName          *string                         `json:"billName,omitempty"`          // O
+	BillShortName     *string                         `json:"billShortName,omitempty"`     // O
+	BillDescription   *CallbackSnapMultiLangReason    `json:"billDescription,omitempty"`   // O
+	BillSubCompany    *string                         `json:"billSubCompany,omitempty"`    // O
+	BillAmount        *CallbackSnapAmount             `json:"billAmount,omitempty"`        // O
+	AdditionalInfo    *CallbackSnapBillAdditionalInfo `json:"additionalInfo,omitempty"`    // O
+	Reason            *CallbackSnapMultiLangReason    `json:"reason,omitempty"`            // O
+}
+
+type CallbackSnapBillAdditionalInfo struct {
+	Status *string `json:"status,omitempty"` // O
+}
+
+type CallbackSnapFreeText struct {
+	English   *string `json:"english,omitempty"`   // O
+	Indonesia *string `json:"indonesia,omitempty"` // O
+}

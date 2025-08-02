@@ -262,6 +262,7 @@ func (s *EventServiceImpl) GetAllEventPaginated(ctx context.Context, filter dto.
 
 	paginationDB := domain.PaginationParam{
 		TargetPage: pagination.TargetPage,
+		Order:      "DESC",
 	}
 
 	tx, err := s.DB.Postgres.Begin(ctx)
@@ -376,7 +377,7 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 		}, &lib.ErrorGarudaIDAlreadyUsed
 	}
 
-	externalResp, err := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, garudaID)
+	externalResp, err := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, garudaID, s.Env.GarudaID.ApiKey)
 	if err != nil {
 		return resp, &lib.ErrorGetGarudaID
 	}
@@ -397,11 +398,19 @@ func (s *EventServiceImpl) FindByGarudaID(ctx context.Context, garudaID, eventID
 			return resp, &lib.ErrorGetGarudaID
 		}
 	}
+	var IsAdult bool = false
+	if externalResp != nil && externalResp.Data.Age > s.Env.GarudaID.MinimumAge {
+		IsAdult = true
+	}
 	resp.IsAvailable = true
 	resp.GarudaID = garudaID
+	resp.IsAdult = IsAdult
 	return resp, nil
 }
 
+// todo find bulk garuda id
+
+// todo find bulk garuda id
 func (s *EventServiceImpl) GetActiveSettingByEventId(ctx context.Context, eventId string) (res dto.EventSettingsResponse, err error) {
 	_, err = s.EventRepo.FindById(ctx, nil, eventId)
 	if err != nil {

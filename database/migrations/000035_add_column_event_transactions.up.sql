@@ -1,0 +1,1 @@
+ALTER TABLE event_transactions ADD COLUMN pg_additional_fee int NOT NULL DEFAULT 0;

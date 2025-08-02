@@ -188,6 +188,17 @@ var (
 		Code: 50004,
 		Err:  errors.New("failed to create transaction on paylabs, please try again"),
 	}
+	TransactionWithoutAdultError = TIXError{
+		Code: 40914,
+		Err:  errors.New("transaction must contain at least one adult ticket"),
+	}
+)
+
+var (
+	ErrorPaymentMethodInvalid = TIXError{
+		Code: 40012,
+		Err:  errors.New("payment method is invalid"),
+	}
 )
 
 var (
@@ -239,6 +250,10 @@ var (
 		Code: 40305,
 		Err:  errors.New("event does not require garuda id verification"),
 	}
+	ErrorDuplicateGarudaIDPayload = TIXError{
+		Code: 40913,
+		Err:  errors.New("duplicate garuda id found in payload"),
+	}
 )
 
 // callback
@@ -247,9 +262,9 @@ var (
 		Code: 40008,
 		Err:  errors.New("callback signature is invalid"),
 	}
-	ErrorInvoiceIDNotFound = TIXError{
+	ErrorOrderNotFound = TIXError{
 		Code: 40412,
-		Err:  errors.New("invoice id not found"),
+		Err:  errors.New("order not found"),
 	}
 	ErrorFailedToMarkTransactionAsSuccess = TIXError{
 		Code: 50005,
@@ -274,5 +289,24 @@ var (
 	MissmatchTxIDParameterBearerError = TIXError{
 		Code: 40302,
 		Err:  errors.New("transaction ID in parameter does not match with the one in bearer token"),
+	}
+)
+
+// Event tickets
+var (
+	FailedToCreateEventTIcket = TIXError{
+		Code: 50007,
+		Err:  errors.New("failed to create event ticket"),
+	}
+	EventTicketNotFound = TIXError{
+		Code: 40414,
+		Err:  errors.New("event ticket not found"),
+	}
+)
+
+var (
+	ErrorCreatePaymentLog = TIXError{
+		Code: 50008,
+		Err:  errors.New("failed to create payment log"),
 	}
 )

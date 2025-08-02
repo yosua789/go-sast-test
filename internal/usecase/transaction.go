@@ -30,7 +30,10 @@ func NewTransactionUsecase(
 func (u *TransactionUsecase) SendBill(
 	ctx context.Context,
 	email, name string,
+	useGarudaId bool,
 	itemCount int,
+	trxAccessToken string,
+	paymentMethod model.PaymentMethod,
 	event model.Event,
 	transaction model.EventTransaction,
 	ticketCategory model.EventTicketCategory,
@@ -38,18 +41,23 @@ func (u *TransactionUsecase) SendBill(
 ) (err error) {
 	log.Info().Msg("send email bill")
 	var transactionPayload = domainEvent.TransactionBill{
-		TransactionID: transaction.ID,
-		InvoiceNumber: transaction.InvoiceNumber,
+		TransactionID:          transaction.ID,
+		OrderNumber:            transaction.OrderNumber,
+		TransactionAccessToken: trxAccessToken,
 		Payment: domainEvent.PaymentInformation{
-			Method:      transaction.PaymentMethod,
-			DisplayName: "Mandiri Virtual Account",
-			Code:        "CODE",
-			VANumber:    transaction.PaymentAdditionalInfo,
-			GrandTotal:  transaction.GrandTotal,
+			Type:                         paymentMethod.PaymentType,
+			Group:                        paymentMethod.PaymentGroup,
+			Channel:                      paymentMethod.PaymentChannel,
+			Code:                         paymentMethod.PaymentCode,
+			PaymentAdditionalInformation: transaction.PaymentAdditionalInfo,
+			DisplayName:                  paymentMethod.Name,
+			GrandTotal:                   transaction.GrandTotal,
 		},
 		Status: transaction.Status,
 		DetailInformation: domainEvent.DetailInformationTransaction{
 			BookEmail: email,
+			BookName:  name,
+
 			TicketCategory: domainEvent.TicketCategoryInformation{
 				Code:     ticketCategory.Code,
 				Price:    ticketCategory.Price,
@@ -66,7 +74,12 @@ func (u *TransactionUsecase) SendBill(
 				City:      venueSector.Venue.City,
 			},
 		},
-		EventTime: event.EventTime,
+		Event: domainEvent.EventInformation{
+			ID:             event.ID,
+			BannerFilename: event.Banner,
+			Name:           event.Name,
+			Time:           event.EventTime,
+		},
 		ItemCount: itemCount,
 		ExpiredAt: transaction.PaymentExpiredAt,
 		CreatedAt: transaction.CreatedAt,
@@ -88,6 +101,157 @@ func (u *TransactionUsecase) SendBill(
 	}
 
 	err = u.EventPublisher.Publish(ctx, u.Env.Nats.Subjects.SendBill, bytes)
+	if err != nil {
+		return
+	}
+
+	log.Info().Msg("success send email")
+
+	return
+}
+
+func (u *TransactionUsecase) SendInvoice(
+	ctx context.Context,
+	email, name string,
+	useGarudaId bool,
+	itemCount int,
+	transactionDetail entity.EventTransaction,
+) (err error) {
+	log.Info().Msg("send email invoice")
+	var transactionPayload = domainEvent.TransactionInvoice{
+		TransactionID: transactionDetail.ID,
+		OrderNumber:   transactionDetail.OrderNumber,
+		Payment: domainEvent.PaymentInformation{
+			DisplayName:                  transactionDetail.PaymentMethod.Name,
+			Type:                         transactionDetail.PaymentMethod.PaymentType,
+			Group:                        transactionDetail.PaymentMethod.PaymentGroup,
+			Channel:                      transactionDetail.PaymentMethod.PaymentChannel,
+			Code:                         transactionDetail.PaymentMethod.PaymentCode,
+			PaymentAdditionalInformation: transactionDetail.PaymentAdditionalInfo,
+			GrandTotal:                   transactionDetail.GrandTotal,
+		},
+		Status: transactionDetail.Status,
+		DetailInformation: domainEvent.DetailInformationTransaction{
+			BookEmail: email,
+			TicketCategory: domainEvent.TicketCategoryInformation{
+				Code:     transactionDetail.TicketCategory.Code,
+				Price:    transactionDetail.TicketCategory.Price,
+				Name:     transactionDetail.TicketCategory.Name,
+				Entrance: transactionDetail.TicketCategory.Entrance,
+				Sector: domainEvent.TicketSector{
+					Name: transactionDetail.VenueSector.Name,
+				},
+			},
+			Location: domainEvent.LocationInformation{
+				VenueType: transactionDetail.Event.Venue.VenueType,
+				VenueName: transactionDetail.Event.Venue.Name,
+				Country:   transactionDetail.Event.Venue.Country,
+				City:      transactionDetail.Event.Venue.City,
+			},
+		},
+		Event: domainEvent.EventInformation{
+			ID:             transactionDetail.Event.ID,
+			BannerFilename: transactionDetail.Event.Banner,
+			Name:           transactionDetail.Event.Name,
+			Time:           transactionDetail.Event.EventTime,
+		},
+		ItemCount: itemCount,
+		ExpiredAt: transactionDetail.PaymentExpiredAt,
+		CreatedAt: transactionDetail.CreatedAt,
+	}
+
+	var emailPayload = domainEvent.RequestSendEmail{
+		Recipient: domainEvent.Recipient{
+			Email: email,
+			Name:  name,
+		},
+		Data: transactionPayload,
+	}
+
+	log.Info().Interface("data", emailPayload).Msg("payload")
+
+	bytes, err := json.Marshal(emailPayload)
+	if err != nil {
+		return
+	}
+
+	err = u.EventPublisher.Publish(ctx, u.Env.Nats.Subjects.SendInvoice, bytes)
+	if err != nil {
+		return
+	}
+
+	log.Info().Msg("success send email")
+
+	return
+}
+
+func (u *TransactionUsecase) SendETicket(
+	ctx context.Context,
+	useGarudaId bool,
+	eventTicket model.EventTicket,
+	transactionDetail entity.EventTransaction,
+) (err error) {
+	log.Info().Msg("send email eticket")
+	var transactionPayload = domainEvent.TransactionETicket{
+		TicketID:        eventTicket.ID,
+		TransactionID:   transactionDetail.ID,
+		TicketNumber:    eventTicket.TicketNumber,
+		TicketCode:      eventTicket.TicketCode,
+		TicketSeatLabel: eventTicket.SeatLabel.String,
+		Payment: domainEvent.PaymentInformation{
+			// Method:                       transactionDetail.PaymentMethod.PaymentCode,
+			DisplayName:                  transactionDetail.PaymentMethod.Name,
+			Code:                         transactionDetail.PaymentMethod.PaymentCode,
+			PaymentAdditionalInformation: transactionDetail.PaymentAdditionalInfo,
+			GrandTotal:                   transactionDetail.GrandTotal,
+		},
+		DetailInformation: domainEvent.DetailInformationTransaction{
+			BookEmail:       eventTicket.TicketOwnerEmail,
+			BookName:        eventTicket.TicketOwnerFullname,
+			BookPhoneNumber: eventTicket.TicketOwnerPhoneNumber.String,
+			BookGarudaID:    eventTicket.TicketOwnerGarudaId.String,
+			UseGarudaId:     useGarudaId,
+			TicketCategory: domainEvent.TicketCategoryInformation{
+				Code:     transactionDetail.TicketCategory.Code,
+				Price:    transactionDetail.TicketCategory.Price,
+				Name:     transactionDetail.TicketCategory.Name,
+				Entrance: transactionDetail.TicketCategory.Entrance,
+				Sector: domainEvent.TicketSector{
+					Name: transactionDetail.VenueSector.Name,
+				},
+			},
+			Location: domainEvent.LocationInformation{
+				VenueType: transactionDetail.Event.Venue.VenueType,
+				VenueName: transactionDetail.Event.Venue.Name,
+				Country:   transactionDetail.Event.Venue.Country,
+				City:      transactionDetail.Event.Venue.City,
+			},
+		},
+		Event: domainEvent.EventInformation{
+			ID:             transactionDetail.Event.ID,
+			Name:           transactionDetail.Event.Name,
+			BannerFilename: transactionDetail.Event.Banner,
+			Time:           transactionDetail.Event.EventTime,
+		},
+		CreatedAt: transactionDetail.CreatedAt,
+	}
+
+	var emailPayload = domainEvent.RequestSendEmail{
+		Recipient: domainEvent.Recipient{
+			Email: eventTicket.TicketOwnerEmail,
+			Name:  eventTicket.TicketOwnerFullname,
+		},
+		Data: transactionPayload,
+	}
+
+	log.Info().Interface("data", emailPayload).Msg("payload")
+
+	bytes, err := json.Marshal(emailPayload)
+	if err != nil {
+		return
+	}
+
+	err = u.EventPublisher.Publish(ctx, u.Env.Nats.Subjects.SendETicket, bytes)
 	if err != nil {
 		return
 	}

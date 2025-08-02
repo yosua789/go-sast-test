@@ -12,6 +12,7 @@ type Service struct {
 	EventService               service.EventService
 	EventTicketCategoryService service.EventTicketCategoryService
 	EventTransactionService    service.EventTransactionService
+	PaymentLogsService         service.PaymentLogsService
 }
 
 func Newservice(
@@ -25,6 +26,7 @@ func Newservice(
 	venueService := service.NewVenueService(db, env, r.VenueRepo, r.VenueSectorRepo)
 	eventService := service.NewEventService(db, env, r.EventRepo, r.EventSettingRepo, r.EventTicketCategoryRepo, r.OrganizerRepo, r.VenueRepo, r.EventTransactionGarudaIDRepo, r.GcsStorageRepository)
 	eventTicketCategoryService := service.NewEventTicketCategoryService(db, env, r.VenueRepo, r.VenueSectorRepo, r.EventRepo, r.EventTicketCategoryRepo, r.EventSeatmapBookRepo, r.GcsStorageRepository)
+	paymentLogsService := service.NewPaymentLogsService(db, env, r.PaymentLogsRepository)
 	eventTransactionService := service.NewEventTransactionService(
 		db,
 		env,
@@ -37,7 +39,10 @@ func Newservice(
 		r.EventOrderInformationBookRepo,
 		r.VenueSectorRepo,
 		r.EventTransactionGarudaIDRepo,
+		r.EventTicketRepo,
+		r.PaymentMethodRepository,
 		job.CheckStatusTransactionJob,
+		r.PaymentLogsRepository,
 		useCase.TransactionUseCase,
 	)
 
@@ -47,5 +52,6 @@ func Newservice(
 		EventService:               eventService,
 		EventTicketCategoryService: eventTicketCategoryService,
 		EventTransactionService:    eventTransactionService,
+		PaymentLogsService:         paymentLogsService,
 	}
 }
