@@ -534,103 +534,104 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	// Testing in local purposes
-	// go func() {
-	// 	if err != nil {
-	// 		log.Warn().Str("email", transaction.Email).Err(err).Msg("failed to send job invoice")
-	// 	}
+	go func() {
+		if err != nil {
+			log.Warn().Str("email", transaction.Email).Err(err).Msg("failed to send job invoice")
+		}
 
-	// 	tx, err := s.DB.Postgres.Begin(ctx)
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// 	defer tx.Rollback(ctx)
+		tx, err := s.DB.Postgres.Begin(ctx)
+		if err != nil {
+			return
+		}
+		defer tx.Rollback(ctx)
 
-	// 	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transaction.ID)
-	// 	if err != nil {
-	// 		return
-	// 	}
+		transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transaction.ID)
+		if err != nil {
+			return
+		}
 
-	// 	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transaction.ID)
-	// 	if err != nil {
-	// 		log.Error().Err(err).Msg("Failed to find transaction by order number")
-	// 		return
-	// 	}
+		transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transaction.ID)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to find transaction by order number")
+			return
+		}
 
-	// 	err = s.TransactionUseCase.SendInvoice(
-	// 		ctx,
-	// 		req.Email,
-	// 		req.Fullname,
-	// 		eventSettings.GarudaIdVerification,
-	// 		len(transactionItems),
-	// 		transactionDetail,
-	// 	)
-	// 	if err != nil {
-	// 		log.Error().Err(err).Msg("failed to send invoice")
-	// 		return
-	// 	}
+		err = s.TransactionUseCase.SendInvoice(
+			ctx,
+			req.Email,
+			req.Fullname,
+			eventSettings.GarudaIdVerification,
+			len(transactionItems),
+			transactionDetail,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to send invoice")
+			return
+		}
 
-	// 	var eventTickets []model.EventTicket
+		var eventTickets []model.EventTicket
 
-	// 	for _, val := range transactionItems {
-	// 		if val.Email.Valid && val.Fullname.Valid {
-	// 			ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
-	// 			ticketCode, err := helper.GenerateTicketCode()
-	// 			if err != nil {
-	// 				return
-	// 			}
+		for _, val := range transactionItems {
+			if val.Email.Valid && val.Fullname.Valid {
+				ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
+				ticketCode, err := helper.GenerateTicketCode()
+				if err != nil {
+					return
+				}
 
-	// 			eventTicket := model.EventTicket{
-	// 				EventID:          transactionDetail.Event.ID,
-	// 				TicketCategoryID: transactionDetail.TicketCategory.ID,
-	// 				TransactionID:    transactionDetail.ID,
+				eventTicket := model.EventTicket{
+					EventID:          transactionDetail.Event.ID,
+					TicketCategoryID: transactionDetail.TicketCategory.ID,
+					TransactionID:    transactionDetail.ID,
 
-	// 				TicketOwnerEmail:       val.Email.String,
-	// 				TicketOwnerFullname:    val.Fullname.String,
-	// 				TicketOwnerPhoneNumber: val.PhoneNumber,
-	// 				TicketOwnerGarudaId:    val.GarudaID,
-	// 				TicketNumber:           ticketNumber,
-	// 				TicketCode:             ticketCode,
+					TicketOwnerEmail:       val.Email.String,
+					TicketOwnerFullname:    val.Fullname.String,
+					TicketOwnerPhoneNumber: val.PhoneNumber,
+					TicketOwnerGarudaId:    val.GarudaID,
+					TicketNumber:           ticketNumber,
+					TicketCode:             ticketCode,
 
-	// 				EventTime:    transactionDetail.Event.EventTime,
-	// 				EventVenue:   transactionDetail.VenueSector.Venue.Name,
-	// 				EventCity:    transactionDetail.VenueSector.Venue.City,
-	// 				EventCountry: transactionDetail.VenueSector.Venue.Country,
-	// 				SectorName:   transactionDetail.VenueSector.Name,
-	// 				AreaCode:     transactionDetail.VenueSector.AreaCode.String,
-	// 				Entrance:     transactionDetail.TicketCategory.Entrance,
-	// 				SeatRow:      val.SeatRow,
-	// 				SeatColumn:   val.SeatColumn,
-	// 				SeatLabel:    val.SeatLabel,
-	// 				IsCompliment: false,
-	// 			}
-	// 			ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
-	// 			if err != nil {
-	// 				log.Error().Err(err).Msg("failed to create data eticket")
-	// 				return
-	// 			}
-	// 			eventTicket.ID = ticketId
-	// 			eventTickets = append(eventTickets, eventTicket)
-	// 		}
-	// 	}
+					EventTime:    transactionDetail.Event.EventTime,
+					EventVenue:   transactionDetail.Event.Venue.Name,
+					EventCity:    transactionDetail.Event.Venue.City,
+					EventCountry: transactionDetail.Event.Venue.Country,
 
-	// 	err = tx.Commit(ctx)
-	// 	if err != nil {
-	// 		log.Warn().Err(err).Msg("failed to create eticket")
-	// 	}
+					SectorName:   transactionDetail.VenueSector.Name,
+					AreaCode:     transactionDetail.VenueSector.AreaCode.String,
+					Entrance:     transactionDetail.TicketCategory.Entrance,
+					SeatRow:      val.SeatRow,
+					SeatColumn:   val.SeatColumn,
+					SeatLabel:    val.SeatLabel,
+					IsCompliment: false,
+				}
+				ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
+				if err != nil {
+					log.Error().Err(err).Msg("failed to create data eticket")
+					return
+				}
+				eventTicket.ID = ticketId
+				eventTickets = append(eventTickets, eventTicket)
+			}
+		}
 
-	// 	for _, val := range eventTickets {
-	// 		err = s.TransactionUseCase.SendETicket(
-	// 			ctx,
-	// 			eventSettings.GarudaIdVerification,
-	// 			val,
-	// 			transactionDetail,
-	// 		)
-	// 		if err != nil {
-	// 			log.Warn().Str("email", transaction.Email).Err(err).Msg("failed to send job invoice")
-	// 		}
-	// 	}
+		err = tx.Commit(ctx)
+		if err != nil {
+			log.Warn().Err(err).Msg("failed to create eticket")
+		}
 
-	// }()
+		for _, val := range eventTickets {
+			err = s.TransactionUseCase.SendETicket(
+				ctx,
+				eventSettings.GarudaIdVerification,
+				val,
+				transactionDetail,
+			)
+			if err != nil {
+				log.Warn().Str("email", transaction.Email).Err(err).Msg("failed to send job invoice")
+			}
+		}
+
+	}()
 
 	// set via cookie
 	// helper.SetAccessToken(ctx, accessToken)
@@ -955,9 +956,10 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 					TicketCode:             ticketCode,
 
 					EventTime:    transactionDetail.Event.EventTime,
-					EventVenue:   transactionDetail.VenueSector.Venue.Name,
-					EventCity:    transactionDetail.VenueSector.Venue.City,
-					EventCountry: transactionDetail.VenueSector.Venue.Country,
+					EventVenue:   transactionDetail.Event.Venue.Name,
+					EventCity:    transactionDetail.Event.Venue.City,
+					EventCountry: transactionDetail.Event.Venue.Country,
+
 					SectorName:   transactionDetail.VenueSector.Name,
 					AreaCode:     transactionDetail.VenueSector.AreaCode.String,
 					Entrance:     transactionDetail.TicketCategory.Entrance,
@@ -1297,9 +1299,10 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 						TicketCode:             ticketCode,
 
 						EventTime:    transactionDetail.Event.EventTime,
-						EventVenue:   transactionDetail.VenueSector.Venue.Name,
-						EventCity:    transactionDetail.VenueSector.Venue.City,
-						EventCountry: transactionDetail.VenueSector.Venue.Country,
+						EventVenue:   transactionDetail.Event.Venue.Name,
+						EventCity:    transactionDetail.Event.Venue.City,
+						EventCountry: transactionDetail.Event.Venue.Country,
+
 						SectorName:   transactionDetail.VenueSector.Name,
 						AreaCode:     transactionDetail.VenueSector.AreaCode.String,
 						Entrance:     transactionDetail.TicketCategory.Entrance,

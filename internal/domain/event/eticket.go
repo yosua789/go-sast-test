@@ -3,6 +3,7 @@ package event
 import "time"
 
 type TransactionETicket struct {
+	TicketID        int    `json:"ticket_id"`
 	TransactionID   string `json:"transaction_id"`
 	TicketNumber    string `json:"ticket_number"`
 	TicketCode      string `json:"ticket_code"`
