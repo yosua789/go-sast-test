@@ -138,6 +138,7 @@ type EnvironmentVariable struct {
 		PublicKey       string `mapstructure:"PUBLIC_KEY"`       // paylabs public key in PEM format
 		PrivateKey      string `mapstructure:"PRIVATE_KEY"`      // our private key in PEM format
 		PaymentDuration int    `mapstructure:"PAYMENT_DURATION"` // Duration in seconds
+		ActivePayment   bool   `mapstructure:"ACTIVE_PAYMENT"`   // Enable or disable payment
 	} `mapstructure:"PAYLABS"`
 	Storage struct {
 		Type string `mapstructure:"TYPE"`

@@ -461,26 +461,30 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 	var paymentAdditionalInformation string
 	// mapping paylabs va snap or qris
-	if helper.IsVA(transaction.PaymentMethod) {
-		log.Info().Msg("payment method is VA, calling paylabs snap")
-		var errPaylabs error
-		paymentAdditionalInformation, errPaylabs = s.paylabsVASnap(ctx, transaction, event.Name+" - "+ticketCategory.Name)
-		if errPaylabs != nil {
-			log.Error().Err(errPaylabs).Msg("failed to get paylabs va number")
-			err = &lib.ErrorTransactionPaylabs
-			return
-		}
-		log.Info().Str("paymentAdditionalInformation", paymentAdditionalInformation).Msg("got payment additional information")
-	} else if helper.IsQRIS(transaction.PaymentMethod) {
-		var errPaylabs error
-		log.Info().Msg("payment method is QRIS, calling paylabs qris")
-		paymentAdditionalInformation, errPaylabs = s.paylabsQris(ctx, transaction, event.Name+" - "+ticketCategory.Name)
-		if errPaylabs != nil {
-			log.Error().Err(errPaylabs).Msg("failed to get paylabs qris barcode")
-			err = &lib.ErrorTransactionPaylabs
-			return
-		}
+	if s.Env.Paylabs.ActivePayment {
+		if helper.IsVA(transaction.PaymentMethod) {
+			log.Info().Msg("payment method is VA, calling paylabs snap")
+			var errPaylabs error
+			paymentAdditionalInformation, errPaylabs = s.paylabsVASnap(ctx, transaction, event.Name+" - "+ticketCategory.Name)
+			if errPaylabs != nil {
+				log.Error().Err(errPaylabs).Msg("failed to get paylabs va number")
+				err = &lib.ErrorTransactionPaylabs
+				return
+			}
+			log.Info().Str("paymentAdditionalInformation", paymentAdditionalInformation).Msg("got payment additional information")
+		} else if helper.IsQRIS(transaction.PaymentMethod) {
+			var errPaylabs error
+			log.Info().Msg("payment method is QRIS, calling paylabs qris")
+			paymentAdditionalInformation, errPaylabs = s.paylabsQris(ctx, transaction, event.Name+" - "+ticketCategory.Name)
+			if errPaylabs != nil {
+				log.Error().Err(errPaylabs).Msg("failed to get paylabs qris barcode")
+				err = &lib.ErrorTransactionPaylabs
+				return
+			}
 
+		}
+	} else {
+		transaction.PaymentMethod = "WITHOUT_PAYMENT"
 	}
 	transaction.PaymentAdditionalInfo = paymentAdditionalInformation
 
