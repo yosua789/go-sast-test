@@ -377,10 +377,9 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	}
 	for i, obj := range resAdditionalPayment {
 		if obj.IsPercentage {
-			resAdditionalPayment[i].Value = (float64(res.TotalPrice) * obj.Value) / 100
-			resAdditionalPayment[i].IsPercentage = false
+			resAdditionalPayment[i].CalculatedValue = (float64(res.TotalPrice) * obj.Value) / 100
 		} else {
-			resAdditionalPayment[i].Value = obj.Value
+			resAdditionalPayment[i].CalculatedValue = obj.Value
 		}
 	}
 	resData = dto.OrderDetails{
@@ -399,6 +398,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 		Country:               res.Country, // Assuming country and city are not available in this query
 		City:                  res.City,
 		AdditionalPayment:     resAdditionalPayment,
+		PGAdditionalFee:       res.PGAdditionalFee, // Additional fee for payment gateway
 	}
 
 	return

@@ -23,8 +23,9 @@ type OrderDetails struct {
 } // start from event_transaction
 
 type AdditionalPaymentInfo struct {
-	Name         string  `json:"name"`
-	IsTax        bool    `json:"is_tax"`
-	IsPercentage bool    `json:"is_percentage"`
-	Value        float64 `json:"value"`
+	Name            string  `json:"name"`
+	IsTax           bool    `json:"is_tax"`
+	IsPercentage    bool    `json:"is_percentage"`
+	Value           float64 `json:"value"`
+	CalculatedValue float64 `json:"calculated_value"` // calculated value based on total price
 }
