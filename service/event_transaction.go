@@ -1205,6 +1205,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 
 	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transactionData.ID)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to find transaction detail by transaction id")
 		return
 	}
 
@@ -1234,6 +1235,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 		go func() {
 			tx, err := s.DB.Postgres.Begin(ctx)
 			if err != nil {
+				log.Error().Err(err).Msg("failed to begin transaction for eticket creation")
 				return
 			}
 			defer tx.Rollback(ctx)
