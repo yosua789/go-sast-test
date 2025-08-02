@@ -1178,7 +1178,17 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 			return
 		}
 	}
+	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transactionData.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to find transaction detail by transaction id")
+		return
+	}
 
+	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transactionData.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to find transaction by order number")
+		return
+	}
 	err = tx.Commit(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to commit transaction")
@@ -1203,17 +1213,6 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 	log.Info().Msgf("JSON Payload: %s", jsonData)
 
-	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transactionData.ID)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to find transaction detail by transaction id")
-		return
-	}
-
-	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transactionData.ID)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to find transaction by order number")
-		return
-	}
 	// sent invoice email to users with goroutine
 	if isSuccess {
 		log.Info().Msg("Transaction is success, sending invoice and eticket")
