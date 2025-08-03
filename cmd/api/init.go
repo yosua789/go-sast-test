@@ -56,7 +56,7 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	}
 
 	err = InitSentry(env)
-	if err == nil {
+	if err != nil {
 		log.Fatal().Err(err).Msg("failed to init sentry")
 	}
 

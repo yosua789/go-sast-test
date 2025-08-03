@@ -70,6 +70,8 @@ func SetDefaultConfig(v *viper.Viper) {
 	v.SetDefault("DATABASE.TIMEOUT.PING", "1s")
 	v.SetDefault("DATABASE.TIMEOUT.READ", "5s")
 	v.SetDefault("DATABASE.TIMEOUT.WRITE", "5s")
+
+	v.SetDefault("ASYNQ.DEADLINE_DURATION", "30s")
 }
 
 type EnvironmentVariable struct {
@@ -164,6 +166,9 @@ type EnvironmentVariable struct {
 	Sentry struct {
 		Dsn string `mapstructure:"DSN"`
 	} `mapstructure:"SENTRY"`
+	Asynq struct {
+		ProcessTimeout time.Duration `mapstructure:"PROCESS_TIMEOUT"`
+	} `mapstructure:"ASYNQ"`
 }
 
 func (e *EnvironmentVariable) GetDBDSN() string {
