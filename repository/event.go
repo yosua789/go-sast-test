@@ -10,6 +10,7 @@ import (
 	"assist-tix/model"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -32,17 +33,20 @@ type EventRepository interface {
 }
 
 type EventRepositoryImpl struct {
-	WrapDB *database.WrapDB
-	Env    *config.EnvironmentVariable
+	RedisRepository RedisRepository
+	WrapDB          *database.WrapDB
+	Env             *config.EnvironmentVariable
 }
 
 func NewEventRepository(
 	wrapDB *database.WrapDB,
+	redisRepo RedisRepository,
 	env *config.EnvironmentVariable,
 ) EventRepository {
 	return &EventRepositoryImpl{
-		WrapDB: wrapDB,
-		Env:    env,
+		WrapDB:          wrapDB,
+		Env:             env,
+		RedisRepository: redisRepo,
 	}
 }
 
@@ -114,6 +118,20 @@ func (r *EventRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId string) (event model.Event, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
+	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf("eventData-"+eventId))
+	if err == nil {
+
+		err = json.Unmarshal([]byte(val), &event)
+		if err != nil {
+			log.Warn().Err(err).Msg("Error Marshal data from redis")
+		} else {
+			log.Info().Msg("using data from redis")
+			return event, nil
+		}
+
+	} else {
+		log.Warn().Err(err).Msg("Not Found on Redis, using postgresql instead")
+	}
 
 	query := fmt.Sprintf(`SELECT 
 		id, 
@@ -178,7 +196,12 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 		}
 		return event, err
 	}
-
+	jsonData, err := json.Marshal(event)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshalling event")
+	} else {
+		r.RedisRepository.SetState(ctx, "eventData-"+eventId, string(jsonData), 15*time.Minute)
+	}
 	return
 }
 

@@ -9,8 +9,10 @@ import (
 	"errors"
 	"net/http"
 	"os"
+
 	"path"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -36,6 +38,7 @@ func NewRouter(handler Handler) *gin.Engine {
 	if handler.Env.Api.CorsEnable {
 		router.Use(handler.Middleware.CORSMiddleware())
 	}
+	router.Use(sentrygin.New(sentrygin.Options{}))
 
 	HelloWorld(router)
 

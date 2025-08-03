@@ -31,13 +31,14 @@ func Newrepository(
 	wrapDB *database.WrapDB,
 	env *config.EnvironmentVariable,
 	gcsClient *storage.Client,
+	redisRepo repository.RedisRepository,
 ) Repository {
 	return Repository{
 		OrganizerRepo:                 repository.NewOrganizerRepository(wrapDB, env),
 		VenueRepo:                     repository.NewVenueRepository(wrapDB, env),
-		VenueSectorRepo:               repository.NewVenueSectorRepository(wrapDB, env),
-		EventRepo:                     repository.NewEventRepository(wrapDB, env),
-		EventSettingRepo:              repository.NewEventSettingsRepository(wrapDB, env),
+		VenueSectorRepo:               repository.NewVenueSectorRepository(wrapDB, redisRepo, env),
+		EventRepo:                     repository.NewEventRepository(wrapDB, redisRepo, env),
+		EventSettingRepo:              repository.NewEventSettingsRepository(wrapDB, redisRepo, env),
 		EventTicketCategoryRepo:       repository.NewEventTicketCategoryRepository(wrapDB, env),
 		EventTransactionRepo:          repository.NewEventTransactionRepository(wrapDB, env),
 		EventTransactionItemRepo:      repository.NewEventTransactionItemRepository(wrapDB, env),
@@ -45,7 +46,7 @@ func Newrepository(
 		EventTransactionGarudaIDRepo:  repository.NewEventTransactionGarudaIDRepository(wrapDB, env),
 		EventOrderInformationBookRepo: repository.NewEventOrderInformationBookRepository(wrapDB, env),
 		EventTicketRepo:               repository.NewEventTicketRepository(wrapDB, env),
-		PaymentMethodRepository:       repository.NewPaymentMethodRepository(wrapDB, env),
+		PaymentMethodRepository:       repository.NewPaymentMethodRepository(wrapDB, redisRepo, env),
 		GcsStorageRepository:          repository.NewGCSFileRepositoryImpl(gcsClient, env),
 		PaymentLogsRepository:         repository.NewPaymentLogRepository(wrapDB, env),
 	}
