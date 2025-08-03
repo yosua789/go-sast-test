@@ -12,6 +12,7 @@ import (
 	"assist-tix/storage"
 	custValidator "assist-tix/validator"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -55,7 +56,7 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 
 	//  redis client
 	log.Info().Msg("Connecting to Redis")
-	redisClient := redis.NewRedisClient(env.Redis.Address, env.Redis.Password)
+	redisClient := redis.NewRedisClient(fmt.Sprintf(`%s:%d`, env.Redis.Host, env.Redis.Port), env.Redis.Password)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
