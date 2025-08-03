@@ -5,8 +5,12 @@ import (
 	"assist-tix/database"
 	"assist-tix/entity"
 	"context"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/rs/zerolog/log"
 )
 
 type EventSettingsRepository interface {
@@ -34,6 +38,20 @@ func NewEventSettingsRepository(
 func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.Tx, eventId string) (res []entity.EventSetting, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
+	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf("eventsetting-"+eventId))
+	if err == nil {
+
+		err = json.Unmarshal([]byte(val), &res)
+		if err != nil {
+			log.Warn().Err(err).Msg("Error Marshal data event setting from redis")
+		} else {
+			log.Info().Msg("using data  event setting from redis")
+			return res, nil
+		}
+
+	} else {
+		log.Warn().Err(err).Msg("Not Found on Redis, using postgresql instead")
+	}
 
 	query := `SELECT 
 		es.id, 
@@ -77,7 +95,12 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 		)
 		res = append(res, eventSetting)
 	}
-
+	jsonData, err := json.Marshal(res)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshalling eventSetting")
+	} else {
+		r.RedisRepository.SetState(ctx, "eventsetting-"+eventId, string(jsonData), 15*time.Minute)
+	}
 	return
 }
 

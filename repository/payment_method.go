@@ -6,9 +6,12 @@ import (
 	"assist-tix/lib"
 	"assist-tix/model"
 	"context"
+	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/rs/zerolog/log"
 )
 
 type PaymentMethodRepository interface {
@@ -38,6 +41,21 @@ func NewPaymentMethodRepository(
 func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context.Context, tx pgx.Tx) (grouppedPayments map[string][]model.PaymentMethod, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
+
+	val, err := r.RedisRepository.GetState(ctx, "paymentMethod")
+	if err == nil {
+
+		err = json.Unmarshal([]byte(val), &grouppedPayments)
+		if err != nil {
+			log.Warn().Err(err).Msg("Error Marshal data grouppedpayments from redis")
+		} else {
+			log.Info().Msg("using data grouppedPayment from redis")
+			return grouppedPayments, nil
+		}
+
+	} else {
+		log.Warn().Err(err).Msg("Not Found on Redis, using postgresql instead")
+	}
 
 	grouppedPayments = make(map[string][]model.PaymentMethod, 0)
 
@@ -131,7 +149,12 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 			})
 		}
 	}
-
+	jsonData, err := json.Marshal(grouppedPayments)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshalling paymentMethod")
+	} else {
+		r.RedisRepository.SetState(ctx, "paymentMethod", string(jsonData), 15*time.Minute)
+	}
 	return
 }
 
