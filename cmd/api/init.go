@@ -3,12 +3,16 @@ package api
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/database/redis"
 	"assist-tix/helper"
 	"assist-tix/internal/infra/nats"
 	"assist-tix/middleware"
+	"assist-tix/repository"
 	"assist-tix/router"
 	"assist-tix/storage"
 	custValidator "assist-tix/validator"
+	"context"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -49,6 +53,17 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	}
 	log.Info().Msg("+=== connected to [asynq] ===+")
 
+	//  redis client
+	log.Info().Msg("Connecting to Redis")
+	redisClient := redis.NewRedisClient(env.Redis.Address, env.Redis.Password)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	log.Info().Msg("Ping Redis")
+	redisResp := redisClient.Ping(ctx)
+	if redisResp.Err() != nil {
+		log.Fatal().Err(redisResp.Err()).Msg("Failed to Ping Redis")
+	}
 	// Init Nats
 	natsClient, err := helper.CreateNatsConnection(env)
 	if err != nil {
@@ -66,8 +81,8 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 	natsPublisher := nats.NewPublisher(natsClient, js)
 	useCase := NewUseCase(env, natsPublisher)
 	job := NewJob(env, asynqClient)
-
-	repository := Newrepository(wrapDB, env, gcsClient)
+	redisRepo := repository.NewRedisRepository(redisClient)
+	repository := Newrepository(wrapDB, env, gcsClient, redisRepo)
 	service := Newservice(env, repository, wrapDB, job, useCase)
 	handler := Newhandler(env, service, validate)
 

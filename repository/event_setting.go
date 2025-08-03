@@ -15,17 +15,20 @@ type EventSettingsRepository interface {
 }
 
 type EventSettingsRepositoryImpl struct {
-	WrapDB *database.WrapDB
-	Env    *config.EnvironmentVariable
+	WrapDB          *database.WrapDB
+	RedisRepository RedisRepository
+	Env             *config.EnvironmentVariable
 }
 
 func NewEventSettingsRepository(
 	wrapDB *database.WrapDB,
+	redisRepo RedisRepository,
 	env *config.EnvironmentVariable,
 ) EventSettingsRepository {
 	return &EventSettingsRepositoryImpl{
-		WrapDB: wrapDB,
-		Env:    env,
+		WrapDB:          wrapDB,
+		RedisRepository: redisRepo,
+		Env:             env,
 	}
 }
 func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.Tx, eventId string) (res []entity.EventSetting, err error) {

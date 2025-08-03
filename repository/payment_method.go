@@ -18,17 +18,20 @@ type PaymentMethodRepository interface {
 }
 
 type PaymentMethodRepositoryImpl struct {
-	Env    *config.EnvironmentVariable
-	WrapDB *database.WrapDB
+	Env             *config.EnvironmentVariable
+	RedisRepository RedisRepository
+	WrapDB          *database.WrapDB
 }
 
 func NewPaymentMethodRepository(
 	wrapDB *database.WrapDB,
+	redisRepo RedisRepository,
 	env *config.EnvironmentVariable,
 ) PaymentMethodRepository {
 	return &PaymentMethodRepositoryImpl{
-		Env:    env,
-		WrapDB: wrapDB,
+		Env:             env,
+		RedisRepository: redisRepo,
+		WrapDB:          wrapDB,
 	}
 }
 

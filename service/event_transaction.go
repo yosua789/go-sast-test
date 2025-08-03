@@ -109,6 +109,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	defer tx.Rollback(ctx)
 
 	log.Info().Msg("validate event by id")
+	// use redis
 	event, err := s.EventRepo.FindById(ctx, tx, eventId)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -134,6 +135,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		return
 	}
 
+	// use redis
 	paymentMethod, err := s.PaymentMethodRepo.ValidatePaymentCodeIsActive(ctx, tx, req.PaymentMethod)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -141,6 +143,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	log.Info().Msg("find event settings by event id")
+	// use redis
 	settings, err := s.EventSettingRepo.FindByEventId(ctx, tx, eventId)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -166,6 +169,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 
 	log.Info().Str("venueSectorId", ticketCategory.VenueSectorId).Msg("find venue by venue sector id")
+	// use redis
 	venueSector, err := s.VenueSectorRepo.FindVenueSectorById(ctx, tx, ticketCategory.VenueSectorId)
 	if err != nil {
 		sentry.CaptureException(err)

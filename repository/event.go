@@ -32,17 +32,20 @@ type EventRepository interface {
 }
 
 type EventRepositoryImpl struct {
-	WrapDB *database.WrapDB
-	Env    *config.EnvironmentVariable
+	RedisRepository RedisRepository
+	WrapDB          *database.WrapDB
+	Env             *config.EnvironmentVariable
 }
 
 func NewEventRepository(
 	wrapDB *database.WrapDB,
+	redisRepo RedisRepository,
 	env *config.EnvironmentVariable,
 ) EventRepository {
 	return &EventRepositoryImpl{
-		WrapDB: wrapDB,
-		Env:    env,
+		WrapDB:          wrapDB,
+		Env:             env,
+		RedisRepository: redisRepo,
 	}
 }
 
