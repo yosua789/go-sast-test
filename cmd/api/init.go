@@ -55,6 +55,11 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 		log.Fatal().Err(err).Msg("failed to start nats")
 	}
 
+	err = InitSentry(env)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to init sentry")
+	}
+
 	js, _ := jetstream.New(natsClient)
 
 	// Publisher

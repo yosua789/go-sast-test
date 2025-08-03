@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
@@ -112,6 +113,7 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 
 	res, err := h.EventTransactionService.CreateEventTransaction(ctx, uriParams.EventID, uriParams.TicketCategoryID, request)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("error create event transaction")
 		var tixErr *lib.TIXError
 		if errors.As(err, &tixErr) {

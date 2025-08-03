@@ -39,6 +39,7 @@ func GetKeyFileString(pathKey string) (key string) {
 	defer file.Close()
 	privateKeyBytes, err := io.ReadAll(file)
 	if err != nil {
+		log.Info().Err(err).Msg("Failed to read private key file " + pathKey)
 		panic(err)
 	}
 	key = string(privateKeyBytes)

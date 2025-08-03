@@ -70,6 +70,8 @@ func SetDefaultConfig(v *viper.Viper) {
 	v.SetDefault("DATABASE.TIMEOUT.PING", "1s")
 	v.SetDefault("DATABASE.TIMEOUT.READ", "5s")
 	v.SetDefault("DATABASE.TIMEOUT.WRITE", "5s")
+
+	v.SetDefault("ASYNQ.DEADLINE_DURATION", "30s")
 }
 
 type EnvironmentVariable struct {
@@ -98,13 +100,15 @@ type EnvironmentVariable struct {
 	} `mapstructure:"REDIS"`
 	Database struct {
 		Postgres struct {
-			UseMigration bool   `mapstructure:"USE_MIGRATION"`
-			Scheme       string `mapstructure:"SCHEME"`
-			Host         string `mapstructure:"HOST"`
-			Port         string `mapstructure:"PORT"`
-			User         string `mapstructure:"USER"`
-			Password     string `mapstructure:"PASSWORD"`
-			Name         string `mapstructure:"NAME"`
+			UseMigration   bool   `mapstructure:"USE_MIGRATION"`
+			Scheme         string `mapstructure:"SCHEME"`
+			Host           string `mapstructure:"HOST"`
+			Port           string `mapstructure:"PORT"`
+			User           string `mapstructure:"USER"`
+			Password       string `mapstructure:"PASSWORD"`
+			Name           string `mapstructure:"NAME"`
+			MaxConnections int    `mapstructure:"MAX_CONNECTIONS"`
+			MaxIdleTime    int    `mapstructure:"MAX_IDLE_TIME"`
 		} `mapstructure:"POSTGRES"`
 		Timeout struct {
 			Ping  time.Duration `mapstructure:"PING"`
@@ -159,6 +163,12 @@ type EnvironmentVariable struct {
 		// IsMock?  bool   `mapstructure:"IS_MOCK"`
 		MinimumAge int `mapstructure:"MINIMUM_AGE"` // Minimum age in years for Garuda ID verification
 	} `mapstructure:"GARUDA_ID"`
+	Sentry struct {
+		Dsn string `mapstructure:"DSN"`
+	} `mapstructure:"SENTRY"`
+	Asynq struct {
+		ProcessTimeout time.Duration `mapstructure:"PROCESS_TIMEOUT"`
+	} `mapstructure:"ASYNQ"`
 }
 
 func (e *EnvironmentVariable) GetDBDSN() string {
