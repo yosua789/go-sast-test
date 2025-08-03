@@ -9,14 +9,18 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type EventTransactionGarudaIDRepository interface {
 	Create(ctx context.Context, tx pgx.Tx, eventID string, garudaID string) (err error)
 	GetEventGarudaID(ctx context.Context, tx pgx.Tx, eventID string, garudaID string) (res model.EventTransactionGarudaID, err error)
 	CreateBatch(ctx context.Context, tx pgx.Tx, payloads dto.BulkGarudaIDRequest) (err error)
+	CreateGarudaIdBooks(ctx context.Context, tx pgx.Tx, eventId string, garudaIds ...string) (err error)
 }
 
 type EventTransactionGarudaIDRepositoryImpl struct {
@@ -81,6 +85,55 @@ func (r *EventTransactionGarudaIDRepositoryImpl) Create(ctx context.Context, tx 
 
 	return err
 }
+
+func (r *EventTransactionGarudaIDRepositoryImpl) CreateGarudaIdBooks(ctx context.Context, tx pgx.Tx, eventId string, garudaIds ...string) (err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
+	defer cancel()
+
+	if len(garudaIds) == 0 {
+		return nil
+	}
+
+	query := `INSERT INTO event_transaction_garuda_id_books (
+		event_id,
+		garuda_id,
+		created_at
+	) VALUES `
+
+	var args []interface{}
+	var placeholders []string
+
+	for i, garudaId := range garudaIds {
+		base := i * 2
+		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, NOW())",
+			base+1, base+2))
+
+		args = append(args,
+			eventId,
+			garudaId,
+		)
+	}
+
+	query += strings.Join(placeholders, ",")
+
+	if tx != nil {
+		_, err = tx.Exec(ctx, query, args...)
+	} else {
+		_, err = r.WrapDB.Postgres.Exec(ctx, query, args...)
+	}
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				err = &lib.ErrorGarudaIDAlreadyUsed
+			}
+		}
+	}
+
+	return nil
+}
+
 func (r *EventTransactionGarudaIDRepositoryImpl) CreateBatch(ctx context.Context, tx pgx.Tx, payload dto.BulkGarudaIDRequest) error {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Write)
 	defer cancel()

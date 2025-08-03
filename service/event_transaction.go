@@ -20,6 +20,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -99,17 +100,18 @@ func NewEventTransactionService(
 	}
 }
 
+type GarudaIdDetail struct {
+	GarudaID    string
+	Name        string
+	PhoneNumber string
+	Email       string
+}
+
 func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error) {
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Str("paymentMethod", req.PaymentMethod).Msg("create event transaction")
-	tx, err := s.DB.Postgres.Begin(ctx)
-	if err != nil {
-		sentry.CaptureException(err)
-		return res, err
-	}
-	defer tx.Rollback(ctx)
 
 	log.Info().Msg("validate event by id")
-	event, err := s.EventRepo.FindById(ctx, tx, eventId)
+	event, err := s.EventRepo.FindById(ctx, nil, eventId)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
@@ -134,21 +136,14 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 		return
 	}
 
-	paymentMethod, err := s.PaymentMethodRepo.ValidatePaymentCodeIsActive(ctx, tx, req.PaymentMethod)
+	paymentMethod, err := s.PaymentMethodRepo.ValidatePaymentCodeIsActive(ctx, nil, req.PaymentMethod)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
 	}
 
 	log.Info().Msg("find event settings by event id")
-	settings, err := s.EventSettingRepo.FindByEventId(ctx, tx, eventId)
-	if err != nil {
-		sentry.CaptureException(err)
-		return
-	}
-
-	log.Info().Str("eventId", eventId).Msg("validate email is booked in the event")
-	orderInformationBookId, err := s.EventOrderInformationBookRepo.CreateOrderInformation(ctx, tx, eventId, req.Email, req.Fullname)
+	settings, err := s.EventSettingRepo.FindByEventId(ctx, nil, eventId)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
@@ -156,7 +151,119 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	log.Info().Interface("SettingsRaw", settings).Msg("mapping event settings")
 	eventSettings := lib.MapEventSettings(settings)
+
 	log.Info().Interface("Settings", eventSettings).Msg("Event settings")
+
+	buyCount := len(req.Items)
+	log.Info().Int("count", buyCount).Int("MaxAdultTicketPerTransaction", eventSettings.MaxAdultTicketPerTransaction).Msg("buy items")
+	if buyCount > eventSettings.MaxAdultTicketPerTransaction {
+		err = &lib.ErrorPurchaseQuantityExceedTheLimit
+		return
+	}
+
+	usedGarudaID := make(map[string]interface{})
+	detailGarudaID := make(map[string]GarudaIdDetail)
+
+	if eventSettings.GarudaIdVerification {
+
+		// Validating garuda id to external
+		var wg sync.WaitGroup
+		responses := make(chan domain.PararelGarudaIDResponse, len(req.Items))
+
+		var hasAdult bool = false
+		for _, val := range req.Items {
+			if val.GarudaID == "" {
+				log.Error().Msg("GarudaID is required")
+				return res, &lib.ErrorBadRequest
+			}
+			if _, ok := usedGarudaID[val.GarudaID]; ok {
+				log.Warn().Str("GarudaID", val.GarudaID).Msg("Duplicate GarudaID on payload")
+				return res, &lib.ErrorDuplicateGarudaIDPayload
+			}
+
+			wg.Add(1)
+
+			usedGarudaID[val.GarudaID] = struct{}{}
+
+			go func(wg *sync.WaitGroup, response chan<- domain.PararelGarudaIDResponse) {
+				defer wg.Done()
+
+				// Verify garuda id Validity  by external service
+				externalResp, errExternal := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, val.GarudaID, s.Env.GarudaID.ApiKey)
+				if errExternal != nil {
+					log.Error().Err(errExternal).Msg("failed to verify garuda id")
+					err = &lib.ErrorGetGarudaID
+				} else {
+					if externalResp != nil && !externalResp.Success {
+						switch externalResp.ErrorCode {
+						case 40401:
+							err = &lib.ErrorGarudaIDNotFound
+						case 42205:
+							err = &lib.ErrorGarudaIDBlacklisted
+						case 40909:
+							err = &lib.ErrorGarudaIDInvalid
+						case 40910:
+							err = &lib.ErrorGarudaIDRejected
+						case 50001:
+							err = &lib.ErrorGetGarudaID
+						}
+					}
+				}
+
+				response <- domain.PararelGarudaIDResponse{
+					Response: externalResp,
+					Error:    err,
+				}
+			}(&wg, responses)
+
+			log.Info().Str("garudaId", val.GarudaID).Msg("Calling")
+		}
+
+		// Waiting check to external API. Blocking!!!
+		wg.Wait()
+
+		// Close responses
+		close(responses)
+
+		for resp := range responses {
+			if resp.Error != nil {
+				err = resp.Error
+				return
+			}
+
+			detailGarudaID[resp.Response.Data.FansID] = GarudaIdDetail{
+				GarudaID:    resp.Response.Data.FansID,
+				Name:        resp.Response.Data.Name,
+				PhoneNumber: resp.Response.Data.PhoneNumber,
+				Email:       resp.Response.Data.Email,
+			}
+
+			if resp.Response.Data.Age > s.Env.GarudaID.MinimumAge {
+				hasAdult = true
+			}
+
+			if !hasAdult {
+				err = &lib.TransactionWithoutAdultError
+				log.Error().Err(err).Msg("transaction must contain at least one adult ticket")
+				return res, err
+			}
+		}
+	}
+
+	// Start flow trx !!!
+	tx, err := s.DB.Postgres.Begin(ctx)
+	if err != nil {
+		sentry.CaptureException(err)
+		return res, err
+	}
+	defer tx.Rollback(ctx)
+
+	log.Info().Str("eventId", eventId).Msg("validate email is booked in the event")
+	orderInformationBookId, err := s.EventOrderInformationBookRepo.CreateOrderInformation(ctx, tx, eventId, req.Email, req.Fullname)
+	if err != nil {
+		sentry.CaptureException(err)
+		return
+	}
 
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Msg("find ticket category by id and event id")
 	ticketCategory, err := s.EventTicketCategoryRepo.FindByIdAndEventId(ctx, tx, eventId, ticketCategoryId)
@@ -169,13 +276,6 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	venueSector, err := s.VenueSectorRepo.FindVenueSectorById(ctx, tx, ticketCategory.VenueSectorId)
 	if err != nil {
 		sentry.CaptureException(err)
-		return
-	}
-
-	buyCount := len(req.Items)
-	log.Info().Int("count", buyCount).Int("MaxAdultTicketPerTransaction", eventSettings.MaxAdultTicketPerTransaction).Msg("buy items")
-	if buyCount > eventSettings.MaxAdultTicketPerTransaction {
-		err = &lib.ErrorPurchaseQuantityExceedTheLimit
 		return
 	}
 
@@ -260,85 +360,85 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 			}
 		}
 	}
-	usedGarudaID := make(map[string]interface{})
 
 	// TODO: Checking bulk garuda id
 	if eventSettings.GarudaIdVerification {
-		var hasAdult bool
+		// var hasAdult bool
 		// Verify garuda id
-		for i, item := range req.Items {
+		// for i, item := range req.Items {
 
-			if item.GarudaID == "" {
-				log.Error().Msg("GarudaID is required")
-				return res, &lib.ErrorBadRequest
-			}
-			if _, ok := usedGarudaID[item.GarudaID]; ok {
-				log.Warn().Str("GarudaID", item.GarudaID).Msg("Duplicate GarudaID on payload")
-				return res, &lib.ErrorDuplicateGarudaIDPayload
-			}
+		// check internal database whether garuda id is hold
+		// _, garudaIdErr := s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, tx, eventId, item.GarudaID)
+		// if garudaIdErr == nil {
+		// 	return res, &lib.ErrorGarudaIDAlreadyUsed
+		// }
 
-			usedGarudaID[item.GarudaID] = struct{}{}
-			// check internal database whether garuda id is hold
-			_, garudaIdErr := s.EventTransactionGarudaIDRepo.GetEventGarudaID(ctx, tx, eventId, item.GarudaID)
-			if garudaIdErr == nil {
-				return res, &lib.ErrorGarudaIDAlreadyUsed
-			}
+		var garudaIds []string
 
-			// When error isn't TixError
-			var tixErr *lib.TIXError
-			if !errors.As(garudaIdErr, &tixErr) {
-				log.Error().Err(err).Msg("error validate hold garuda id")
-				err = garudaIdErr
-				return res, err
-			}
-
-			// When garuda id not found in event books
-			if tixErr == &lib.ErrorGarudaIDNotFound {
-
-				// Verify garuda id Validity  by external service
-				externalResp, errExternal := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, item.GarudaID, s.Env.GarudaID.ApiKey)
-				if errExternal != nil {
-					log.Error().Err(errExternal).Msg("failed to verify garuda id")
-					err = &lib.ErrorGetGarudaID
-					return
-				}
-
-				if externalResp != nil && !externalResp.Success {
-					switch externalResp.ErrorCode {
-					case 40401:
-						err = &lib.ErrorGarudaIDNotFound
-						return
-					case 42205:
-						err = &lib.ErrorGarudaIDBlacklisted
-						return
-					case 40909:
-						err = &lib.ErrorGarudaIDInvalid
-						return
-					case 40910:
-						err = &lib.ErrorGarudaIDRejected
-						return
-					case 50001:
-						err = &lib.ErrorGetGarudaID
-						return
-					}
-				}
-				if externalResp.Data.Age > s.Env.GarudaID.MinimumAge {
-					hasAdult = true
-				}
-				//  append garuda id to transaction item
-				req.Items[i].GarudaID = item.GarudaID
-				req.Items[i].FullName = externalResp.Data.Name
-				req.Items[i].Email = externalResp.Data.Email
-				req.Items[i].PhoneNumber = externalResp.Data.PhoneNumber
-
-				log.Info().Interface("externalResp", externalResp).Msg("garuda id validation response")
-			}
-			if !hasAdult {
-				err = &lib.TransactionWithoutAdultError
-				log.Error().Err(err).Msg("transaction must contain at least one adult ticket")
-				return res, err
-			}
+		for _, val := range req.Items {
+			garudaIds = append(garudaIds, val.GarudaID)
 		}
+
+		err = s.EventTransactionGarudaIDRepo.CreateGarudaIdBooks(ctx, tx, eventId, garudaIds...)
+		if err != nil {
+			return
+		}
+
+		// When error isn't TixError
+		// var tixErr *lib.TIXError
+		// if !errors.As(garudaIdErr, &tixErr) {
+		// 	log.Error().Err(err).Msg("error validate hold garuda id")
+		// 	err = garudaIdErr
+		// 	return res, err
+		// }
+
+		// When garuda id not found in event books
+		// if tixErr == &lib.ErrorGarudaIDNotFound {
+
+		// Verify garuda id Validity  by external service
+		// externalResp, errExternal := helper.VerifyUserGarudaIDByID(s.Env.GarudaID.BaseUrl, item.GarudaID, s.Env.GarudaID.ApiKey)
+		// if errExternal != nil {
+		// 	log.Error().Err(errExternal).Msg("failed to verify garuda id")
+		// 	err = &lib.ErrorGetGarudaID
+		// 	return
+		// }
+
+		// if externalResp != nil && !externalResp.Success {
+		// 	switch externalResp.ErrorCode {
+		// 	case 40401:
+		// 		err = &lib.ErrorGarudaIDNotFound
+		// 		return
+		// 	case 42205:
+		// 		err = &lib.ErrorGarudaIDBlacklisted
+		// 		return
+		// 	case 40909:
+		// 		err = &lib.ErrorGarudaIDInvalid
+		// 		return
+		// 	case 40910:
+		// 		err = &lib.ErrorGarudaIDRejected
+		// 		return
+		// 	case 50001:
+		// 		err = &lib.ErrorGetGarudaID
+		// 		return
+		// 	}
+		// }
+		// if externalResp.Data.Age > s.Env.GarudaID.MinimumAge {
+		// 	hasAdult = true
+		// }
+		//  append garuda id to transaction item
+		// req.Items[i].GarudaID = item.GarudaID
+		// req.Items[i].FullName = externalResp.Data.Name
+		// req.Items[i].Email = externalResp.Data.Email
+		// req.Items[i].PhoneNumber = externalResp.Data.PhoneNumber
+
+		// log.Info().Interface("externalResp", externalResp).Msg("garuda id validation response")
+		// }
+		// if !hasAdult {
+		// 	err = &lib.TransactionWithoutAdultError
+		// 	log.Error().Err(err).Msg("transaction must contain at least one adult ticket")
+		// 	return res, err
+		// }
+		// }
 	} else {
 		for _, item := range req.Items {
 			if !helper.IsValidEmail(item.Email) || !helper.ValidatePhoneNumber(item.PhoneNumber) || !helper.IsValidUsername(item.FullName) {
@@ -430,9 +530,19 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	for _, item := range req.Items {
 		var garudaId sql.NullString = helper.ToSQLString(item.GarudaID)
 
-		var fullName sql.NullString = helper.ToSQLString(item.FullName)
-		var email sql.NullString = helper.ToSQLString(item.Email)
-		var phoneNumber sql.NullString = helper.ToSQLString(item.PhoneNumber)
+		var fullName sql.NullString
+		var email sql.NullString
+		var phoneNumber sql.NullString
+
+		if eventSettings.GarudaIdVerification {
+			fullName = helper.ToSQLString(detailGarudaID[item.GarudaID].Name)
+			email = helper.ToSQLString(detailGarudaID[item.GarudaID].Email)
+			phoneNumber = helper.ToSQLString(detailGarudaID[item.GarudaID].PhoneNumber)
+		} else {
+			fullName = helper.ToSQLString(item.FullName)
+			email = helper.ToSQLString(item.Email)
+			phoneNumber = helper.ToSQLString(item.PhoneNumber)
+		}
 
 		var seatLabel sql.NullString
 
