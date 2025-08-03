@@ -6,6 +6,7 @@ type TransactionInvoice struct {
 	TransactionID     string                       `json:"transaction_id"`
 	OrderNumber       string                       `json:"order_number"`
 	Status            string                       `json:"status"`
+	AdditionalFees    []AdditionalFee              `json:"additional_fees"`
 	Payment           PaymentInformation           `json:"payment"`
 	DetailInformation DetailInformationTransaction `json:"detail_information"`
 	Event             EventInformation             `json:"event"`

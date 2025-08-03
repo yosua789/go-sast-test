@@ -27,7 +27,7 @@ func NewCheckTransactionJob(client *asynq.Client) CheckStatusTransactionJob {
 	}
 }
 
-func (j *CheckStatusTransactionJob) EnqueueCheckTransaction(ctx context.Context, transactionId string, transactionDuration time.Duration) error {
+func (j *CheckStatusTransactionJob) EnqueueCheckTransaction(ctx context.Context, transactionId string, transactionDuration time.Duration, timeout time.Duration) error {
 	payload, err := json.Marshal(CheckStatusTransactionPayload{
 		TransactionID: transactionId,
 		CreatedAt:     time.Now(),
@@ -39,6 +39,7 @@ func (j *CheckStatusTransactionJob) EnqueueCheckTransaction(ctx context.Context,
 	task := asynq.NewTask(
 		QueueTypeCheckStatusTransaction,
 		payload,
+		asynq.Timeout(timeout),
 		asynq.ProcessIn(transactionDuration),
 		asynq.MaxRetry(3),
 	)

@@ -115,12 +115,25 @@ func (u *TransactionUsecase) SendInvoice(
 	email, name string,
 	useGarudaId bool,
 	itemCount int,
+	additionalFees []entity.AdditionalFee,
 	transactionDetail entity.EventTransaction,
 ) (err error) {
 	log.Info().Msg("send email invoice")
+
+	invoiceAdditionalFees := make([]domainEvent.AdditionalFee, 0)
+	for _, val := range additionalFees {
+		invoiceAdditionalFees = append(invoiceAdditionalFees, domainEvent.AdditionalFee{
+			Name:         val.Name,
+			IsPercentage: val.IsPercentage,
+			IsTax:        val.IsTax,
+			Value:        val.Value,
+		})
+	}
+
 	var transactionPayload = domainEvent.TransactionInvoice{
-		TransactionID: transactionDetail.ID,
-		OrderNumber:   transactionDetail.OrderNumber,
+		TransactionID:  transactionDetail.ID,
+		OrderNumber:    transactionDetail.OrderNumber,
+		AdditionalFees: invoiceAdditionalFees,
 		Payment: domainEvent.PaymentInformation{
 			DisplayName:                  transactionDetail.PaymentMethod.Name,
 			Type:                         transactionDetail.PaymentMethod.PaymentType,

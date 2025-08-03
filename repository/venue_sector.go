@@ -8,9 +8,13 @@ import (
 	"assist-tix/model"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/rs/zerolog/log"
 )
 
 type VenueSectorRepository interface {
@@ -20,23 +24,40 @@ type VenueSectorRepository interface {
 }
 
 type VenueSectorRepositoryImpl struct {
-	WrapDB *database.WrapDB
-	Env    *config.EnvironmentVariable
+	WrapDB          *database.WrapDB
+	RedisRepository RedisRepository
+	Env             *config.EnvironmentVariable
 }
 
 func NewVenueSectorRepository(
 	wrapDB *database.WrapDB,
+	redisRepo RedisRepository,
 	env *config.EnvironmentVariable,
 ) VenueSectorRepository {
 	return &VenueSectorRepositoryImpl{
-		WrapDB: wrapDB,
-		Env:    env,
+		WrapDB:          wrapDB,
+		RedisRepository: redisRepo,
+		Env:             env,
 	}
 }
 
 func (r *VenueSectorRepositoryImpl) FindVenueSectorById(ctx context.Context, tx pgx.Tx, sectorId string) (venueSector entity.VenueSector, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
+	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf("venue-"+sectorId))
+	if err == nil {
+
+		err = json.Unmarshal([]byte(val), &venueSector)
+		if err != nil {
+			log.Warn().Err(err).Msg("Error Marshal data from redis")
+		} else {
+			log.Info().Msg("using data from redis")
+			return venueSector, nil
+		}
+
+	} else {
+		log.Warn().Err(err).Msg("Not Found on Redis, using postgresql instead")
+	}
 
 	query := `SELECT
 		vs.id, 
@@ -101,6 +122,12 @@ func (r *VenueSectorRepositoryImpl) FindVenueSectorById(ctx context.Context, tx 
 		if errors.Is(err, sql.ErrNoRows) {
 			return venueSector, &lib.ErrorVenueSectorNotFound
 		}
+	}
+	jsonData, err := json.Marshal(venueSector)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to matshalling venueSector")
+	} else {
+		r.RedisRepository.SetState(ctx, "venue-"+sectorId, string(jsonData), 15*time.Minute)
 	}
 
 	return
