@@ -35,6 +35,8 @@ func NewEventTransactionGarudaIDRepository(
 }
 
 func (r *EventTransactionGarudaIDRepositoryImpl) GetEventGarudaID(ctx context.Context, tx pgx.Tx, eventID string, garudaID string) (res model.EventTransactionGarudaID, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
 	query := `SELECT id, event_id, garuda_id, created_at FROM event_transaction_garuda_id_books WHERE event_id = $1 AND garuda_id = $2 LIMIT 1`
 
 	if tx != nil {

@@ -161,6 +161,9 @@ type EnvironmentVariable struct {
 		// IsMock?  bool   `mapstructure:"IS_MOCK"`
 		MinimumAge int `mapstructure:"MINIMUM_AGE"` // Minimum age in years for Garuda ID verification
 	} `mapstructure:"GARUDA_ID"`
+	Sentry struct {
+		Dsn string `mapstructure:"DSN"`
+	} `mapstructure:"SENTRY"`
 }
 
 func (e *EnvironmentVariable) GetDBDSN() string {

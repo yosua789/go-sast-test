@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
@@ -102,6 +103,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Str("paymentMethod", req.PaymentMethod).Msg("create event transaction")
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		return res, err
 	}
 	defer tx.Rollback(ctx)
@@ -109,6 +111,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	log.Info().Msg("validate event by id")
 	event, err := s.EventRepo.FindById(ctx, tx, eventId)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -133,18 +136,21 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	paymentMethod, err := s.PaymentMethodRepo.ValidatePaymentCodeIsActive(ctx, tx, req.PaymentMethod)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
 	log.Info().Msg("find event settings by event id")
 	settings, err := s.EventSettingRepo.FindByEventId(ctx, tx, eventId)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
 	log.Info().Str("eventId", eventId).Msg("validate email is booked in the event")
 	orderInformationBookId, err := s.EventOrderInformationBookRepo.CreateOrderInformation(ctx, tx, eventId, req.Email, req.Fullname)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -155,12 +161,14 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Msg("find ticket category by id and event id")
 	ticketCategory, err := s.EventTicketCategoryRepo.FindByIdAndEventId(ctx, tx, eventId, ticketCategoryId)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
 	log.Info().Str("venueSectorId", ticketCategory.VenueSectorId).Msg("find venue by venue sector id")
 	venueSector, err := s.VenueSectorRepo.FindVenueSectorById(ctx, tx, ticketCategory.VenueSectorId)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -180,6 +188,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	log.Info().Msg("update stock public ticket by ticket category id")
 	err = s.EventTicketCategoryRepo.BuyPublicTicketById(ctx, tx, eventId, ticketCategoryId, buyCount)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -246,6 +255,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 			log.Info().Msg("checking seat is already booked by try to insert")
 			err = s.EventSeatmapBookRepo.CreateSeatBook(ctx, tx, eventId, ticketCategory.VenueSectorId, seatParams)
 			if err != nil {
+				sentry.CaptureException(err)
 				return
 			}
 		}
@@ -343,6 +353,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	transaction.TotalPrice = ticketCategory.Price * len(req.Items)
 	additionalFees, err := s.EventSettingRepo.FindAdditionalFee(ctx, nil, eventId)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("failed to find additional fees for event")
 		return
 	}
@@ -401,6 +412,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	log.Info().Msg("create transaction to database")
 	transactionRes, err := s.EventTransactionRepo.CreateTransaction(ctx, tx, eventId, ticketCategoryId, transaction)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -410,6 +422,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// Update order information book to set transactionId
 	err = s.EventOrderInformationBookRepo.UpdateTransactionIdByID(ctx, tx, orderInformationBookId, transaction.ID)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -457,6 +470,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	log.Info().Msg("insert transaction item")
 	err = s.EventTransactionItemRepo.CreateTransactionItems(ctx, tx, transactionItems)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 	var paymentAdditionalInformation string
@@ -490,6 +504,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	err = s.EventTransactionRepo.UpdatePaymentAdditionalInformation(ctx, tx, transaction.ID, paymentAdditionalInformation)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to update VA number")
 		err = &lib.ErrorTransactionPaylabs
 		return
@@ -502,12 +517,14 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	}
 	err = s.EventTransactionGarudaIDRepo.CreateBatch(ctx, tx, EventTransactionGarudaID)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to create batch garuda id")
 		err = &lib.ErrorInternalServer
 		return
 	}
 	err = tx.Commit(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -516,12 +533,14 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	err = s.CheckStatusTransactionJob.EnqueueCheckTransaction(ctx, transaction.ID, s.Env.Transaction.ExpirationDuration+marginTimeReleaseData)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Str("TransactionId", transaction.ID).Msg("failed to kick job check status transaction")
 		return
 	}
 
 	accessToken, err := helper.GenerateAccessToken(s.Env, transaction.ID)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("failed to generate access token")
 		return
 	}
@@ -529,6 +548,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// Send email send bill job
 	err = s.TransactionUseCase.SendBill(ctx, req.Email, req.Fullname, eventSettings.GarudaIdVerification, len(transactionItems), accessToken, paymentMethod, event, transaction, ticketCategory, venueSector)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Warn().Err(err).Msg("error send bill to email")
 		return
 	}
@@ -536,22 +556,26 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// Testing in local purposes
 	// go func() {
 	// 	if err != nil {
+	sentry.CaptureException(err)
 	// 		log.Warn().Str("email", transaction.Email).Err(err).Msg("failed to send job invoice")
 	// 	}
 
 	// 	tx, err := s.DB.Postgres.Begin(ctx)
 	// 	if err != nil {
+	sentry.CaptureException(err)
 	// 		return
 	// 	}
 	// 	defer tx.Rollback(ctx)
 
 	// 	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transaction.ID)
 	// 	if err != nil {
+	sentry.CaptureException(err)
 	// 		return
 	// 	}
 
 	// 	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transaction.ID)
 	// 	if err != nil {
+	sentry.CaptureException(err)
 	// 		log.Error().Err(err).Msg("Failed to find transaction by order number")
 	// 		return
 	// 	}
@@ -565,6 +589,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 		transactionDetail,
 	// 	)
 	// 	if err != nil {
+	sentry.CaptureException(err)
 	// 		log.Error().Err(err).Msg("failed to send invoice")
 	// 		return
 	// 	}
@@ -576,6 +601,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 			ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
 	// 			ticketCode, err := helper.GenerateTicketCode()
 	// 			if err != nil {
+	sentry.CaptureException(err)
 	// 				return
 	// 			}
 
@@ -606,6 +632,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 			}
 	// 			ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
 	// 			if err != nil {
+	sentry.CaptureException(err)
 	// 				log.Error().Err(err).Msg("failed to create data eticket")
 	// 				return
 	// 			}
@@ -616,6 +643,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	// 	err = tx.Commit(ctx)
 	// 	if err != nil {
+	sentry.CaptureException(err)
 	// 		log.Warn().Err(err).Msg("failed to create eticket")
 	// 	}
 
@@ -627,6 +655,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 			transactionDetail,
 	// 		)
 	// 		if err != nil {
+	sentry.CaptureException(err)
 	// 			log.Warn().Str("email", transaction.Email).Err(err).Msg("failed to send job invoice")
 	// 		}
 	// 	}
@@ -693,6 +722,7 @@ func (s *EventTransactionServiceImpl) paylabsVASnap(ctx *gin.Context, transactio
 	// VA
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err)
 		return
 	}
@@ -718,6 +748,7 @@ func (s *EventTransactionServiceImpl) paylabsVASnap(ctx *gin.Context, transactio
 	url := s.Env.Paylabs.BaseUrl + "/api/v1.0/transfer-va/create-va"
 	paylabsReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err)
 		err = &lib.ErrorTransactionPaylabs
 		return
@@ -728,6 +759,7 @@ func (s *EventTransactionServiceImpl) paylabsVASnap(ctx *gin.Context, transactio
 	client := &http.Client{}
 	resp, err := client.Do(paylabsReq)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to send request to Paylabs")
 		err = &lib.ErrorTransactionPaylabs
 		return
@@ -738,6 +770,7 @@ func (s *EventTransactionServiceImpl) paylabsVASnap(ctx *gin.Context, transactio
 	var responsePaylabs map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&responsePaylabs)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to decode response from Paylabs")
 		err = &lib.ErrorTransactionPaylabs
 		return
@@ -773,6 +806,7 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	// Encode JSON body
 	jsonData, err := json.Marshal(jsonBody)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to encode JSON body for Paylabs QRIS")
 		err = &lib.ErrorTransactionPaylabs
 		return
@@ -795,6 +829,7 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	url := s.Env.Paylabs.BaseUrl + "/payment/v2" + path
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to create new request for Paylabs QRIS")
 		err = &lib.ErrorTransactionPaylabs
 		return
@@ -806,6 +841,7 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to send request to Paylabs")
 		err = &lib.ErrorTransactionPaylabs
 		return
@@ -816,6 +852,7 @@ func (s *EventTransactionServiceImpl) paylabsQris(ctx *gin.Context, transaction 
 	var response map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to decode response from Paylabs")
 		err = &lib.ErrorTransactionPaylabs
 		return
@@ -839,6 +876,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	header := map[string]interface{}{}
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to begin transaction")
 		return
 	}
@@ -849,6 +887,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	}
 	headerString, err := json.Marshal(header)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to marshal headers")
 		return
 	}
@@ -868,6 +907,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	//  actual callback processing
 	transactionData, err := s.EventTransactionRepo.FindByOrderNumber(ctx, tx, *req.TrxId)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to find transaction by order number")
 		return
 	}
@@ -878,10 +918,12 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 
 	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transactionData.ID)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, tx, transactionDetail.Event.ID)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -889,23 +931,27 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 
 	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transactionData.ID)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to find transaction by order number")
 		return
 	}
 	transactionTime, err := time.Parse(time.RFC3339, *req.TrxDateTime)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to parse transaction time")
 		return
 	}
 
 	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, transactionTime, req.PaymentRequestId)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to mark transaction as success")
 		return
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -920,6 +966,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 			transactionDetail,
 		)
 		if err != nil {
+			sentry.CaptureException(err)
 			log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
 		}
 	}()
@@ -928,6 +975,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 	go func() {
 		tx, err := s.DB.Postgres.Begin(ctx)
 		if err != nil {
+			sentry.CaptureException(err)
 			return
 		}
 		defer tx.Rollback(ctx)
@@ -939,6 +987,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 				ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
 				ticketCode, err := helper.GenerateTicketCode()
 				if err != nil {
+					sentry.CaptureException(err)
 					log.Warn().Err(err).Msg("failed to generate ticket code")
 					return
 				}
@@ -970,6 +1019,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 				}
 				ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
 				if err != nil {
+					sentry.CaptureException(err)
 					log.Error().Err(err).Msg("failed to create data eticket")
 					return
 				}
@@ -980,6 +1030,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 
 		err = tx.Commit(ctx)
 		if err != nil {
+			sentry.CaptureException(err)
 			log.Warn().Err(err).Msg("failed to create eticket")
 		}
 
@@ -991,6 +1042,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 				transactionDetail,
 			)
 			if err != nil {
+				sentry.CaptureException(err)
 				log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
 			}
 		}
@@ -1018,6 +1070,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 func (s *EventTransactionServiceImpl) CallbackVA(ctx *gin.Context, req dto.PaylabsVACallbackRequest) (err error) {
 	stringifyPayload, err := json.Marshal(req)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to marshal callback request")
 		return
 	}
@@ -1031,12 +1084,14 @@ func (s *EventTransactionServiceImpl) CallbackVA(ctx *gin.Context, req dto.Payla
 func (s *EventTransactionServiceImpl) ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error) {
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		return err
 	}
 	defer tx.Rollback(ctx)
 
 	event, err := s.EventRepo.FindById(ctx, tx, eventId)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -1061,11 +1116,13 @@ func (s *EventTransactionServiceImpl) ValidateEmailIsAlreadyBook(ctx *gin.Contex
 
 	err = s.EventOrderInformationBookRepo.ValidateOrderInformationByEmailEventId(ctx, tx, eventId, email)
 	if err != nil {
+		sentry.CaptureException(err)
 		return err
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -1075,6 +1132,7 @@ func (s *EventTransactionServiceImpl) ValidateEmailIsAlreadyBook(ctx *gin.Contex
 func (s *EventTransactionServiceImpl) GetAvailablePaymentMethods(ctx *gin.Context, eventId string) (res []dto.EventGrouppedPaymentMethodsResponse, err error) {
 	grouppedPayments, err := s.PaymentMethodRepo.GetGrouppedActivePaymentMethod(ctx, nil)
 	if err != nil {
+		sentry.CaptureException(err)
 		return res, err
 	}
 
@@ -1107,6 +1165,7 @@ func (s *EventTransactionServiceImpl) GetAvailablePaymentMethods(ctx *gin.Contex
 func (s *EventTransactionServiceImpl) FindById(ctx context.Context, transactionID string) (res dto.OrderDetails, err error) {
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("failed to begin transaction")
 		return
 	}
@@ -1114,12 +1173,14 @@ func (s *EventTransactionServiceImpl) FindById(ctx context.Context, transactionI
 	log.Info().Str("transactionID", transactionID).Msg("find event transaction by id")
 	res, err = s.EventTransactionRepo.FindById(ctx, tx, transactionID)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("failed to find event transaction by id")
 		return
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("failed to commit transaction")
 		return
 	}
@@ -1134,6 +1195,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to begin transaction")
 		return
 	}
@@ -1145,6 +1207,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 
 	headerString, err := json.Marshal(header)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to marshal headers")
 		return
 	}
@@ -1169,6 +1232,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	//  actual callback processing
 	transactionData, err := s.EventTransactionRepo.FindByOrderNumber(ctx, tx, req.MerchantTradeNo)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to find transaction by order number")
 		return
 	}
@@ -1180,6 +1244,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	layout := "20060102150405"
 	loc, err := time.LoadLocation("Asia/Jakarta")
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to load location")
 		return
 	}
@@ -1195,6 +1260,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 		}
 		markResult, err = s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, t, req.PaymentMethodInfo.RRN)
 		if err != nil {
+			sentry.CaptureException(err)
 			log.Error().Err(err).Msg("Failed to mark transaction as success")
 			return
 		}
@@ -1202,23 +1268,27 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	} else {
 		markResult, err = s.EventTransactionRepo.MarkTransactionAsFailed(ctx, tx, transactionData.ID, req.PaymentMethodInfo.RRN)
 		if err != nil {
+			sentry.CaptureException(err)
 			log.Error().Err(err).Msg("Failed to mark transaction as failed")
 			return
 		}
 	}
 	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transactionData.ID)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to find transaction detail by transaction id")
 		return
 	}
 
 	transactionItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, transactionData.ID)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to find transaction by order number")
 		return
 	}
 	err = tx.Commit(ctx)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("Failed to commit transaction")
 		return
 	}
@@ -1236,6 +1306,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	res.RequestID = requestID
 	jsonData, err := json.Marshal(res)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Error().Err(err)
 		return
 	}
@@ -1243,6 +1314,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 
 	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, tx, transactionData.ID)
 	if err != nil {
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -1261,6 +1333,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 				transactionDetail,
 			)
 			if err != nil {
+				sentry.CaptureException(err)
 				log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
 			}
 			log.Info().Msg("success send invoice email")
@@ -1270,6 +1343,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 		go func() {
 			tx, err := s.DB.Postgres.Begin(ctx)
 			if err != nil {
+				sentry.CaptureException(err)
 				log.Error().Err(err).Msg("failed to begin transaction for eticket creation")
 				return
 			}
@@ -1282,6 +1356,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 					ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
 					ticketCode, err := helper.GenerateTicketCode()
 					if err != nil {
+						sentry.CaptureException(err)
 						log.Warn().Err(err).Msg("failed to generate ticket code")
 						return
 					}
@@ -1313,6 +1388,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 					}
 					ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
 					if err != nil {
+						sentry.CaptureException(err)
 						log.Error().Err(err).Msg("failed to create data eticket")
 						return
 					}
@@ -1324,6 +1400,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 
 			err = tx.Commit(ctx)
 			if err != nil {
+				sentry.CaptureException(err)
 				log.Warn().Err(err).Msg("failed to create eticket")
 			}
 
@@ -1335,6 +1412,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 					transactionDetail,
 				)
 				if err != nil {
+					sentry.CaptureException(err)
 					log.Warn().Str("email", transactionData.Email).Err(err).Msg("failed to send job invoice")
 				}
 				log.Info().Msgf("success send eticket to %s", val.TicketOwnerEmail)
