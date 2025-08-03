@@ -22,7 +22,7 @@ type WrapDatabase struct {
 const MIGRATION_LOCATIONS = "database/migrations"
 
 func NewDBConnection(env *config.EnvironmentVariable) *pgxpool.Pool {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), env.Database.Timeout.Ping+5*time.Second)
 	defer cancel()
 
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
