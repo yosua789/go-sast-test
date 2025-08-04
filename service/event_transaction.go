@@ -37,6 +37,7 @@ type EventTransactionService interface {
 	GetAvailablePaymentMethods(ctx *gin.Context, eventId string) (res []dto.EventGrouppedPaymentMethodsResponse, err error)
 	CallbackQRISPaylabs(ctx *gin.Context, req dto.QRISCallbackRequest) (res dto.QRISCallbackResponse, err error)
 	FindById(ctx context.Context, transactionID string) (res dto.OrderDetails, err error)
+	CreateEventTransactionV2(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
 }
 
 type EventTransactionServiceImpl struct {

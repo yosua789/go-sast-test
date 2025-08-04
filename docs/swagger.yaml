@@ -501,11 +501,15 @@ definitions:
       grand_total:
         description: event_transaction -> transaction -> grand total
         type: integer
+      order_number:
+        type: string
       payment_additional_info:
         description: e.g. VA Number, QR Code
         type: string
       payment_method:
         description: if VA then return VA Number if qris return qr code string
+        type: string
+      payment_paid_at:
         type: string
       pg_additional_fee:
         description: event transaction -> transaction -> additional fee for payment
@@ -937,6 +941,55 @@ paths:
           schema:
             $ref: '#/definitions/lib.HTTPError'
       summary: Create event ticket transaction
+      tags:
+      - events
+  /events/{eventId}/ticket-categories/{ticketCategoryId}/order/v2:
+    post:
+      consumes:
+      - application/json
+      description: Create event ticket transaction V2
+      parameters:
+      - description: Event ID
+        in: path
+        name: eventId
+        required: true
+        type: string
+      - description: Ticket Category ID
+        in: path
+        name: ticketCategoryId
+        required: true
+        type: string
+      - description: Create event ticket transaction
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateEventTransaction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Order created
+          schema:
+            allOf:
+            - $ref: '#/definitions/lib.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.EventTransactionResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/lib.HTTPError'
+      summary: Create event ticket transaction V2
       tags:
       - events
   /events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap:

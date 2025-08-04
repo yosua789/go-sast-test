@@ -24,6 +24,7 @@ type EventTransactionHandler interface {
 	IsEmailAlreadyBook(ctx *gin.Context)
 	GetAvailablePaymentMethods(ctx *gin.Context)
 	GetTransactionDetails(ctx *gin.Context)
+	CreateTransactionV2(ctx *gin.Context)
 }
 
 type EventTransactionHandlerImpl struct {
@@ -61,6 +62,99 @@ func NewEventTransactionHandler(
 // @Failure 500 {object} lib.HTTPError "Internal server error"
 // @Router /events/{eventId}/ticket-categories/{ticketCategoryId}/order [post]
 func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
+	var uriParams dto.GetDetailEventTicketCategoryByIdParams
+
+	if err := ctx.ShouldBindUri(&uriParams); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			// Find first error
+			fieldErr := validationErrors[0]
+
+			mappedError := lib.MapErrorGetDetailEventTicketCategoryByIdParams(fieldErr)
+			if mappedError != nil {
+				var tixErr *lib.TIXError
+				if errors.As(mappedError, &tixErr) {
+					lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), tixErr, tixErr.Code, h.Env.App.Debug)
+					return
+				}
+			}
+
+			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+			return
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	var request dto.CreateEventTransaction
+
+	if err := ctx.ShouldBind(&request); err != nil {
+		lib.RespondError(ctx, http.StatusBadRequest, err.Error(), err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	if err := h.Validator.Struct(request); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			fieldErr := validationErrors[0]
+
+			mappedError := lib.MapErrorGetDetailEventTicketCategoryByIdParams(fieldErr)
+			if mappedError != nil {
+				var tixErr *lib.TIXError
+				if errors.As(mappedError, &tixErr) {
+					lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), tixErr, tixErr.Code, h.Env.App.Debug)
+					return
+				}
+			}
+
+			lib.RespondError(ctx, http.StatusBadRequest, fieldErr.Field()+" is invalid", fieldErr, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+			return
+		}
+		lib.RespondError(ctx, http.StatusBadRequest, "bad request. check your payload", nil, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	res, err := h.EventTransactionService.CreateEventTransaction(ctx, uriParams.EventID, uriParams.TicketCategoryID, request)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.Error().Err(err).Msg("error create event transaction")
+		var tixErr *lib.TIXError
+		if errors.As(err, &tixErr) {
+			switch *tixErr {
+			case lib.ErrorEventSaleIsPaused, lib.ErrorEventSaleIsNotStartedYet, lib.ErrorEventSaleAlreadyOver:
+				lib.RespondError(ctx, http.StatusForbidden, "error", err, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorSeatIsAlreadyBooked, lib.ErrorTicketIsOutOfStock, lib.ErrorPurchaseQuantityExceedTheLimit, lib.ErrorOrderInformationIsAlreadyBook, lib.ErrorGarudaIDInvalid, lib.ErrorGarudaIDRejected, lib.ErrorGarudaIDBlacklisted, lib.ErrorGarudaIDAlreadyUsed, lib.ErrorDuplicateGarudaIDPayload, lib.TransactionWithoutAdultError:
+				lib.RespondError(ctx, http.StatusConflict, "error", err, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorEventIdInvalid, lib.ErrorTicketCategoryInvalid, lib.ErrorFailedToBookSeat, lib.ErrorPaymentMethodInvalid, lib.ErrorBadRequest:
+				lib.RespondError(ctx, http.StatusBadRequest, "error", err, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorEventNotFound, lib.ErrorTicketCategoryNotFound, lib.ErrorBookedSeatNotFound, lib.ErrorGarudaIDNotFound, lib.ErrorVenueSectorNotFound:
+				lib.RespondError(ctx, http.StatusNotFound, "error", err, tixErr.Code, h.Env.App.Debug)
+			case lib.ErrorGetGarudaID, lib.ErrorTransactionPaylabs:
+				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, tixErr.Code, h.Env.App.Debug)
+			default:
+				lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			}
+		} else {
+			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+		}
+		return
+	}
+
+	lib.RespondSuccess(ctx, http.StatusOK, "success", res)
+}
+
+// @Summary Create event ticket transaction V2
+// @Description Create event ticket transaction V2
+// @Tags events
+// @Produce json
+// @Accept json
+// @Param eventId path string true "Event ID"
+// @Param ticketCategoryId path string true "Ticket Category ID"
+// @Param request body dto.CreateEventTransaction true "Create event ticket transaction"
+// @Success 200 {object} lib.APIResponse{data=dto.EventTransactionResponse} "Order created"
+// @Failure 400 {object} lib.HTTPError "Invalid request body"
+// @Failure 404 {object} lib.HTTPError "Not Found"
+// @Failure 500 {object} lib.HTTPError "Internal server error"
+// @Router /events/{eventId}/ticket-categories/{ticketCategoryId}/order/v2 [post]
+func (h *EventTransactionHandlerImpl) CreateTransactionV2(ctx *gin.Context) {
 	var uriParams dto.GetDetailEventTicketCategoryByIdParams
 
 	if err := ctx.ShouldBindUri(&uriParams); err != nil {
