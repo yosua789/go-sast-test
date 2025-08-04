@@ -270,6 +270,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	e.name,
 	e.event_time,
 	v.name as venue_name,
+	et.order_number,
 	et.payment_expired_at,
 	et.transaction_status,
 	et.payment_additional_information, 
@@ -300,6 +301,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.EventName,
 			&res.EventTime,
 			&res.VenueName,
+			&res.OrderNumber,
 			&res.TransactionDeadline,
 			&res.TransactionStatus,
 			&res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
@@ -318,6 +320,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.EventName,
 			&res.EventTime,
 			&res.VenueName,
+			&res.OrderNumber,
 			&res.TransactionDeadline,
 			&res.TransactionStatus,
 			&res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
@@ -386,6 +389,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 		EventName:             res.EventName,
 		VenueName:             res.VenueName,
 		EventTime:             res.EventTime,
+		OrderNumber:           res.OrderNumber,
 		TransactionDeadline:   res.TransactionDeadline,
 		TransactionStatus:     res.TransactionStatus,
 		PaymentMethod:         res.PaymentMethod,
