@@ -205,7 +205,7 @@ func (h *EventTransactionHandlerImpl) CreateTransactionV2(ctx *gin.Context) {
 		return
 	}
 
-	res, err := h.EventTransactionService.CreateEventTransaction(ctx, uriParams.EventID, uriParams.TicketCategoryID, request)
+	res, err := h.EventTransactionService.CreateEventTransactionV2(ctx, uriParams.EventID, uriParams.TicketCategoryID, request)
 	if err != nil {
 		sentry.CaptureException(err)
 		log.Error().Err(err).Msg("error create event transaction")
