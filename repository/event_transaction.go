@@ -286,7 +286,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	v.city,
 	et.pg_additional_fee
 	FROM event_transactions et
-	JOIN event_ticket_categories etc ON et.event_ticket_category_id,
+	JOIN event_ticket_categories etc ON et.event_ticket_category_id
 	JOIN events e ON et.event_id = e.id
 	JOIN venues v ON e.venue_id = v.id
 	LEFT JOIN event_transaction_items eti ON et.id = eti.transaction_id
