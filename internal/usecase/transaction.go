@@ -38,6 +38,9 @@ func (u *TransactionUsecase) SendAsyncOrder(
 	transaction model.EventTransaction, // dikirim
 	ticketCategory model.EventTicketCategory,
 	venueSector entity.VenueSector,
+	eventTransactionItems []model.EventTransactionItem,
+	clientIP string,
+	orderInformationBookID int,
 ) (err error) {
 	jsonData := async_order.AsyncOrder{
 		UseGarudaId:            useGarudaId,
@@ -48,6 +51,9 @@ func (u *TransactionUsecase) SendAsyncOrder(
 		Transaction:            transaction,
 		TicketCategory:         ticketCategory,
 		VenueSector:            venueSector,
+		EventTransactionItem:   eventTransactionItems,
+		ClientIP:               clientIP,
+		OrderInformationBookID: orderInformationBookID,
 	}
 	log.Info().Interface("data", jsonData).Msg("payload")
 

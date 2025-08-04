@@ -472,7 +472,18 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 		return
 	}
 
-	err = s.TransactionUseCase.SendAsyncOrder(ctx, eventSettings.GarudaIdVerification, len(transactionItems), accessToken, paymentMethod, event, transaction, ticketCategory, venueSector)
+	err = s.TransactionUseCase.SendAsyncOrder(ctx,
+		eventSettings.GarudaIdVerification,
+		len(transactionItems),
+		accessToken,
+		paymentMethod,
+		event,
+		transaction,
+		ticketCategory,
+		venueSector,
+		transactionItems,
+		ctx.ClientIP(),
+		orderInformationBookId)
 	if err != nil {
 		sentry.CaptureException(err)
 		log.Warn().Err(err).Msg("error send async order to nats")
