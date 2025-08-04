@@ -75,6 +75,7 @@ type OrderDetails struct {
 	TransactionStatus     string                         `json:"transaction_status"`      // event_transaction -> transaction -> transaction status
 	PaymentMethod         string                         `json:"payment_method"`          // if VA then return VA Number if qris return qr code string
 	PaymentAdditionalInfo string                         `json:"payment_additional_info"` // e.g. VA Number, QR Code
+	PaymentPaidAt         *time.Time                     `json:"payment_paid_at"`         // e.g. VA Number, QR Code
 	GrandTotal            int                            `json:"grand_total"`             // event_transaction -> transaction -> grand total
 	TotalAdminFee         int                            `json:"total_admin_fee"`         // event_transaction -> transaction -> total admin fee
 	TotalTax              int                            `json:"total_tax"`               // event_transaction -> transaction -> total tax

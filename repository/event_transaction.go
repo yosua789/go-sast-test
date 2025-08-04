@@ -275,6 +275,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	et.transaction_status,
 	et.payment_additional_information, 
 	et.payment_method,
+	et.paid_at,
 	COUNT(eti.id) AS item_count,
 	et.grand_total,
 	et.total_admin_fee,
@@ -306,6 +307,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.TransactionStatus,
 			&res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
 			&res.PaymentMethod,
+			&res.PaymentPaidAt,
 			&res.TransactionQuantity,
 			&res.GrandTotal,
 			&res.TotalAdminFee,
@@ -325,6 +327,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.TransactionStatus,
 			&res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
 			&res.PaymentMethod,
+			&res.PaymentPaidAt,
 			&res.TransactionQuantity,
 			&res.GrandTotal,
 			&res.TotalAdminFee,
@@ -394,6 +397,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 		TransactionStatus:     res.TransactionStatus,
 		PaymentMethod:         res.PaymentMethod,
 		PaymentAdditionalInfo: res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
+		PaymentPaidAt:         res.PaymentPaidAt,
 		GrandTotal:            res.GrandTotal,
 		TotalAdminFee:         res.TotalAdminFee,
 		TotalTax:              res.TotalTax,
