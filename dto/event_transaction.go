@@ -71,8 +71,9 @@ type OrderDetails struct {
 	VenueName             string                         `json:"venue_name"` // event transaction -> event -> venue
 	EventTime             time.Time                      `json:"event_time"` // event transaction -> event -> event_time
 	OrderNumber           string                         `json:"order_number"`
-	TransactionDeadline   time.Time                      `json:"transaction_deadline"`    // event_transactions.payment_expired_at
-	TransactionStatus     string                         `json:"transaction_status"`      // event_transaction -> transaction -> transaction status
+	TransactionDeadline   time.Time                      `json:"transaction_deadline"` // event_transactions.payment_expired_at
+	TransactionStatus     string                         `json:"transaction_status"`   // event_transaction -> transaction -> transaction status
+	TicketCategoryName    string                         `json:"ticket_category_name"`
 	PaymentMethod         string                         `json:"payment_method"`          // if VA then return VA Number if qris return qr code string
 	PaymentAdditionalInfo string                         `json:"payment_additional_info"` // e.g. VA Number, QR Code
 	PaymentPaidAt         *time.Time                     `json:"payment_paid_at"`         // e.g. VA Number, QR Code

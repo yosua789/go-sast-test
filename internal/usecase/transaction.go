@@ -206,11 +206,14 @@ func (u *TransactionUsecase) SendETicket(
 ) (err error) {
 	log.Info().Msg("send email eticket")
 	var transactionPayload = domainEvent.TransactionETicket{
-		TicketID:        eventTicket.ID,
-		TransactionID:   transactionDetail.ID,
-		TicketNumber:    eventTicket.TicketNumber,
-		TicketCode:      eventTicket.TicketCode,
-		TicketSeatLabel: eventTicket.SeatLabel.String,
+		TicketID:      eventTicket.ID,
+		TransactionID: transactionDetail.ID,
+		TicketNumber:  eventTicket.TicketNumber,
+		TicketCode:    eventTicket.TicketCode,
+
+		TicketSeatLabel:  eventTicket.SeatLabel.String,
+		TicketSeatRow:    eventTicket.SeatRow,
+		TicketSeatColumn: eventTicket.SeatColumn,
 		Payment: domainEvent.PaymentInformation{
 			// Method:                       transactionDetail.PaymentMethod.PaymentCode,
 			DisplayName:                  transactionDetail.PaymentMethod.Name,
