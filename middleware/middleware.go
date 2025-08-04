@@ -34,7 +34,17 @@ func (m *MiddlewareImpl) CORSMiddleware() gin.HandlerFunc {
 		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Max")
 		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-ancestors 'none';")
 
+		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains;")
+
+		c.Header("X-Content-Type-Options", "nosniff")
+
+		c.Header("X-Frame-Options", "DENY")
+
+		c.Header("X-XSS-Protection", "1; mode=block")
+
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		if c.Request.Method == "OPTIONS" {
 			log.Info().Msg("Abort Options")
 			c.Header("Access-Control-Allow-Origin", "*")
