@@ -291,7 +291,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	WHERE et.id = $1
 	GROUP BY 
 	e.name, e.event_time, v.name,
-	et.order_number, et.payment_expired_at, et.transaction_status,
+	et.order_number, et.paid_at, et.payment_expired_at, et.transaction_status,
 	et.payment_additional_information, et.payment_method,
 	et.grand_total, et.total_admin_fee, et.total_tax, et.total_price, 
 	v.country, v.city, et.pg_additional_fee
