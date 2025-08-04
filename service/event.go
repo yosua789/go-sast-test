@@ -439,7 +439,7 @@ func (s *EventServiceImpl) GetActiveSettingByEventId(ctx context.Context, eventI
 		})
 	}
 	if len(eventSettings.AdditionalFees) < 1 {
-		eventSettings.AdditionalFees = nil
+		eventSettings.AdditionalFees = make([]dto.EventAdditionalFeeResponse, 0)
 	}
 
 	res = eventSettings
