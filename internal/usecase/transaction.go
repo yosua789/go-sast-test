@@ -163,7 +163,7 @@ func (u *TransactionUsecase) SendInvoice(
 	transactionDetail entity.EventTransaction,
 ) (err error) {
 	log.Info().Msg("send email invoice")
-
+	log.Info().Msgf("%v ini paid at", transactionDetail.PaidAt)
 	invoiceAdditionalFees := make([]domainEvent.AdditionalFee, 0)
 	for _, val := range additionalFees {
 		invoiceAdditionalFees = append(invoiceAdditionalFees, domainEvent.AdditionalFee{

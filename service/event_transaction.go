@@ -1054,6 +1054,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		log.Error().Err(err).Msg("Failed to parse transaction time")
 		return
 	}
+	log.Info().Msgf("Transaction time: %v", transactionTime)
 	transactionData.PaidAt = &transactionTime
 
 	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, transactionTime, req.PaymentRequestId)
@@ -1390,6 +1391,8 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 			return
 		}
 		transactionData.PaidAt = &t
+		log.Info().Msgf("Transaction time: %v", t)
+
 		markResult, err = s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, t, req.PaymentMethodInfo.RRN)
 		if err != nil {
 			sentry.CaptureException(err)
