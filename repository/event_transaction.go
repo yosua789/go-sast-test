@@ -392,6 +392,10 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			resAdditionalPayment[i].CalculatedValue = obj.Value
 		}
 	}
+
+	if res.TransactionStatus == lib.EventTransactionStatusPending && time.Now().After(res.TransactionDeadline) {
+		res.TransactionStatus = lib.EventTransactionStatusExpired
+	}
 	resData = dto.OrderDetails{
 		EventName:             res.EventName,
 		VenueName:             res.VenueName,
