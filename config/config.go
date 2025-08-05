@@ -124,6 +124,7 @@ type EnvironmentVariable struct {
 			SendBill    string `mapstructure:"SEND_BILL"`
 			SendInvoice string `mapstructure:"SEND_INVOICE"`
 			SendETicket string `mapstructure:"SEND_ETICKET"`
+			AsyncOrder  string `mapstructure:"ASYNC_ORDER"`
 		} `mapstructure:"SUBJECTS"`
 	} `mapstructure:"NATS"`
 	Mailer struct {

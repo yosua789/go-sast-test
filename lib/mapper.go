@@ -153,8 +153,8 @@ func MapEntitySectorToTicketCategorySectorResponse(
 	return dto.TicketCategorySectorResponse{
 		ID:         data.ID,
 		Name:       data.Name,
-		Color:      data.Color,
-		AreaCode:   data.AreaCode,
+		Color:      data.Color.String,
+		AreaCode:   data.AreaCode.String,
 		HasSeatmap: data.HasSeatmap,
 	}
 }

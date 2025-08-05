@@ -4,6 +4,7 @@ import (
 	"assist-tix/config"
 	"assist-tix/entity"
 	"assist-tix/internal/domain"
+	"assist-tix/internal/domain/async_order"
 	domainEvent "assist-tix/internal/domain/event"
 	"assist-tix/model"
 	"context"
@@ -27,6 +28,49 @@ func NewTransactionUsecase(
 	}
 }
 
+func (u *TransactionUsecase) SendAsyncOrder(
+	ctx context.Context,
+	useGarudaId bool, // dkirim
+	itemCount int, // dikirim
+	trxAccessToken string, // dikirim
+	paymentMethod model.PaymentMethod, //
+	event model.Event, // dikirim
+	transaction model.EventTransaction, // dikirim
+	ticketCategory model.EventTicketCategory,
+	venueSector entity.VenueSector,
+	eventTransactionItems []model.EventTransactionItem,
+	clientIP string,
+	orderInformationBookID int,
+) (err error) {
+	jsonData := async_order.AsyncOrder{
+		UseGarudaId:            useGarudaId,
+		ItemCount:              itemCount,
+		TransactionAccessToken: trxAccessToken,
+		PaymentMethod:          paymentMethod,
+		Event:                  event,
+		Transaction:            transaction,
+		TicketCategory:         ticketCategory,
+		VenueSector:            venueSector,
+		EventTransactionItem:   eventTransactionItems,
+		ClientIP:               clientIP,
+		OrderInformationBookID: orderInformationBookID,
+	}
+	log.Info().Interface("data", jsonData).Msg("payload")
+
+	bytes, err := json.Marshal(jsonData)
+	if err != nil {
+		return
+	}
+
+	err = u.EventPublisher.Publish(ctx, u.Env.Nats.Subjects.AsyncOrder, bytes)
+	if err != nil {
+		return
+	}
+
+	log.Info().Msg("success send email")
+
+	return
+}
 func (u *TransactionUsecase) SendBill(
 	ctx context.Context,
 	email, name string,
@@ -206,11 +250,14 @@ func (u *TransactionUsecase) SendETicket(
 ) (err error) {
 	log.Info().Msg("send email eticket")
 	var transactionPayload = domainEvent.TransactionETicket{
-		TicketID:        eventTicket.ID,
-		TransactionID:   transactionDetail.ID,
-		TicketNumber:    eventTicket.TicketNumber,
-		TicketCode:      eventTicket.TicketCode,
-		TicketSeatLabel: eventTicket.SeatLabel.String,
+		TicketID:      eventTicket.ID,
+		TransactionID: transactionDetail.ID,
+		TicketNumber:  eventTicket.TicketNumber,
+		TicketCode:    eventTicket.TicketCode,
+
+		TicketSeatLabel:  eventTicket.SeatLabel.String,
+		TicketSeatRow:    eventTicket.SeatRow,
+		TicketSeatColumn: eventTicket.SeatColumn,
 		Payment: domainEvent.PaymentInformation{
 			// Method:                       transactionDetail.PaymentMethod.PaymentCode,
 			DisplayName:                  transactionDetail.PaymentMethod.Name,

@@ -1,9 +1,11 @@
 package entity
 
+import "database/sql"
+
 type Sector struct {
 	ID         string
 	Name       string
 	HasSeatmap bool
-	Color      string
-	AreaCode   string
+	Color      sql.NullString
+	AreaCode   sql.NullString
 }

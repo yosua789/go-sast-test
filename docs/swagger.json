@@ -694,6 +694,84 @@
                 }
             }
         },
+        "/events/{eventId}/ticket-categories/{ticketCategoryId}/order/v2": {
+            "post": {
+                "description": "Create event ticket transaction V2",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Create event ticket transaction V2",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "eventId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ticket Category ID",
+                        "name": "ticketCategoryId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create event ticket transaction",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateEventTransaction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/lib.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.EventTransactionResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/lib.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/events/{eventId}/ticket-categories/{ticketCategoryId}/seatmap": {
             "get": {
                 "description": "Get seatmap by event and ticket category id",
@@ -2218,12 +2296,18 @@
                     "description": "event_transaction -\u003e transaction -\u003e grand total",
                     "type": "integer"
                 },
+                "order_number": {
+                    "type": "string"
+                },
                 "payment_additional_info": {
                     "description": "e.g. VA Number, QR Code",
                     "type": "string"
                 },
                 "payment_method": {
                     "description": "if VA then return VA Number if qris return qr code string",
+                    "type": "string"
+                },
+                "payment_paid_at": {
                     "type": "string"
                 },
                 "pg_additional_fee": {

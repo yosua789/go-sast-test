@@ -51,7 +51,7 @@ type DetailEventResponse struct {
 type EventSettingsResponse struct {
 	GarudaIdVerification         bool                         `json:"garuda_id_verification"`
 	MaxAdultTicketPerTransaction int                          `json:"max_adult_ticket_per_transaction"`
-	AdditionalFees               []EventAdditionalFeeResponse `json:"additional_fees,omitempty"`
+	AdditionalFees               []EventAdditionalFeeResponse `json:"additional_fees"`
 }
 
 type EventAdditionalFeeResponse struct {

@@ -270,29 +270,33 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 	e.name,
 	e.event_time,
 	v.name as venue_name,
+	et.order_number,
 	et.payment_expired_at,
 	et.transaction_status,
 	et.payment_additional_information, 
 	et.payment_method,
+	et.paid_at,
 	COUNT(eti.id) AS item_count,
 	et.grand_total,
 	et.total_admin_fee,
 	et.total_tax,
 	et.total_price,
+	etc.name,
 	v.country,
 	v.city,
 	et.pg_additional_fee
 	FROM event_transactions et
+	JOIN event_ticket_categories etc ON et.event_ticket_category_id = etc.id
 	JOIN events e ON et.event_id = e.id
 	JOIN venues v ON e.venue_id = v.id
 	LEFT JOIN event_transaction_items eti ON et.id = eti.transaction_id
 	WHERE et.id = $1
 	GROUP BY 
 	e.name, e.event_time, v.name,
-	et.payment_expired_at, et.transaction_status,
+	et.order_number, et.paid_at, et.payment_expired_at, et.transaction_status,
 	et.payment_additional_information, et.payment_method,
 	et.grand_total, et.total_admin_fee, et.total_tax, et.total_price, 
-	v.country, v.city, et.pg_additional_fee
+	etc.name, v.country, v.city, et.pg_additional_fee
 	LIMIT 1;
 	`
 	if tx != nil {
@@ -300,15 +304,18 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.EventName,
 			&res.EventTime,
 			&res.VenueName,
+			&res.OrderNumber,
 			&res.TransactionDeadline,
 			&res.TransactionStatus,
 			&res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
 			&res.PaymentMethod,
+			&res.PaymentPaidAt,
 			&res.TransactionQuantity,
 			&res.GrandTotal,
 			&res.TotalAdminFee,
 			&res.TotalTax,
 			&res.TotalPrice,
+			&res.TicketCategoryName,
 			&res.Country,
 			&res.City,
 			&res.PGAdditionalFee, // Additional fee for payment gateway
@@ -318,15 +325,18 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 			&res.EventName,
 			&res.EventTime,
 			&res.VenueName,
+			&res.OrderNumber,
 			&res.TransactionDeadline,
 			&res.TransactionStatus,
 			&res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
 			&res.PaymentMethod,
+			&res.PaymentPaidAt,
 			&res.TransactionQuantity,
 			&res.GrandTotal,
 			&res.TotalAdminFee,
 			&res.TotalTax,
 			&res.TotalPrice,
+			&res.TicketCategoryName,
 			&res.Country,
 			&res.City,
 			&res.PGAdditionalFee, // Additional fee for payment gateway
@@ -386,10 +396,13 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 		EventName:             res.EventName,
 		VenueName:             res.VenueName,
 		EventTime:             res.EventTime,
+		OrderNumber:           res.OrderNumber,
 		TransactionDeadline:   res.TransactionDeadline,
 		TransactionStatus:     res.TransactionStatus,
+		TicketCategoryName:    res.TicketCategoryName,
 		PaymentMethod:         res.PaymentMethod,
 		PaymentAdditionalInfo: res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
+		PaymentPaidAt:         res.PaymentPaidAt,
 		GrandTotal:            res.GrandTotal,
 		TotalAdminFee:         res.TotalAdminFee,
 		TotalTax:              res.TotalTax,

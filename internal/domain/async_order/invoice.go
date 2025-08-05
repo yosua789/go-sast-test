@@ -1,4 +1,4 @@
-package event
+package async_order
 
 import "time"
 
@@ -12,6 +12,5 @@ type TransactionInvoice struct {
 	Event             EventInformation             `json:"event"`
 	ItemCount         int                          `json:"item_count"`
 	ExpiredAt         time.Time                    `json:"expired_at"`
-	PaidAt            time.Time                    `json:"paid_at"`
 	CreatedAt         time.Time                    `json:"created_at"`
 }
