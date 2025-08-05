@@ -401,7 +401,7 @@ func (r *EventTransactionRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx
 		TransactionStatus:     res.TransactionStatus,
 		TicketCategoryName:    res.TicketCategoryName,
 		PaymentMethod:         res.PaymentMethod,
-		PaymentAdditionalInfo: res.PaymentAdditionalInfo, // e.g. VA Number, QR Code
+		PaymentAdditionalInfo: res.PaymentAdditionalInfo.String, // e.g. VA Number, QR Code
 		PaymentPaidAt:         res.PaymentPaidAt,
 		GrandTotal:            res.GrandTotal,
 		TotalAdminFee:         res.TotalAdminFee,
