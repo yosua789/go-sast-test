@@ -1096,6 +1096,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 			len(transactionItems),
 			additionalFees,
 			transactionDetail,
+			transactionTime,
 		)
 		if err != nil {
 			sentry.CaptureException(err)
@@ -1382,7 +1383,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 
 	// Parse the time string in Asia/Jakarta location
-
+	var paidAt time.Time
 	var markResult model.EventTransaction
 	if isSuccess {
 		t, errConvertTime := time.ParseInLocation(layout, req.SuccessTime, loc)
@@ -1391,6 +1392,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 			return
 		}
 		transactionData.PaidAt = &t
+		paidAt = t
 		log.Info().Msgf("Transaction time: %v", t)
 
 		markResult, err = s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, t, req.PaymentMethodInfo.RRN)
@@ -1482,6 +1484,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 				len(transactionItems),
 				additionalFees,
 				transactionDetail,
+				paidAt,
 			)
 			if err != nil {
 				sentry.CaptureException(err)
