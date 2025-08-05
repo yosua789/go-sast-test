@@ -383,11 +383,11 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	transaction.CreatedAt = transactionRes.CreatedAt
 
 	// Update order information book to set transactionId
-	err = s.EventOrderInformationBookRepo.UpdateTransactionIdByID(ctx, tx, orderInformationBookId, transaction.ID)
-	if err != nil {
-		sentry.CaptureException(err)
-		return
-	}
+	// err = s.EventOrderInformationBookRepo.UpdateTransactionIdByID(ctx, tx, orderInformationBookId, transaction.ID)
+	// if err != nil {
+	// 	sentry.CaptureException(err)
+	// 	return
+	// }
 
 	var transactionItems []model.EventTransactionItem
 	for _, item := range req.Items {
@@ -453,13 +453,13 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	for _, item := range req.Items {
 		EventTransactionGarudaID.GarudaIDs = append(EventTransactionGarudaID.GarudaIDs, item.GarudaID)
 	}
-	err = s.EventTransactionGarudaIDRepo.CreateBatch(ctx, tx, EventTransactionGarudaID)
-	if err != nil {
-		sentry.CaptureException(err)
-		log.Error().Err(err).Msg("Failed to create batch garuda id")
-		err = &lib.ErrorInternalServer
-		return
-	}
+	// err = s.EventTransactionGarudaIDRepo.CreateBatch(ctx, tx, EventTransactionGarudaID)
+	// if err != nil {
+	// 	sentry.CaptureException(err)
+	// 	log.Error().Err(err).Msg("Failed to create batch garuda id")
+	// 	err = &lib.ErrorInternalServer
+	// 	return
+	// }
 	err = tx.Commit(ctx)
 	if err != nil {
 		sentry.CaptureException(err)

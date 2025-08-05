@@ -1054,6 +1054,8 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		log.Error().Err(err).Msg("Failed to parse transaction time")
 		return
 	}
+	log.Info().Msgf("Transaction time: %v", transactionTime)
+	transactionData.PaidAt = &transactionTime
 
 	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, transactionTime, req.PaymentRequestId)
 	if err != nil {
@@ -1076,6 +1078,16 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 			return
 		}
 
+		if transactionData.PGAdditionalFee > 0 {
+			// TODO: refactor to dynamic NOT HARD CODED
+			additionalFees = append(additionalFees, entity.AdditionalFee{
+				Name:         "Payment Fee",
+				IsPercentage: false,
+				Value:        float64(transactionData.PGAdditionalFee),
+				IsTax:        false,
+			})
+		}
+
 		err = s.TransactionUseCase.SendInvoice(
 			ctx,
 			transactionDetail.Email,
@@ -1084,6 +1096,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 			len(transactionItems),
 			additionalFees,
 			transactionDetail,
+			transactionTime,
 		)
 		if err != nil {
 			sentry.CaptureException(err)
@@ -1370,7 +1383,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 
 	// Parse the time string in Asia/Jakarta location
-
+	var paidAt time.Time
 	var markResult model.EventTransaction
 	if isSuccess {
 		t, errConvertTime := time.ParseInLocation(layout, req.SuccessTime, loc)
@@ -1378,6 +1391,10 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 			log.Error().Err(errConvertTime).Msg("Failed to parse transaction time")
 			return
 		}
+		transactionData.PaidAt = &t
+		paidAt = t
+		log.Info().Msgf("Transaction time: %v", t)
+
 		markResult, err = s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, t, req.PaymentMethodInfo.RRN)
 		if err != nil {
 			sentry.CaptureException(err)
@@ -1432,8 +1449,9 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 	log.Info().Msgf("JSON Payload: %s", jsonData)
 
-	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, tx, transactionData.ID)
+	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, nil, transactionData.ID)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to find event settings by event id")
 		sentry.CaptureException(err)
 		return
 	}
@@ -1449,6 +1467,15 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 				log.Error().Err(err).Msg("failed get event settings for invoice")
 				return
 			}
+			if transactionData.PGAdditionalFee > 0 {
+				// TODO: refactor to dynamic NOT HARD CODED
+				additionalFees = append(additionalFees, entity.AdditionalFee{
+					Name:         "Payment Fee",
+					IsPercentage: false,
+					Value:        float64(transactionData.PGAdditionalFee),
+					IsTax:        false,
+				})
+			}
 			err = s.TransactionUseCase.SendInvoice(
 				ctx,
 				transactionDetail.Email,
@@ -1457,6 +1484,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 				len(transactionItems),
 				additionalFees,
 				transactionDetail,
+				paidAt,
 			)
 			if err != nil {
 				sentry.CaptureException(err)
