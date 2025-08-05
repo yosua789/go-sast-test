@@ -1076,6 +1076,16 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 			return
 		}
 
+		if transactionData.PGAdditionalFee > 0 {
+			// TODO: refactor to dynamic NOT HARD CODED
+			additionalFees = append(additionalFees, entity.AdditionalFee{
+				Name:         "Payment Fee",
+				IsPercentage: false,
+				Value:        float64(transactionData.PGAdditionalFee),
+				IsTax:        false,
+			})
+		}
+
 		err = s.TransactionUseCase.SendInvoice(
 			ctx,
 			transactionDetail.Email,
@@ -1449,6 +1459,15 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 			if err != nil {
 				log.Error().Err(err).Msg("failed get event settings for invoice")
 				return
+			}
+			if transactionData.PGAdditionalFee > 0 {
+				// TODO: refactor to dynamic NOT HARD CODED
+				additionalFees = append(additionalFees, entity.AdditionalFee{
+					Name:         "Payment Fee",
+					IsPercentage: false,
+					Value:        float64(transactionData.PGAdditionalFee),
+					IsTax:        false,
+				})
 			}
 			err = s.TransactionUseCase.SendInvoice(
 				ctx,

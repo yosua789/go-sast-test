@@ -187,6 +187,7 @@ func (u *TransactionUsecase) SendInvoice(
 			PaymentAdditionalInformation: transactionDetail.PaymentAdditionalInfo,
 			GrandTotal:                   transactionDetail.GrandTotal,
 		},
+		PaidAt: *transactionDetail.PaidAt,
 		Status: transactionDetail.Status,
 		DetailInformation: domainEvent.DetailInformationTransaction{
 			BookEmail: email,
