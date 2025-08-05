@@ -1432,7 +1432,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 	}
 	log.Info().Msgf("JSON Payload: %s", jsonData)
 
-	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, tx, transactionData.ID)
+	rawEventSettings, err := s.EventSettingRepo.FindByEventId(ctx, nil, transactionData.ID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to find event settings by event id")
 		sentry.CaptureException(err)
