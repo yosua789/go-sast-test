@@ -42,7 +42,7 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
 
-	val, err := r.RedisRepository.GetState(ctx, "paymentMethod")
+	val, err := r.RedisRepository.GetState(ctx, "grouppedPayments")
 	if err == nil {
 
 		err = json.Unmarshal([]byte(val), &grouppedPayments)
@@ -153,7 +153,7 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling paymentMethod")
 	} else {
-		r.RedisRepository.SetState(ctx, "paymentMethod", string(jsonData), 15*time.Minute)
+		r.RedisRepository.SetState(ctx, "grouppedPayments", string(jsonData), 15*time.Minute)
 	}
 	return
 }
@@ -161,6 +161,20 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 func (r *PaymentMethodRepositoryImpl) ValidatePaymentCodeIsActive(ctx context.Context, tx pgx.Tx, paymentCode string) (paymentMethod model.PaymentMethod, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
+	val, err := r.RedisRepository.GetState(ctx, "paymentMethod")
+	if err == nil {
+
+		err = json.Unmarshal([]byte(val), &paymentMethod)
+		if err != nil {
+			log.Warn().Err(err).Msg("Error Marshal data paymentMethod from redis")
+		} else {
+			log.Info().Msg("using data grouppedPayment from redis")
+			return paymentMethod, nil
+		}
+
+	} else {
+		log.Warn().Err(err).Msg("Not Found on Redis, using postgresql instead")
+	}
 
 	query := `SELECT
 		id, 
@@ -229,6 +243,12 @@ func (r *PaymentMethodRepositoryImpl) ValidatePaymentCodeIsActive(ctx context.Co
 		}
 
 		return paymentMethod, err
+	}
+	jsonData, err := json.Marshal(paymentMethod)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshalling paymentMethod")
+	} else {
+		r.RedisRepository.SetState(ctx, "grouppedPayments", string(jsonData), 15*time.Minute)
 	}
 
 	return paymentMethod, nil
