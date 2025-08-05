@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
@@ -99,7 +98,7 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling eventSetting")
 	} else {
-		r.RedisRepository.SetState(ctx, "eventsetting-"+eventId, string(jsonData), 15*time.Minute)
+		r.RedisRepository.SetState(ctx, "eventsetting-"+eventId, string(jsonData), 15)
 	}
 	return
 }
@@ -107,6 +106,18 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 func (r *EventSettingsRepositoryImpl) FindAdditionalFee(ctx context.Context, tx pgx.Tx, eventId string) (res []entity.AdditionalFee, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
+	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf("eventadditionalfee-"+eventId))
+	if err == nil {
+		err = json.Unmarshal([]byte(val), &res)
+		if err != nil {
+			log.Warn().Err(err).Msg("Error Marshal data event additional fee from redis")
+		} else {
+			log.Info().Msg("using data event additional fee from redis")
+			return res, nil
+		}
+	} else {
+		log.Warn().Err(err).Msg("Not Found on Redis, using postgresql instead")
+	}
 	query := `SELECT
 		id,
 		event_id,
@@ -143,6 +154,21 @@ func (r *EventSettingsRepositoryImpl) FindAdditionalFee(ctx context.Context, tx 
 			&additionalFee.UpdatedAt,
 		)
 		res = append(res, additionalFee)
+	}
+
+	if len(res) == 0 {
+		log.Info().Msgf("No additional fees found for event ID: %s", eventId)
+	}
+	jsonData, err := json.Marshal(res)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshalling eventAdditionalFee")
+	} else {
+		err = r.RedisRepository.SetState(ctx, "eventadditionalfee-"+eventId, string(jsonData), 15)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to cache event additional fees in Redis")
+			err = nil
+		}
+		log.Info().Msg("Cached event additional fees in Redis")
 	}
 
 	return
