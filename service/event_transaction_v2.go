@@ -350,7 +350,6 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	// transaction.AdminFeePercentage = float32(eventSettings.AdminFeePercentage)
 	// log.Info().Int("TotalAdminFee", totalAdminFee).Float32("AdminFeePercentage", transaction.AdminFeePercentage).Msg("calculate admin fee")
 	pgAdditionalFee := 0
-
 	transaction.GrandTotal = transaction.TotalPrice + transaction.TotalTax + transaction.TotalAdminFee
 	if paymentMethod.IsPercentage {
 		log.Info().Msg("payment method is percentage, calculating additional fee")
@@ -381,13 +380,6 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	//  orderInformationBookId
 	transaction.ID = transactionRes.ID
 	transaction.CreatedAt = transactionRes.CreatedAt
-
-	// Update order information book to set transactionId
-	// err = s.EventOrderInformationBookRepo.UpdateTransactionIdByID(ctx, tx, orderInformationBookId, transaction.ID)
-	// if err != nil {
-	// 	sentry.CaptureException(err)
-	// 	return
-	// }
 
 	var transactionItems []model.EventTransactionItem
 	for _, item := range req.Items {
@@ -439,27 +431,6 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	}
 	log.Info().Str("transactionId", transaction.ID).Int("count", len(transactionItems)).Msg("create transaction item")
 
-	// // TODO: Add item name, email phone number ->done on validating garuda id
-	// log.Info().Msg("insert transaction item")
-	// err = s.EventTransactionItemRepo.CreateTransactionItems(ctx, tx, transactionItems)
-	// if err != nil {
-	// 	sentry.CaptureException(err)
-	// 	return
-	// }
-
-	var EventTransactionGarudaID dto.BulkGarudaIDRequest
-	EventTransactionGarudaID.EventID = eventId
-	EventTransactionGarudaID.GarudaIDs = make([]string, 0, len(req.Items))
-	for _, item := range req.Items {
-		EventTransactionGarudaID.GarudaIDs = append(EventTransactionGarudaID.GarudaIDs, item.GarudaID)
-	}
-	// err = s.EventTransactionGarudaIDRepo.CreateBatch(ctx, tx, EventTransactionGarudaID)
-	// if err != nil {
-	// 	sentry.CaptureException(err)
-	// 	log.Error().Err(err).Msg("Failed to create batch garuda id")
-	// 	err = &lib.ErrorInternalServer
-	// 	return
-	// }
 	err = tx.Commit(ctx)
 	if err != nil {
 		sentry.CaptureException(err)
