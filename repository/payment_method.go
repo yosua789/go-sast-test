@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
@@ -153,7 +152,7 @@ func (r *PaymentMethodRepositoryImpl) GetGrouppedActivePaymentMethod(ctx context
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling paymentMethod")
 	} else {
-		r.RedisRepository.SetState(ctx, "grouppedPayments", string(jsonData), 15*time.Minute)
+		r.RedisRepository.SetState(ctx, "grouppedPayments", string(jsonData), 15)
 	}
 	return
 }
@@ -248,7 +247,7 @@ func (r *PaymentMethodRepositoryImpl) ValidatePaymentCodeIsActive(ctx context.Co
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling paymentMethod")
 	} else {
-		r.RedisRepository.SetState(ctx, "grouppedPayments", string(jsonData), 15*time.Minute)
+		r.RedisRepository.SetState(ctx, "grouppedPayments", string(jsonData), 15)
 	}
 
 	return paymentMethod, nil

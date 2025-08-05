@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
@@ -99,7 +98,7 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling eventSetting")
 	} else {
-		r.RedisRepository.SetState(ctx, "eventsetting-"+eventId, string(jsonData), 15*time.Minute)
+		r.RedisRepository.SetState(ctx, "eventsetting-"+eventId, string(jsonData), 15)
 	}
 	return
 }
@@ -164,7 +163,7 @@ func (r *EventSettingsRepositoryImpl) FindAdditionalFee(ctx context.Context, tx 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling eventAdditionalFee")
 	} else {
-		err = r.RedisRepository.SetState(ctx, "eventadditionalfee-"+eventId, string(jsonData), 15*time.Minute)
+		err = r.RedisRepository.SetState(ctx, "eventadditionalfee-"+eventId, string(jsonData), 15)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to cache event additional fees in Redis")
 			err = nil
