@@ -200,7 +200,7 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling event")
 	} else {
-		r.RedisRepository.SetState(ctx, "eventData-"+eventId, string(jsonData), 15*time.Minute)
+		r.RedisRepository.SetState(ctx, "eventData-"+eventId, string(jsonData), 15)
 	}
 	return
 }

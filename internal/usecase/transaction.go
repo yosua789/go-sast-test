@@ -9,6 +9,7 @@ import (
 	"assist-tix/model"
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -161,9 +162,10 @@ func (u *TransactionUsecase) SendInvoice(
 	itemCount int,
 	additionalFees []entity.AdditionalFee,
 	transactionDetail entity.EventTransaction,
+	paidAt time.Time, // this is the time when the transaction was paid
 ) (err error) {
 	log.Info().Msg("send email invoice")
-
+	log.Info().Msgf("%v ini paid at", transactionDetail.PaidAt)
 	invoiceAdditionalFees := make([]domainEvent.AdditionalFee, 0)
 	for _, val := range additionalFees {
 		invoiceAdditionalFees = append(invoiceAdditionalFees, domainEvent.AdditionalFee{
@@ -187,6 +189,7 @@ func (u *TransactionUsecase) SendInvoice(
 			PaymentAdditionalInformation: transactionDetail.PaymentAdditionalInfo,
 			GrandTotal:                   transactionDetail.GrandTotal,
 		},
+		PaidAt: paidAt,
 		Status: transactionDetail.Status,
 		DetailInformation: domainEvent.DetailInformationTransaction{
 			BookEmail: email,

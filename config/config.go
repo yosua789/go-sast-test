@@ -71,7 +71,8 @@ func SetDefaultConfig(v *viper.Viper) {
 	v.SetDefault("DATABASE.TIMEOUT.READ", "5s")
 	v.SetDefault("DATABASE.TIMEOUT.WRITE", "5s")
 
-	v.SetDefault("ASYNQ.DEADLINE_DURATION", "30s")
+	v.SetDefault("ASYNQ.PROCESS_TIMEOUT", "30s")
+	v.SetDefault("ASYNQ.MAX_RETRY", 5)
 }
 
 type EnvironmentVariable struct {
@@ -169,6 +170,7 @@ type EnvironmentVariable struct {
 	} `mapstructure:"SENTRY"`
 	Asynq struct {
 		ProcessTimeout time.Duration `mapstructure:"PROCESS_TIMEOUT"`
+		MaxRetry       int           `mapstructure:"MAX_RETRY"`
 	} `mapstructure:"ASYNQ"`
 }
 
