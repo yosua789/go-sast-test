@@ -94,6 +94,7 @@ func MapEventSettingEntityToEventSettingResponse(
 	eventSettings []entity.EventSetting,
 ) dto.EventSettingsResponse {
 	var res dto.EventSettingsResponse
+	res.AdditionalFees = make([]dto.EventAdditionalFeeResponse, 0)
 
 	for _, setting := range eventSettings {
 		if setting.Setting.Name == EventGarudaIdVerificationSettingName {

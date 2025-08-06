@@ -140,6 +140,7 @@ type EnvironmentVariable struct {
 	} `mapstructure:"FILE_UPLOAD"`
 
 	Transaction struct {
+		UseV2              bool          `mapstructure:"USE_V2"` // Use V2 transaction flow
 		ExpirationDuration time.Duration `mapstructure:"EXPIRATION_DURATION"`
 	} `mapstructure:"TRANSACTION"`
 	Paylabs struct {

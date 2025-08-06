@@ -118,7 +118,7 @@ func (r *EventRepositoryImpl) FindAll(ctx context.Context, tx pgx.Tx) (res []mod
 func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId string) (event model.Event, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
-	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf("eventData-"+eventId))
+	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf(lib.EventDataKeyPrefix+eventId))
 	if err == nil {
 
 		err = json.Unmarshal([]byte(val), &event)
@@ -200,7 +200,7 @@ func (r *EventRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, eventId s
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling event")
 	} else {
-		r.RedisRepository.SetState(ctx, "eventData-"+eventId, string(jsonData), 15)
+		r.RedisRepository.SetState(ctx, lib.EventDataKeyPrefix+eventId, string(jsonData), 1)
 	}
 	return
 }

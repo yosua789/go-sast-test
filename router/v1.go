@@ -63,8 +63,16 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 	rg.GET("/:eventId/ticket-categories/:ticketCategoryId/seatmap", h.EventTicketCategoryHandler.GetSeatmap)
 
 	// rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
-	rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransactionV2)
-	rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/v2", h.EventTransaction.CreateTransactionV2)
+	if h.Env.Transaction.UseV2 {
+		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransactionV2)
+	} else {
+		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
+	}
+	if h.Env.App.Debug {
+		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/v2", h.EventTransaction.CreateTransactionV2)
+		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/v1", h.EventTransaction.CreateTransaction)
+	}
+
 	// rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/paylabs-vasnap", h.EventTransaction.PaylabsVASnap)
 }
 

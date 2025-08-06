@@ -43,7 +43,7 @@ func NewVenueSectorRepository(
 func (r *VenueSectorRepositoryImpl) FindVenueSectorById(ctx context.Context, tx pgx.Tx, sectorId string) (venueSector entity.VenueSector, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
-	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf("venue-"+sectorId))
+	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf(lib.VenueSectorKeyPrefix+sectorId))
 	if err == nil {
 
 		err = json.Unmarshal([]byte(val), &venueSector)
@@ -126,7 +126,7 @@ func (r *VenueSectorRepositoryImpl) FindVenueSectorById(ctx context.Context, tx 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to matshalling venueSector")
 	} else {
-		r.RedisRepository.SetState(ctx, "venue-"+sectorId, string(jsonData), 15)
+		r.RedisRepository.SetState(ctx, lib.VenueSectorKeyPrefix+sectorId, string(jsonData), 1)
 	}
 
 	return

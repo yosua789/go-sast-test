@@ -4,6 +4,7 @@ import (
 	"assist-tix/config"
 	"assist-tix/database"
 	"assist-tix/entity"
+	"assist-tix/lib"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -37,7 +38,7 @@ func NewEventSettingsRepository(
 func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.Tx, eventId string) (res []entity.EventSetting, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
-	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf("eventsetting-"+eventId))
+	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf(lib.EventSettingKeyPrefix+eventId))
 	if err == nil {
 
 		err = json.Unmarshal([]byte(val), &res)
@@ -98,7 +99,7 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling eventSetting")
 	} else {
-		r.RedisRepository.SetState(ctx, "eventsetting-"+eventId, string(jsonData), 15)
+		r.RedisRepository.SetState(ctx, lib.EventSettingKeyPrefix+eventId, string(jsonData), 1)
 	}
 	return
 }
@@ -106,7 +107,7 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 func (r *EventSettingsRepositoryImpl) FindAdditionalFee(ctx context.Context, tx pgx.Tx, eventId string) (res []entity.AdditionalFee, err error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
 	defer cancel()
-	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf("eventadditionalfee-"+eventId))
+	val, err := r.RedisRepository.GetState(ctx, fmt.Sprintf(lib.EventAdditionalFeeKeyPrefix+eventId))
 	if err == nil {
 		err = json.Unmarshal([]byte(val), &res)
 		if err != nil {
@@ -163,7 +164,7 @@ func (r *EventSettingsRepositoryImpl) FindAdditionalFee(ctx context.Context, tx 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling eventAdditionalFee")
 	} else {
-		err = r.RedisRepository.SetState(ctx, "eventadditionalfee-"+eventId, string(jsonData), 15)
+		err = r.RedisRepository.SetState(ctx, lib.EventAdditionalFeeKeyPrefix+eventId, string(jsonData), 1)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to cache event additional fees in Redis")
 			err = nil
