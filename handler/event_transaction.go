@@ -25,6 +25,9 @@ type EventTransactionHandler interface {
 	GetAvailablePaymentMethods(ctx *gin.Context)
 	GetTransactionDetails(ctx *gin.Context)
 	CreateTransactionV2(ctx *gin.Context)
+
+	CallbackVASnapV2(ctx *gin.Context)
+	CallbackQRISPaylabsV2(ctx *gin.Context)
 }
 
 type EventTransactionHandlerImpl struct {
@@ -89,6 +92,10 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&request); err != nil {
 		lib.RespondError(ctx, http.StatusBadRequest, err.Error(), err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+	if len(request.Items) < 1 {
+		lib.RespondError(ctx, http.StatusBadRequest, "transaction items cannot be empty", &lib.ErrorNilTransactionItem, lib.ErrorNilTransactionItem.Code, h.Env.App.Debug)
 		return
 	}
 
@@ -185,6 +192,10 @@ func (h *EventTransactionHandlerImpl) CreateTransactionV2(ctx *gin.Context) {
 		return
 	}
 
+	if len(request.Items) < 1 {
+		lib.RespondError(ctx, http.StatusBadRequest, "transaction items cannot be empty", &lib.ErrorNilTransactionItem, lib.ErrorNilTransactionItem.Code, h.Env.App.Debug)
+		return
+	}
 	if err := h.Validator.Struct(request); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
 			fieldErr := validationErrors[0]
@@ -304,6 +315,52 @@ func (h *EventTransactionHandlerImpl) CallbackVASnap(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+func (h *EventTransactionHandlerImpl) CallbackVASnapV2(ctx *gin.Context) {
+	// Implement the callback logic here
+	var req dto.SnapCallbackPaymentRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Error().Err(err).Msg("error binding JSON for callback")
+		lib.RespondError(ctx, http.StatusBadRequest, "invalid request body", err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+	log.Info().Msgf("Received callback: %+v", req)
+
+	// This is a placeholder for the actual implementation
+	res, err := h.EventTransactionService.CallbackVASnapV2(ctx, req)
+	var tixErr *lib.TIXError
+	if errors.As(err, &tixErr) {
+		switch *tixErr {
+		case lib.ErrorOrderNotFound:
+			lib.RespondError(ctx, http.StatusNotFound, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
+			// return
+		case lib.ErrorCallbackSignatureInvalid:
+			lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
+			// return
+		default:
+			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			// return
+		}
+		headerString := ctx.GetString("headers")
+		bodyString := ctx.GetString("rawPayload")
+		respString, err := json.Marshal(res)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to marshal response")
+		}
+		_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), strconv.Itoa(tixErr.Code), tixErr.Error())
+		return
+	}
+	headerString := ctx.GetString("headers")
+	bodyString := ctx.GetString("rawPayload")
+	respString, err := json.Marshal(res)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal response")
+		return
+	}
+	_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), "", "")
+
+	ctx.JSON(http.StatusOK, res)
+}
+
 func (h *EventTransactionHandlerImpl) CallbackQRISPaylabs(ctx *gin.Context) {
 	// Implement the callback logic here
 
@@ -318,6 +375,52 @@ func (h *EventTransactionHandlerImpl) CallbackQRISPaylabs(ctx *gin.Context) {
 
 	// This is a placeholder for the actual implementation
 	res, err := h.EventTransactionService.CallbackQRISPaylabs(ctx, req)
+	var tixErr *lib.TIXError
+	if errors.As(err, &tixErr) {
+		switch *tixErr {
+		case lib.ErrorOrderNotFound:
+			lib.RespondError(ctx, http.StatusNotFound, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
+			// return
+		case lib.ErrorCallbackSignatureInvalid:
+			lib.RespondError(ctx, http.StatusBadRequest, tixErr.Error(), err, tixErr.Code, h.Env.App.Debug)
+			// return
+		default:
+			lib.RespondError(ctx, http.StatusInternalServerError, "error", err, lib.ErrorInternalServer.Code, h.Env.App.Debug)
+			// return
+		}
+		headerString := ctx.GetString("headers")
+		bodyString := ctx.GetString("rawPayload")
+		respString, err := json.Marshal(res)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to marshal response")
+		}
+		_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), strconv.Itoa(tixErr.Code), tixErr.Error())
+		return
+	}
+	headerString := ctx.GetString("headers")
+	bodyString := ctx.GetString("rawPayload")
+	respString, err := json.Marshal(res)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal response")
+	}
+	_, _ = h.PaymentLogsService.Create(ctx, bodyString, headerString, string(respString), "", "")
+	ctx.JSON(http.StatusOK, res)
+}
+
+func (h *EventTransactionHandlerImpl) CallbackQRISPaylabsV2(ctx *gin.Context) {
+	// Implement the callback logic here
+
+	var req dto.QRISCallbackRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Error().Err(err).Msg("error binding JSON for callback")
+		lib.RespondError(ctx, http.StatusBadRequest, "invalid request body", err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
+		return
+	}
+
+	log.Info().Msgf("Received callback: %+v", req)
+
+	// This is a placeholder for the actual implementation
+	res, err := h.EventTransactionService.CallbackQRISPaylabsV2(ctx, req)
 	var tixErr *lib.TIXError
 	if errors.As(err, &tixErr) {
 		switch *tixErr {

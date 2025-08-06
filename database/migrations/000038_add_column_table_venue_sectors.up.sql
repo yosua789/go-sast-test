@@ -1,0 +1,1 @@
+ALTER TABLE venue_sector_seatmap_matrix ADD COLUMN seat_row_label int DEFAULT 0;

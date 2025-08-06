@@ -310,3 +310,21 @@ var (
 		Err:  errors.New("failed to create payment log"),
 	}
 )
+
+var (
+	ErrorSeatmapBookEmpty = TIXError{
+		Code: 50009,
+		Err:  errors.New("seatmaps is empty"),
+	}
+	ErrorSeatAvailableSeatNotMatcheWithRequestSeats = TIXError{
+		Code: 50010,
+		Err:  errors.New("count available seat in the sector not match with requested seat"),
+	}
+)
+
+var (
+	ErrorNilTransactionItem = TIXError{
+		Code: 40015,
+		Err:  errors.New("transaction item is nil"),
+	}
+)

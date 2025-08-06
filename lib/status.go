@@ -42,10 +42,11 @@ const (
 
 // Event Transaction status
 const (
-	EventTransactionStatusPending = "PENDING"
-	EventTransactionStatusSuccess = "SUCCESS"
-	EventTransactionStatusExpired = "EXPIRED"
-	EventTransactionStatusFailed  = "FAILED"
+	EventTransactionStatusPending          = "PENDING"
+	EventTransactionStatusSuccess          = "SUCCESS"
+	EventTransactionStatusProcessingTicket = "PROCESSING TICKET"
+	EventTransactionStatusExpired          = "EXPIRED"
+	EventTransactionStatusFailed           = "FAILED"
 )
 
 type EventTicketStatus string

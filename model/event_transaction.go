@@ -5,6 +5,9 @@ import "time"
 type EventTransaction struct {
 	ID string
 
+	EventID          string
+	TicketCategoryID string
+
 	OrderNumber       string
 	Status            string
 	StatusInformation string

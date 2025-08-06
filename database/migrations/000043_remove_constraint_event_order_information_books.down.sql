@@ -1,0 +1,1 @@
+ALTER TABLE event_order_information_books ADD CONSTRAINT unique_event_email_book UNIQUE (event_id, email);

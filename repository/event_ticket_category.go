@@ -31,6 +31,7 @@ type EventTicketCategoryRepository interface {
 	FindLowestPriceTicketByEventIds(ctx context.Context, tx pgx.Tx, eventIds ...string) (res map[string]int, err error)
 	FindTotalSaleTicketByEventIds(ctx context.Context, tx pgx.Tx, eventIds ...string) (res map[string]int, err error)
 	FindSeatByRowsColumnsEventSectorId(ctx context.Context, tx pgx.Tx, eventId, sectorId string, seatmaps ...domain.SeatmapParam) (seats map[string]entity.EventVenueSector, err error)
+	FindNAvailableSeatAfterSectorRowColumn(ctx context.Context, tx pgx.Tx, eventId, sectorId string, seatCount, seatRow, seatColumn int) (seats []entity.EventVenueSector, err error)
 }
 
 type EventTicketCategoryRepositoryImpl struct {
@@ -682,6 +683,80 @@ func (r *EventTicketCategoryRepositoryImpl) FindSeatByRowsColumnsEventSectorId(c
 		)
 
 		seats[helper.ConvertRowColumnKey(sectorSeatmap.SeatRow, sectorSeatmap.SeatColumn)] = sectorSeatmap
+	}
+
+	return
+}
+
+func (r *EventTicketCategoryRepositoryImpl) FindNAvailableSeatAfterSectorRowColumn(ctx context.Context, tx pgx.Tx, eventId, sectorId string, seatCount, seatRow, seatColumn int) (seats []entity.EventVenueSector, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := `SELECT *
+	FROM (
+		SELECT 
+			vssm.id, 
+			vssm.seat_row, 
+			vssm.seat_column, 
+			vssm.seat_row_label, 
+			CASE 
+				WHEN vssm.label != evssm.label THEN evssm.label
+				ELSE vssm.label
+			END AS seat_final_label,
+			CASE 
+				WHEN vssm.status != evssm.status THEN 
+					CASE 
+						WHEN evssm.status IN ('PREBOOK', 'COMPLIMENT') THEN 'UNAVAILABLE'
+						ELSE evssm.status
+					END 
+				ELSE vssm.status
+			END AS seat_final_status
+		FROM venue_sector_seatmap_matrix vssm 
+		LEFT JOIN event_venue_sector_seatmap_matrix evssm 
+			ON vssm.sector_id = evssm.sector_id 
+			AND vssm.seat_row = evssm.seat_row 
+			AND vssm.seat_column = evssm.seat_column
+			AND evssm.event_id = $1
+		WHERE vssm.sector_id = $2
+		AND (vssm.seat_row, vssm.seat_column) > ($3, $4)
+	) sub
+	WHERE seat_final_status = $5
+	ORDER BY seat_row ASC, seat_column ASC 
+	LIMIT $6
+`
+
+	var rows pgx.Rows
+
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, eventId, sectorId, seatRow, seatColumn, lib.SeatmapStatusAvailable, seatCount)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, eventId, sectorId, eventId, sectorId, seatRow, seatColumn, lib.SeatmapStatusAvailable, seatCount)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var sectorSeatmap entity.EventVenueSector
+		rows.Scan(
+			&sectorSeatmap.ID,
+			&sectorSeatmap.SeatRow,
+			&sectorSeatmap.SeatColumn,
+			&sectorSeatmap.SeatRowLabel,
+			&sectorSeatmap.Label,
+			&sectorSeatmap.Status,
+		)
+
+		seats = append(seats, sectorSeatmap)
+	}
+
+	log.Info().Int("RequestSeat", seatCount).Int("Result", len(seats)).Msg("Checking seats")
+
+	if len(seats) != seatCount {
+		return seats, &lib.ErrorSeatAvailableSeatNotMatcheWithRequestSeats
 	}
 
 	return

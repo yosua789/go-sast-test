@@ -32,10 +32,12 @@ type EventTransactionService interface {
 	CreateEventTransaction(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
 	paylabsVASnap(ctx *gin.Context, transaction model.EventTransaction, eventName string) (vaNo string, err error)
 	paylabsQris(ctx *gin.Context, transaction model.EventTransaction, productName string) (barcode string, err error)
-	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (res dto.CallbackSnapResponse, err error)
 	ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error)
 	GetAvailablePaymentMethods(ctx *gin.Context, eventId string) (res []dto.EventGrouppedPaymentMethodsResponse, err error)
+	CallbackVASnap(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (res dto.CallbackSnapResponse, err error)
 	CallbackQRISPaylabs(ctx *gin.Context, req dto.QRISCallbackRequest) (res dto.QRISCallbackResponse, err error)
+	CallbackVASnapV2(ctx *gin.Context, req dto.SnapCallbackPaymentRequest) (res dto.CallbackSnapResponse, err error)
+	CallbackQRISPaylabsV2(ctx *gin.Context, req dto.QRISCallbackRequest) (res dto.QRISCallbackResponse, err error)
 	FindById(ctx context.Context, transactionID string) (res dto.OrderDetails, err error)
 	CreateEventTransactionV2(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error)
 }
@@ -694,12 +696,13 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	// 	err = s.TransactionUseCase.SendInvoice(
 	// 		ctx,
-	// 		req.Email,
-	// 		req.Fullname,
+	// 		transactionDetail.Email,
+	// 		transactionDetail.Fullname,
 	// 		eventSettings.GarudaIdVerification,
 	// 		len(transactionItems),
 	// 		additionalFees,
 	// 		transactionDetail,
+	// 		time.Now(),
 	// 	)
 	// 	if err != nil {
 	// 		sentry.CaptureException(err)
@@ -707,9 +710,49 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 		return
 	// 	}
 
+	// 	log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Msg("find last order seatmap")
+	// 	res, err := s.EventSeatmapBookRepo.GetLastSeatOrderBySectorRowColumnId(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID)
+	// 	if err != nil {
+	// 		log.Error().Err(err).Str("EventID", transactionDetail.Event.ID).Str("SectorID", transactionDetail.VenueSector.ID).Msg("failed to get last seat last order in event and sector")
+	// 		return
+	// 	}
+	// 	log.Info().Int("LastSeatRow", res.SeatRow).Int("LastSeatColumn", res.SeatColumn).Msg("Result last book data")
+
+	// 	log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Int("Num", len(transactionItems)).Int("LastRow", res.SeatRow).Int("LastColumn", res.SeatColumn).Msg("find available seats for auto assign")
+	// 	availableSeats, err := s.EventTicketCategoryRepo.FindNAvailableSeatAfterSectorRowColumn(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID, len(transactionItems), res.SeatRow, res.SeatColumn)
+	// 	if err != nil {
+	// 		var tixErr *lib.TIXError
+	// 		if errors.As(err, &tixErr) {
+	// 			if tixErr.Code == lib.ErrorSeatAvailableSeatNotMatcheWithRequestSeats.Code {
+	// 				log.Error().Err(err).Msg("available seats not match with requested seats")
+	// 				return
+	// 			}
+	// 		}
+	// 		log.Error().Err(err).Msg("failed to find available seats in sector by row and column")
+	// 		return
+	// 	}
+
+	// 	// Insert into seatmap books
+	// 	var seatmaps []domain.SeatmapParam
+	// 	for _, availableSeat := range availableSeats {
+	// 		log.Info().Int("SeatRow", availableSeat.SeatRow).Int("SeatColumn", availableSeat.SeatColumn).Msg("data avilable seat")
+	// 		seatmaps = append(seatmaps, domain.SeatmapParam{
+	// 			SeatRow:    availableSeat.SeatRow,
+	// 			SeatColumn: availableSeat.SeatColumn,
+	// 		})
+	// 	}
+	// 	log.Info().Int("SeatNum", len(seatmaps)).Msg("mark seat as book")
+	// 	err = s.EventSeatmapBookRepo.CreateSeatBook(ctx, tx, eventId, transactionDetail.VenueSector.ID, seatmaps)
+	// 	if err != nil {
+	// 		log.Error().Err(err).Msg("failed to create seatbook")
+	// 		return
+	// 	}
+
+	// 	log.Info().Interface("Res", availableSeats).Msg("Available seats")
+
 	// 	var eventTickets []model.EventTicket
 
-	// 	for _, val := range transactionItems {
+	// 	for i, val := range transactionItems {
 	// 		if val.Email.Valid && val.Fullname.Valid {
 	// 			ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
 	// 			ticketCode, err := helper.GenerateTicketCode()
@@ -735,12 +778,15 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 				EventCity:    transactionDetail.Event.Venue.City,
 	// 				EventCountry: transactionDetail.Event.Venue.Country,
 
-	// 				SectorName:   transactionDetail.VenueSector.Name,
-	// 				AreaCode:     transactionDetail.VenueSector.AreaCode.String,
-	// 				Entrance:     transactionDetail.TicketCategory.Entrance,
-	// 				SeatRow:      val.SeatRow,
-	// 				SeatColumn:   val.SeatColumn,
-	// 				SeatLabel:    val.SeatLabel,
+	// 				SectorName: transactionDetail.VenueSector.Name,
+	// 				AreaCode:   transactionDetail.VenueSector.AreaCode.String,
+	// 				Entrance:   transactionDetail.TicketCategory.Entrance,
+
+	// 				SeatRow:      availableSeats[i].SeatRow,
+	// 				SeatColumn:   availableSeats[i].SeatColumn,
+	// 				SeatRowLabel: helper.ToSQLInt16(int16(availableSeats[i].SeatRowLabel)),
+	// 				SeatLabel:    helper.ToSQLString(availableSeats[i].Label),
+
 	// 				IsCompliment: false,
 	// 			}
 	// 			ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
@@ -1029,6 +1075,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		return res, &lib.ErrorOrderNotFound
 	}
 
+	// MOVE TO ASYNC
 	transactionDetail, err := s.EventTransactionRepo.FindTransactionDetailByTransactionId(ctx, tx, transactionData.ID)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -1048,6 +1095,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		log.Error().Err(err).Msg("Failed to find transaction by order number")
 		return
 	}
+
 	transactionTime, err := time.Parse(time.RFC3339, *req.TrxDateTime)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -1055,7 +1103,6 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		return
 	}
 	log.Info().Msgf("Transaction time: %v", transactionTime)
-	transactionData.PaidAt = &transactionTime
 
 	markResult, err := s.EventTransactionRepo.MarkTransactionAsSuccess(ctx, tx, transactionData.ID, transactionTime, req.PaymentRequestId)
 	if err != nil {
@@ -1070,6 +1117,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		return
 	}
 
+	// MOVE TO ASYNC ORDER
 	// sent invoice email to users with goroutine
 	go func() {
 		additionalFees, err := s.EventSettingRepo.FindAdditionalFee(ctx, nil, transactionDetail.Event.ID)
@@ -1116,9 +1164,30 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		}
 		defer tx.Rollback(ctx)
 
+		log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Msg("find last order seatmap")
+		res, err := s.EventSeatmapBookRepo.GetLastSeatOrderBySectorRowColumnId(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID)
+		if err != nil {
+			log.Error().Err(err).Str("EventID", transactionDetail.Event.ID).Str("SectorID", transactionDetail.VenueSector.ID).Msg("failed to get last seat last order in event and sector")
+			return
+		}
+
+		log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Int("Num", len(transactionItems)).Int("LastRow", res.SeatRow).Int("LastColumn", res.SeatColumn).Msg("find available seats for auto assign")
+		availableSeats, err := s.EventTicketCategoryRepo.FindNAvailableSeatAfterSectorRowColumn(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID, len(transactionItems), res.SeatRow, res.SeatColumn)
+		if err != nil {
+			var tixErr *lib.TIXError
+			if errors.As(err, &tixErr) {
+				if tixErr.Code == lib.ErrorSeatAvailableSeatNotMatcheWithRequestSeats.Code {
+					log.Error().Err(err).Msg("available seats not match with requested seats")
+					return
+				}
+			}
+			log.Error().Err(err).Msg("failed to find available seats in sector by row and column")
+			return
+		}
+
 		var eventTickets []model.EventTicket
 
-		for _, val := range transactionItems {
+		for i, val := range transactionItems {
 			if val.Email.Valid && val.Fullname.Valid {
 				ticketNumber := helper.GenerateTicketNumber(helper.PREFIX_TICKET_NUMBER)
 				ticketCode, err := helper.GenerateTicketCode()
@@ -1145,12 +1214,15 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 					EventCity:    transactionDetail.Event.Venue.City,
 					EventCountry: transactionDetail.Event.Venue.Country,
 
-					SectorName:   transactionDetail.VenueSector.Name,
-					AreaCode:     transactionDetail.VenueSector.AreaCode.String,
-					Entrance:     transactionDetail.TicketCategory.Entrance,
-					SeatRow:      val.SeatRow,
-					SeatColumn:   val.SeatColumn,
-					SeatLabel:    val.SeatLabel,
+					SectorName: transactionDetail.VenueSector.Name,
+					AreaCode:   transactionDetail.VenueSector.AreaCode.String,
+					Entrance:   transactionDetail.TicketCategory.Entrance,
+
+					SeatRow:      availableSeats[i].SeatRow,
+					SeatColumn:   availableSeats[i].SeatColumn,
+					SeatRowLabel: helper.ToSQLInt16(int16(availableSeats[i].SeatRowLabel)),
+					SeatLabel:    helper.ToSQLString(availableSeats[i].Label),
+
 					IsCompliment: false,
 				}
 				ticketId, err := s.EventTicketRepo.Create(ctx, tx, eventTicket)
@@ -1183,6 +1255,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 			}
 		}
 	}()
+
 	serviceCode := "25"
 	caseCode := "00"
 	res.ResponseCode = "200" + serviceCode + caseCode
