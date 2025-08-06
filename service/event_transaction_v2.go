@@ -19,7 +19,7 @@ import (
 
 // return transactionID and jwt. throw process on the nats consumer
 func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context, eventId, ticketCategoryId string, req dto.CreateEventTransaction) (res dto.EventTransactionResponse, err error) {
-	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Str("paymentMethod", req.PaymentMethod).Msg("create event transaction")
+	log.Info().Interface("Payload", req).Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Str("paymentMethod", req.PaymentMethod).Msg("create event transaction")
 
 	log.Info().Msg("validate event by id")
 	event, err := s.EventRepo.FindById(ctx, nil, eventId)
