@@ -441,6 +441,7 @@ func (r *EventTransactionRepositoryImpl) FindTransactionDetailByTransactionId(ct
 		et.full_name,
 		et.email,
 		et.is_compliment,
+		et.pg_additional_fee,
 
 		pm.id as payment_method_id,
 		pm.name as payment_method_name,
@@ -527,6 +528,7 @@ func (r *EventTransactionRepositoryImpl) FindTransactionDetailByTransactionId(ct
 			&res.Fullname,
 			&res.Email,
 			&res.IsCompliment,
+			&res.PgAdditionalFee,
 
 			&res.PaymentMethod.ID,
 			&res.PaymentMethod.Name,
@@ -597,6 +599,7 @@ func (r *EventTransactionRepositoryImpl) FindTransactionDetailByTransactionId(ct
 			&res.Fullname,
 			&res.Email,
 			&res.IsCompliment,
+			&res.PgAdditionalFee,
 
 			&res.PaymentMethod.ID,
 			&res.PaymentMethod.Name,

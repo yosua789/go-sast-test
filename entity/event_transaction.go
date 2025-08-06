@@ -28,6 +28,7 @@ type EventTransaction struct {
 	AdditionalFeeDetails string
 	TotalAdminFee        sql.NullInt32
 	GrandTotal           int
+	PgAdditionalFee      sql.NullInt32
 
 	Fullname string
 	Email    string
