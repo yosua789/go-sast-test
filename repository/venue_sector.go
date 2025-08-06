@@ -126,7 +126,7 @@ func (r *VenueSectorRepositoryImpl) FindVenueSectorById(ctx context.Context, tx 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to matshalling venueSector")
 	} else {
-		r.RedisRepository.SetState(ctx, "venue-"+sectorId, string(jsonData), 15)
+		r.RedisRepository.SetState(ctx, "venue-"+sectorId, string(jsonData), 1)
 	}
 
 	return

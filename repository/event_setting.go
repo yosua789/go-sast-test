@@ -98,7 +98,7 @@ func (r *EventSettingsRepositoryImpl) FindByEventId(ctx context.Context, tx pgx.
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling eventSetting")
 	} else {
-		r.RedisRepository.SetState(ctx, "eventsetting-"+eventId, string(jsonData), 15)
+		r.RedisRepository.SetState(ctx, "eventsetting-"+eventId, string(jsonData), 1)
 	}
 	return
 }
@@ -163,7 +163,7 @@ func (r *EventSettingsRepositoryImpl) FindAdditionalFee(ctx context.Context, tx 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshalling eventAdditionalFee")
 	} else {
-		err = r.RedisRepository.SetState(ctx, "eventadditionalfee-"+eventId, string(jsonData), 15)
+		err = r.RedisRepository.SetState(ctx, "eventadditionalfee-"+eventId, string(jsonData), 1)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to cache event additional fees in Redis")
 			err = nil
