@@ -124,6 +124,7 @@ func MapEventTicketCategoryModelToEventTicketCategoryResponse(
 		Name:        data.Name,
 		Description: data.Description,
 		Price:       data.Price,
+		IsSoldOut:   data.PublicStock == 0,
 	}
 }
 
