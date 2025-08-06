@@ -35,9 +35,10 @@ type PaginatedEvents struct {
 }
 
 type EventVenueSector struct {
-	ID         int
-	SeatRow    int
-	SeatColumn int
-	Label      string
-	Status     string
+	ID           int
+	SeatRow      int
+	SeatColumn   int
+	SeatRowLabel int
+	Label        string
+	Status       string
 }

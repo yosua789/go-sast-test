@@ -79,6 +79,11 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 func ExternalRouter(h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/external")
 
-	r.POST("/paylabs/va-snap/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackVASnap)
-	r.POST("/paylabs/qris/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackQRISPaylabs)
+	if h.Env.Transaction.UseV2 {
+		r.POST("/paylabs/va-snap/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackVASnapV2)
+		r.POST("/paylabs/qris/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackQRISPaylabsV2)
+	} else {
+		r.POST("/paylabs/va-snap/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackVASnap)
+		r.POST("/paylabs/qris/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackQRISPaylabs)
+	}
 }

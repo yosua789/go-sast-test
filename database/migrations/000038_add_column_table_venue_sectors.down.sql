@@ -1,0 +1,1 @@
+ALTER TABLE venue_sector_seatmap_matrix DROP COLUMN seat_row_label;

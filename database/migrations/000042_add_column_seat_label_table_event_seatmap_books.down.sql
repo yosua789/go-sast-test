@@ -1,0 +1,1 @@
+ALTER TABLE event_seatmap_books DROP COLUMN seat_label;

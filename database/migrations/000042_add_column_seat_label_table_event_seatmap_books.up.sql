@@ -1,0 +1,1 @@
+ALTER TABLE event_seatmap_books ADD COLUMN seat_label int;

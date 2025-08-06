@@ -4,6 +4,7 @@ import (
 	"assist-tix/config"
 	"assist-tix/entity"
 	"assist-tix/internal/domain"
+	"assist-tix/internal/domain/async_callback"
 	"assist-tix/internal/domain/async_order"
 	domainEvent "assist-tix/internal/domain/event"
 	"assist-tix/model"
@@ -72,6 +73,32 @@ func (u *TransactionUsecase) SendAsyncOrder(
 
 	return
 }
+
+func (u *TransactionUsecase) SendAsyncCallback(
+	ctx context.Context,
+	transactionId string,
+) (err error) {
+	jsonData := async_callback.AsyncCallback{
+		TransactionId: transactionId,
+		CallbackTime:  time.Now(),
+	}
+	log.Info().Interface("data", jsonData).Msg("payload")
+
+	bytes, err := json.Marshal(jsonData)
+	if err != nil {
+		return
+	}
+
+	err = u.EventPublisher.Publish(ctx, u.Env.Nats.Subjects.AsyncOrder, bytes)
+	if err != nil {
+		return
+	}
+
+	log.Info().Msg("success send email")
+
+	return
+}
+
 func (u *TransactionUsecase) SendBill(
 	ctx context.Context,
 	email, name string,

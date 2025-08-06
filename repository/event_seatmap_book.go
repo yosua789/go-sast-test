@@ -15,12 +15,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/rs/zerolog/log"
 )
 
 type EventSeatmapBookRepository interface {
 	CreateSeatBook(ctx context.Context, tx pgx.Tx, eventId, venueSectorId string, reqs []domain.SeatmapParam) (err error)
 	FindSeatStatusByRowColumnEventSectorId(ctx context.Context, tx pgx.Tx, eventId, venueSectorId string, seatRow, seatColumn int) (res model.EventSeatmapBook, err error)
 	FindSeatBooksByEventSectorId(ctx context.Context, tx pgx.Tx, eventId, venueSectorId string) (seatmap map[string]model.EventSeatmapBook, err error)
+	GetLastSeatOrderBySectorRowColumnId(ctx context.Context, tx pgx.Tx, eventId, sectorId string) (res model.EventSeatmapBook, err error)
 }
 
 type EventSeatmapBookRepositoryImpl struct {
@@ -177,6 +179,60 @@ func (r *EventSeatmapBookRepositoryImpl) FindSeatBooksByEventSectorId(ctx contex
 		)
 
 		seatmap[helper.ConvertRowColumnKey(seatBook.SeatRow, seatBook.SeatColumn)] = seatBook
+	}
+
+	return
+}
+
+func (r *EventSeatmapBookRepositoryImpl) GetLastSeatOrderBySectorRowColumnId(ctx context.Context, tx pgx.Tx, eventId, sectorId string) (res model.EventSeatmapBook, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	log.Info().Str("EventID", eventId).Str("SectorID", sectorId).Msg("find last order in sector")
+
+	query := `SELECT
+		id,
+		event_id,
+		venue_sector_id,
+		seat_row,
+		seat_column,
+		created_at
+	FROM event_seatmap_books
+	WHERE event_id = $1
+		AND venue_sector_id = $2
+	ORDER BY seat_row DESC, seat_column DESC LIMIT 1`
+
+	if tx != nil {
+		err = tx.QueryRow(ctx, query, eventId, sectorId).Scan(
+			&res.ID,
+			&res.EventID,
+			&res.VenueSectorID,
+			&res.SeatRow,
+			&res.SeatColumn,
+			&res.CreatedAt,
+		)
+	} else {
+		err = r.WrapDB.Postgres.QueryRow(ctx, query, eventId, sectorId).Scan(
+			&res.ID,
+			&res.EventID,
+			&res.VenueSectorID,
+			&res.SeatRow,
+			&res.SeatColumn,
+			&res.CreatedAt,
+		)
+	}
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// if no rows it means no order in the event and specified sector
+			// returning row 0 and column 0
+			return model.EventSeatmapBook{
+				SeatRow:    0,
+				SeatColumn: 0,
+			}, nil
+		}
+
+		return
 	}
 
 	return
