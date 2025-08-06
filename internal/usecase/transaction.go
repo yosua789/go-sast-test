@@ -89,7 +89,7 @@ func (u *TransactionUsecase) SendAsyncCallback(
 		return
 	}
 
-	err = u.EventPublisher.Publish(ctx, u.Env.Nats.Subjects.AsyncOrder, bytes)
+	err = u.EventPublisher.Publish(ctx, u.Env.Nats.Subjects.AsyncCallback, bytes)
 	if err != nil {
 		return
 	}
