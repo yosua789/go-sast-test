@@ -94,6 +94,10 @@ func (h *EventTransactionHandlerImpl) CreateTransaction(ctx *gin.Context) {
 		lib.RespondError(ctx, http.StatusBadRequest, err.Error(), err, lib.ErrorBadRequest.Code, h.Env.App.Debug)
 		return
 	}
+	if len(request.Items) < 1 {
+		lib.RespondError(ctx, http.StatusBadRequest, "transaction items cannot be empty", &lib.ErrorNilTransactionItem, lib.ErrorNilTransactionItem.Code, h.Env.App.Debug)
+		return
+	}
 
 	if err := h.Validator.Struct(request); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
@@ -188,6 +192,10 @@ func (h *EventTransactionHandlerImpl) CreateTransactionV2(ctx *gin.Context) {
 		return
 	}
 
+	if len(request.Items) < 1 {
+		lib.RespondError(ctx, http.StatusBadRequest, "transaction items cannot be empty", &lib.ErrorNilTransactionItem, lib.ErrorNilTransactionItem.Code, h.Env.App.Debug)
+		return
+	}
 	if err := h.Validator.Struct(request); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
 			fieldErr := validationErrors[0]

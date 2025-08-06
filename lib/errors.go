@@ -321,3 +321,10 @@ var (
 		Err:  errors.New("count available seat in the sector not match with requested seat"),
 	}
 )
+
+var (
+	ErrorNilTransactionItem = TIXError{
+		Code: 40015,
+		Err:  errors.New("transaction item is nil"),
+	}
+)
