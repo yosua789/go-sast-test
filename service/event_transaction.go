@@ -1081,10 +1081,13 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		if transactionData.PGAdditionalFee > 0 {
 			// TODO: refactor to dynamic NOT HARD CODED
 			additionalFees = append(additionalFees, entity.AdditionalFee{
+				ID:           "payment_fee",
 				Name:         "Payment Fee",
 				IsPercentage: false,
 				Value:        float64(transactionData.PGAdditionalFee),
 				IsTax:        false,
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
 			})
 		}
 
@@ -1470,10 +1473,13 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 			if transactionData.PGAdditionalFee > 0 {
 				// TODO: refactor to dynamic NOT HARD CODED
 				additionalFees = append(additionalFees, entity.AdditionalFee{
+					ID:           "payment_fee",
 					Name:         "Payment Fee",
 					IsPercentage: false,
 					Value:        float64(transactionData.PGAdditionalFee),
 					IsTax:        false,
+					CreatedAt:    time.Now(),
+					UpdatedAt:    time.Now(),
 				})
 			}
 			err = s.TransactionUseCase.SendInvoice(
