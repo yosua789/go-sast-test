@@ -1,2 +1,0 @@
-ALTER TABLE public.event_transaction_garuda_id_books
-DROP CONSTRAINT event_garuda_unique;
