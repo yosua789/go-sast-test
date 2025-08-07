@@ -384,10 +384,11 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	log.Info().Msg("create transaction to database")
 	transactionRes, err := s.EventTransactionRepo.CreateTransaction(ctx, tx, eventId, ticketCategoryId, transaction)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to create transaction")
+		log.Error().Err(err).Msg("failed to create transaction in database")
 		sentry.CaptureException(err)
 		return
 	}
+	log.Info().Str("TransactionID", transactionRes.ID).Msg("transaction created")
 
 	//  sisanya proses by consumer
 	// job async consumer
