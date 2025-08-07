@@ -14,7 +14,8 @@ func (m *MiddlewareImpl) OriginMiddleware() gin.HandlerFunc {
 			origin := c.Request.Header.Get("Origin")
 			referer := c.Request.Header.Get("Referer")
 			log.Info().Msgf("Origin: %s, Referer: %s", origin, referer)
-			if (origin != "" && !strings.HasPrefix(origin, m.Env.Api.Url)) ||
+			if (origin == "" && referer == "") ||
+				(origin != "" && !strings.HasPrefix(origin, m.Env.Api.Url)) ||
 				(referer != "" && !strings.HasPrefix(referer, m.Env.Api.Url)) {
 				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: invalid origin"})
 				return
