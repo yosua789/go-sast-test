@@ -63,7 +63,6 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 	// /events/{eventId}/ticket-categories
 
-	rg.POST("/:eventId/ticket-categories", h.EventTicketCategoryHandler.Create)
 	rg.GET("/:eventId/ticket-categories", h.EventTicketCategoryHandler.GetByEventId)
 	rg.GET("/:eventId/ticket-categories/:ticketCategoryId", h.EventTicketCategoryHandler.GetById)
 
@@ -76,6 +75,7 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
 	}
 	if h.Env.App.Debug {
+		rg.POST("/:eventId/ticket-categories", h.EventTicketCategoryHandler.Create)
 		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/v2", h.EventTransaction.CreateTransactionV2)
 		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order/v1", h.EventTransaction.CreateTransaction)
 	}
