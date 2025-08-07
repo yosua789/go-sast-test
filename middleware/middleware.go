@@ -12,6 +12,7 @@ type Middleware interface {
 	CORSMiddleware() gin.HandlerFunc
 	PayloadPasser() gin.HandlerFunc
 	TokenAuthMiddleware() gin.HandlerFunc
+	OriginMiddleware() gin.HandlerFunc
 }
 
 type MiddlewareImpl struct {

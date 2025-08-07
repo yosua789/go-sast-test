@@ -70,9 +70,9 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 	}
 	// rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
 	if h.Env.Transaction.UseV2 {
-		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransactionV2)
+		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.Middleware.OriginMiddleware(), h.EventTransaction.CreateTransactionV2)
 	} else {
-		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
+		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.Middleware.OriginMiddleware(), h.EventTransaction.CreateTransaction)
 	}
 	if h.Env.App.Debug {
 		rg.POST("/:eventId/ticket-categories", h.EventTicketCategoryHandler.Create)
