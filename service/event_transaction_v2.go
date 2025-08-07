@@ -26,6 +26,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	log.Info().Msg("validate event by id")
 	event, err := s.EventRepo.FindById(ctx, nil, eventId)
 	if err != nil {
+
 		sentry.CaptureException(err)
 		return
 	}
@@ -38,10 +39,13 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	if event.IsSaleActive {
 		now := time.Now()
 		if now.After(event.EndSaleAt.Time) {
+			log.Error().Msg("event sale is already over")
 			err = &lib.ErrorEventSaleAlreadyOver
 			return
 		} else if !(now.After(event.StartSaleAt.Time) && now.Before(event.EndSaleAt.Time)) {
+			log.Error().Msg("event sale is not started yet")
 			err = &lib.ErrorEventSaleIsNotStartedYet
+
 			return
 		}
 	} else {
@@ -51,6 +55,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 
 	paymentMethod, err := s.PaymentMethodRepo.ValidatePaymentCodeIsActive(ctx, nil, req.PaymentMethod)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to validate payment method")
 		sentry.CaptureException(err)
 		return
 	}
@@ -58,6 +63,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	log.Info().Msg("find event settings by event id")
 	settings, err := s.EventSettingRepo.FindByEventId(ctx, nil, eventId)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to find event settings by event id")
 		sentry.CaptureException(err)
 		return
 	}
@@ -70,6 +76,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	buyCount := len(req.Items)
 	log.Info().Int("count", buyCount).Int("MaxAdultTicketPerTransaction", eventSettings.MaxAdultTicketPerTransaction).Msg("buy items")
 	if buyCount > eventSettings.MaxAdultTicketPerTransaction {
+		log.Error().Msg("buy count exceed the limit")
 		err = &lib.ErrorPurchaseQuantityExceedTheLimit
 		return
 	}
@@ -166,6 +173,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	// Start flow trx !!!
 	tx, err := s.DB.Postgres.Begin(ctx)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to begin transaction")
 		sentry.CaptureException(err)
 		return res, err
 	}
@@ -174,6 +182,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	log.Info().Str("eventId", eventId).Msg("validate email is booked in the event")
 	orderInformationBookId, err := s.EventOrderInformationBookRepo.CreateOrderInformation(ctx, tx, eventId, req.Email, req.Fullname)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to create order information book")
 		sentry.CaptureException(err)
 		return
 	}
@@ -181,6 +190,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	log.Info().Str("eventId", eventId).Str("ticketCategoryId", ticketCategoryId).Msg("find ticket category by id and event id")
 	ticketCategory, err := s.EventTicketCategoryRepo.FindByIdAndEventId(ctx, tx, eventId, ticketCategoryId)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to find ticket category by id and event id")
 		sentry.CaptureException(err)
 		return
 	}
@@ -189,12 +199,14 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	// use redis
 	venueSector, err := s.VenueSectorRepo.FindVenueSectorById(ctx, tx, ticketCategory.VenueSectorId)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to find venue sector by id")
 		sentry.CaptureException(err)
 		return
 	}
 
 	log.Info().Int("publicStock", ticketCategory.PublicStock).Msg("checking is user capable to buy by their buy count")
 	if ticketCategory.PublicStock < 0 || buyCount > ticketCategory.PublicStock {
+		log.Error().Msg("public stock is not enough")
 		err = &lib.ErrorTicketIsOutOfStock
 		return
 	}
@@ -202,6 +214,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	log.Info().Msg("update stock public ticket by ticket category id")
 	err = s.EventTicketCategoryRepo.BuyPublicTicketById(ctx, tx, eventId, ticketCategoryId, buyCount)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to update stock public ticket by ticket category id")
 		sentry.CaptureException(err)
 		return
 	}
@@ -295,6 +308,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 
 		err = s.EventTransactionGarudaIDRepo.CreateGarudaIdBooks(ctx, tx, eventId, garudaIds...)
 		if err != nil {
+			log.Error().Err(err).Msg("failed to create garuda id books")
 			return
 		}
 
@@ -370,6 +384,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 	log.Info().Msg("create transaction to database")
 	transactionRes, err := s.EventTransactionRepo.CreateTransaction(ctx, tx, eventId, ticketCategoryId, transaction)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to create transaction")
 		sentry.CaptureException(err)
 		return
 	}
