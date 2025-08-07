@@ -28,11 +28,11 @@ func (m *MiddlewareImpl) CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Content-Type", "application/json")
 		c.Header("Accept", "application/json")
-		// if !m.Env.App.Debug {
-		// 	c.Writer.Header().Set("Access-Control-Allow-Origin", m.Env.Api.Url)
-		// } else {
-		// 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		// }
+		if !m.Env.App.Debug {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", m.Env.Api.Url)
+		} else {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		}
 
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Max-Age", "86400")
