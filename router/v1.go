@@ -7,8 +7,10 @@ import (
 func RouterApiV1(mode string, h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/v1")
 
-	OrganizerRouter(h, r)
-	VenueRouter(h, r)
+	if h.Env.App.Debug {
+		OrganizerRouter(h, r)
+		VenueRouter(h, r)
+	}
 	EventRouter(h, r)
 	ExternalRouter(h, r)
 }
@@ -16,11 +18,13 @@ func RouterApiV1(mode string, h Handler, rg *gin.RouterGroup) {
 func OrganizerRouter(h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/organizers")
 
-	r.POST("", h.OrganizerHandler.Create)
 	r.GET("", h.OrganizerHandler.GetAll)
 	r.GET("/:organizerId", h.OrganizerHandler.GetByID)
-	r.PUT("/:organizerId", h.OrganizerHandler.Update)
-	r.DELETE("/:organizerId", h.OrganizerHandler.Delete)
+	if h.Env.App.Debug {
+		r.PUT("/:organizerId", h.OrganizerHandler.Update)
+		r.POST("", h.OrganizerHandler.Create)
+		r.DELETE("/:organizerId", h.OrganizerHandler.Delete)
+	}
 }
 
 func VenueRouter(h Handler, rg *gin.RouterGroup) {
@@ -29,9 +33,10 @@ func VenueRouter(h Handler, rg *gin.RouterGroup) {
 	r.POST("", h.VenueHandler.Create)
 	r.GET("", h.VenueHandler.GetAll)
 	r.GET("/:venueId", h.VenueHandler.GetById)
-	r.PUT("/:venueId", h.VenueHandler.Update)
-	r.DELETE("/:venueId", h.VenueHandler.Delete)
-
+	if h.Env.App.Debug {
+		r.PUT("/:venueId", h.VenueHandler.Update)
+		r.DELETE("/:venueId", h.VenueHandler.Delete)
+	}
 	r.GET("/:venueId/sectors", h.SectorHandler.GetByVenueId)
 }
 
@@ -41,7 +46,9 @@ func EventRouter(h Handler, rg *gin.RouterGroup) {
 	r.GET("", h.EventHandler.GetAllPaginated)
 	r.GET("/:eventId", h.EventHandler.GetById)
 	r.GET("/:eventId/active-settings", h.EventHandler.GetActiveSettings)
-	r.DELETE("/:eventId", h.EventHandler.Delete)
+	if h.Env.App.Debug {
+		r.DELETE("/:eventId", h.EventHandler.Delete)
+	}
 	r.GET("/:eventId/verify/garuda-id/:garudaId", h.EventHandler.VerifyGarudaID)
 
 	// Validate book email
