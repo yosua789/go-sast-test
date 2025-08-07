@@ -44,7 +44,7 @@ const (
 const (
 	EventTransactionStatusPending          = "PENDING"
 	EventTransactionStatusSuccess          = "SUCCESS"
-	EventTransactionStatusProcessingTicket = "PROCESSING TICKET"
+	EventTransactionStatusProcessingTicket = "PROCESSING_TICKET"
 	EventTransactionStatusExpired          = "EXPIRED"
 	EventTransactionStatusFailed           = "FAILED"
 )
