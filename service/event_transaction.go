@@ -1291,49 +1291,49 @@ func (s *EventTransactionServiceImpl) CallbackVA(ctx *gin.Context, req dto.Payla
 }
 
 func (s *EventTransactionServiceImpl) ValidateEmailIsAlreadyBook(ctx *gin.Context, eventId, email string) (err error) {
-	tx, err := s.DB.Postgres.Begin(ctx)
-	if err != nil {
-		sentry.CaptureException(err)
-		return err
-	}
-	defer tx.Rollback(ctx)
+	// tx, err := s.DB.Postgres.Begin(ctx)
+	// if err != nil {
+	// 	sentry.CaptureException(err)
+	// 	return err
+	// }
+	// defer tx.Rollback(ctx)
 
-	event, err := s.EventRepo.FindById(ctx, tx, eventId)
-	if err != nil {
-		sentry.CaptureException(err)
-		return
-	}
+	// event, err := s.EventRepo.FindById(ctx, tx, eventId)
+	// if err != nil {
+	// 	sentry.CaptureException(err)
+	// 	return
+	// }
 
-	if event.PublishStatus != lib.EventPublishStatusPublished {
-		err = &lib.ErrorEventNotFound
-		return
-	}
+	// if event.PublishStatus != lib.EventPublishStatusPublished {
+	// 	err = &lib.ErrorEventNotFound
+	// 	return
+	// }
 
-	if event.IsSaleActive {
-		now := time.Now()
-		if now.After(event.EndSaleAt.Time) {
-			err = &lib.ErrorEventSaleAlreadyOver
-			return
-		} else if !(now.After(event.StartSaleAt.Time) && now.Before(event.EndSaleAt.Time)) {
-			err = &lib.ErrorEventSaleIsNotStartedYet
-			return
-		}
-	} else {
-		err = &lib.ErrorEventSaleIsPaused
-		return
-	}
+	// if event.IsSaleActive {
+	// 	now := time.Now()
+	// 	if now.After(event.EndSaleAt.Time) {
+	// 		err = &lib.ErrorEventSaleAlreadyOver
+	// 		return
+	// 	} else if !(now.After(event.StartSaleAt.Time) && now.Before(event.EndSaleAt.Time)) {
+	// 		err = &lib.ErrorEventSaleIsNotStartedYet
+	// 		return
+	// 	}
+	// } else {
+	// 	err = &lib.ErrorEventSaleIsPaused
+	// 	return
+	// }
 
-	err = s.EventOrderInformationBookRepo.ValidateOrderInformationByEmailEventId(ctx, tx, eventId, email)
-	if err != nil {
-		sentry.CaptureException(err)
-		return err
-	}
+	// err = s.EventOrderInformationBookRepo.ValidateOrderInformationByEmailEventId(ctx, tx, eventId, email)
+	// if err != nil {
+	// 	sentry.CaptureException(err)
+	// 	return err
+	// }
 
-	err = tx.Commit(ctx)
-	if err != nil {
-		sentry.CaptureException(err)
-		return
-	}
+	// err = tx.Commit(ctx)
+	// if err != nil {
+	// 	sentry.CaptureException(err)
+	// 	return
+	// }
 
 	return nil
 }
