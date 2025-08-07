@@ -30,10 +30,10 @@ func OrganizerRouter(h Handler, rg *gin.RouterGroup) {
 func VenueRouter(h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/venues")
 
-	r.POST("", h.VenueHandler.Create)
 	r.GET("", h.VenueHandler.GetAll)
 	r.GET("/:venueId", h.VenueHandler.GetById)
 	if h.Env.App.Debug {
+		r.POST("", h.VenueHandler.Create)
 		r.PUT("/:venueId", h.VenueHandler.Update)
 		r.DELETE("/:venueId", h.VenueHandler.Delete)
 	}
