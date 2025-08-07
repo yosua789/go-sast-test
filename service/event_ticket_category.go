@@ -172,7 +172,7 @@ func (s *EventTicketCategoryServiceImpl) GetVenueTicketsByEventId(ctx context.Co
 
 	tickets := make([]dto.DetailEventPublicTicketCategoryResponse, 0)
 	for _, val := range ticketCategories {
-		if val.TotalPublicStock == 0 && val.PublicStock == 0 {
+		if val.TotalPublicStock != 0 || val.PublicStock != 0 {
 			tickets = append(tickets, lib.MapEntityTicketCategoryToDetailEventPublicTicketCategoryResponse(val))
 		}
 	}

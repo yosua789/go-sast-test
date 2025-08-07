@@ -194,7 +194,7 @@ func (s *EventServiceImpl) GetEventById(ctx context.Context, eventId string) (re
 	for _, ticketCategory := range ticketCategories {
 		totalAvailableTicket += ticketCategory.TotalPublicStock
 		ticketCategoryResponse := lib.MapEventTicketCategoryModelToEventTicketCategoryResponse(ticketCategory)
-		if ticketCategory.TotalPublicStock == 0 && ticketCategory.PublicStock == 0 {
+		if ticketCategory.TotalPublicStock != 0 || ticketCategory.PublicStock != 0 {
 			ticketCategoriesResponse = append(ticketCategoriesResponse, ticketCategoryResponse)
 		}
 
