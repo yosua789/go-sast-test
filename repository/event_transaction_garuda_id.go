@@ -129,6 +129,8 @@ func (r *EventTransactionGarudaIDRepositoryImpl) CreateGarudaIdBooks(ctx context
 				err = &lib.ErrorGarudaIDAlreadyUsed
 			}
 		}
+
+		return err
 	}
 
 	return nil
