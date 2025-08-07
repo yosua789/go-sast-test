@@ -146,6 +146,8 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 		close(responses)
 
 		for resp := range responses {
+			log.Info().Any("GarudaID", resp.Response.Data).Msg("Response from external service")
+
 			if resp.Error != nil {
 				err = resp.Error
 				return
