@@ -64,10 +64,10 @@ func EventTicketCategories(h Handler, rg *gin.RouterGroup) {
 	// /events/{eventId}/ticket-categories
 
 	rg.GET("/:eventId/ticket-categories", h.EventTicketCategoryHandler.GetByEventId)
-	rg.GET("/:eventId/ticket-categories/:ticketCategoryId", h.EventTicketCategoryHandler.GetById)
-
-	rg.GET("/:eventId/ticket-categories/:ticketCategoryId/seatmap", h.EventTicketCategoryHandler.GetSeatmap)
-
+	if h.Env.App.Debug {
+		rg.GET("/:eventId/ticket-categories/:ticketCategoryId", h.EventTicketCategoryHandler.GetById)
+		rg.GET("/:eventId/ticket-categories/:ticketCategoryId/seatmap", h.EventTicketCategoryHandler.GetSeatmap)
+	}
 	// rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransaction)
 	if h.Env.Transaction.UseV2 {
 		rg.POST("/:eventId/ticket-categories/:ticketCategoryId/order", h.EventTransaction.CreateTransactionV2)
