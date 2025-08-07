@@ -451,6 +451,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 
 	err = tx.Commit(ctx)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to commit transaction")
 		sentry.CaptureException(err)
 		return
 	}
