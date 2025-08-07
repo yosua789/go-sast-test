@@ -722,8 +722,7 @@ func (r *EventTicketCategoryRepositoryImpl) FindNAvailableSeatAfterSectorRowColu
 	) sub
 	WHERE seat_final_status = $5
 	ORDER BY seat_row ASC, seat_column ASC 
-	LIMIT $6
-`
+	LIMIT $6`
 
 	var rows pgx.Rows
 
