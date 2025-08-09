@@ -316,7 +316,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	// If venue doesn't have seatmap it will always empty
 	var selectedSectorSeatmap map[string]entity.EventVenueSector
-	if venueSector.HasSeatmap {
+	if venueSector.HasSeatmap.Bool {
 		log.Info().Msg("venueSector in ticket category has seatmap")
 		var seatParams []domain.SeatmapParam
 		for _, val := range req.Items {
@@ -1164,15 +1164,15 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		}
 		defer tx.Rollback(ctx)
 
-		log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Msg("find last order seatmap")
-		res, err := s.EventSeatmapBookRepo.GetLastSeatOrderBySectorRowColumnId(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID)
+		log.Info().Str("SectorID", transactionDetail.VenueSector.ID.String).Str("EventID", transactionDetail.Event.ID).Msg("find last order seatmap")
+		res, err := s.EventSeatmapBookRepo.GetLastSeatOrderBySectorRowColumnId(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID.String)
 		if err != nil {
-			log.Error().Err(err).Str("EventID", transactionDetail.Event.ID).Str("SectorID", transactionDetail.VenueSector.ID).Msg("failed to get last seat last order in event and sector")
+			log.Error().Err(err).Str("EventID", transactionDetail.Event.ID).Str("SectorID", transactionDetail.VenueSector.ID.String).Msg("failed to get last seat last order in event and sector")
 			return
 		}
 
-		log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Int("Num", len(transactionItems)).Int("LastRow", res.SeatRow).Int("LastColumn", res.SeatColumn).Msg("find available seats for auto assign")
-		availableSeats, err := s.EventTicketCategoryRepo.FindNAvailableSeatAfterSectorRowColumn(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID, len(transactionItems), res.SeatRow, res.SeatColumn)
+		log.Info().Str("SectorID", transactionDetail.VenueSector.ID.String).Str("EventID", transactionDetail.Event.ID).Int("Num", len(transactionItems)).Int("LastRow", res.SeatRow).Int("LastColumn", res.SeatColumn).Msg("find available seats for auto assign")
+		availableSeats, err := s.EventTicketCategoryRepo.FindNAvailableSeatAfterSectorRowColumn(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID.String, len(transactionItems), res.SeatRow, res.SeatColumn)
 		if err != nil {
 			var tixErr *lib.TIXError
 			if errors.As(err, &tixErr) {
@@ -1214,7 +1214,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 					EventCity:    transactionDetail.Event.Venue.City,
 					EventCountry: transactionDetail.Event.Venue.Country,
 
-					SectorName: transactionDetail.VenueSector.Name,
+					SectorName: transactionDetail.VenueSector.Name.String,
 					AreaCode:   transactionDetail.VenueSector.AreaCode.String,
 					Entrance:   transactionDetail.TicketCategory.Entrance,
 
@@ -1611,7 +1611,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 						EventCity:    transactionDetail.Event.Venue.City,
 						EventCountry: transactionDetail.Event.Venue.Country,
 
-						SectorName:   transactionDetail.VenueSector.Name,
+						SectorName:   transactionDetail.VenueSector.Name.String,
 						AreaCode:     transactionDetail.VenueSector.AreaCode.String,
 						Entrance:     transactionDetail.TicketCategory.Entrance,
 						SeatRow:      val.SeatRow,

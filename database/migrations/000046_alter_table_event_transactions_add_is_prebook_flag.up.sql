@@ -1,0 +1,2 @@
+ALTER TABLE event_transactions
+ADD COLUMN is_prebook BOOLEAN NOT NULL DEFAULT FALSE;

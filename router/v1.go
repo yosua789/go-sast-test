@@ -10,6 +10,8 @@ func RouterApiV1(mode string, h Handler, rg *gin.RouterGroup) {
 	if h.Env.App.Debug {
 		OrganizerRouter(h, r)
 		VenueRouter(h, r)
+
+		RetryRouter(h, r)
 	}
 	EventRouter(h, r)
 	ExternalRouter(h, r)
@@ -93,4 +95,10 @@ func ExternalRouter(h Handler, rg *gin.RouterGroup) {
 		r.POST("/paylabs/va-snap/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackVASnap)
 		r.POST("/paylabs/qris/callback", h.Middleware.PayloadPasser(), h.EventTransaction.CallbackQRISPaylabs)
 	}
+}
+
+func RetryRouter(h Handler, rg *gin.RouterGroup) {
+	r := rg.Group("/retry")
+
+	r.POST("/invoices", h.Middleware.IsAuthorized(), h.RetryEmail.RetryInvoices)
 }
