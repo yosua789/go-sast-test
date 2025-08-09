@@ -3,7 +3,7 @@ package entity
 import "database/sql"
 
 type VenueSector struct {
-	ID           string
+	ID           sql.NullString
 	Venue        Venue
 	Name         string
 	SectorRow    sql.NullInt16

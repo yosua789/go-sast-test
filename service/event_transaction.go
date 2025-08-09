@@ -1164,15 +1164,15 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 		}
 		defer tx.Rollback(ctx)
 
-		log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Msg("find last order seatmap")
-		res, err := s.EventSeatmapBookRepo.GetLastSeatOrderBySectorRowColumnId(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID)
+		log.Info().Str("SectorID", transactionDetail.VenueSector.ID.String).Str("EventID", transactionDetail.Event.ID).Msg("find last order seatmap")
+		res, err := s.EventSeatmapBookRepo.GetLastSeatOrderBySectorRowColumnId(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID.String)
 		if err != nil {
-			log.Error().Err(err).Str("EventID", transactionDetail.Event.ID).Str("SectorID", transactionDetail.VenueSector.ID).Msg("failed to get last seat last order in event and sector")
+			log.Error().Err(err).Str("EventID", transactionDetail.Event.ID).Str("SectorID", transactionDetail.VenueSector.ID.String).Msg("failed to get last seat last order in event and sector")
 			return
 		}
 
-		log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Int("Num", len(transactionItems)).Int("LastRow", res.SeatRow).Int("LastColumn", res.SeatColumn).Msg("find available seats for auto assign")
-		availableSeats, err := s.EventTicketCategoryRepo.FindNAvailableSeatAfterSectorRowColumn(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID, len(transactionItems), res.SeatRow, res.SeatColumn)
+		log.Info().Str("SectorID", transactionDetail.VenueSector.ID.String).Str("EventID", transactionDetail.Event.ID).Int("Num", len(transactionItems)).Int("LastRow", res.SeatRow).Int("LastColumn", res.SeatColumn).Msg("find available seats for auto assign")
+		availableSeats, err := s.EventTicketCategoryRepo.FindNAvailableSeatAfterSectorRowColumn(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID.String, len(transactionItems), res.SeatRow, res.SeatColumn)
 		if err != nil {
 			var tixErr *lib.TIXError
 			if errors.As(err, &tixErr) {
