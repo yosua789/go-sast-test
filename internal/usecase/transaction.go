@@ -136,7 +136,7 @@ func (u *TransactionUsecase) SendBill(
 				Name:     ticketCategory.Name,
 				Entrance: ticketCategory.Entrance,
 				Sector: domainEvent.TicketSector{
-					Name: venueSector.Name.String,
+					Name: venueSector.Name,
 				},
 			},
 			Location: domainEvent.LocationInformation{
@@ -226,7 +226,7 @@ func (u *TransactionUsecase) SendInvoice(
 				Name:     transactionDetail.TicketCategory.Name,
 				Entrance: transactionDetail.TicketCategory.Entrance,
 				Sector: domainEvent.TicketSector{
-					Name: transactionDetail.VenueSector.Name.String,
+					Name: transactionDetail.VenueSector.Name,
 				},
 			},
 			Location: domainEvent.LocationInformation{
@@ -316,7 +316,7 @@ func (u *TransactionUsecase) SendIssueInvoiceFilename(
 				Name:     transactionDetail.TicketCategory.Name,
 				Entrance: transactionDetail.TicketCategory.Entrance,
 				Sector: domainEvent.TicketSector{
-					Name: transactionDetail.VenueSector.Name.String,
+					Name: transactionDetail.VenueSector.Name,
 				},
 			},
 			Location: domainEvent.LocationInformation{
@@ -397,7 +397,7 @@ func (u *TransactionUsecase) SendETicket(
 				Name:     transactionDetail.TicketCategory.Name,
 				Entrance: transactionDetail.TicketCategory.Entrance,
 				Sector: domainEvent.TicketSector{
-					Name: transactionDetail.VenueSector.Name.String,
+					Name: transactionDetail.VenueSector.Name,
 				},
 			},
 			Location: domainEvent.LocationInformation{

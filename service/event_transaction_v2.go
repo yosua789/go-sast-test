@@ -241,7 +241,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransactionV2(ctx *gin.Context,
 
 	// If venue doesn't have seatmap it will always empty
 	var selectedSectorSeatmap map[string]entity.EventVenueSector
-	if venueSector.HasSeatmap.Bool {
+	if venueSector.HasSeatmap {
 		log.Info().Msg("venueSector in ticket category has seatmap")
 		// var seatParams []domain.SeatmapParam
 		// for _, val := range req.Items {

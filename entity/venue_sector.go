@@ -3,14 +3,14 @@ package entity
 import "database/sql"
 
 type VenueSector struct {
-	ID           sql.NullString
+	ID           string
 	Venue        Venue
-	Name         sql.NullString
+	Name         string
 	SectorRow    sql.NullInt16
 	SectorColumn sql.NullInt16
 	Capacity     sql.NullInt32
-	HasSeatmap   sql.NullBool
+	HasSeatmap   bool
 	SectorColor  sql.NullString
 
-	AreaCode sql.NullString
+	AreaCode string
 }
