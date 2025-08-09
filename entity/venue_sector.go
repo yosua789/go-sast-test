@@ -12,5 +12,5 @@ type VenueSector struct {
 	HasSeatmap   bool
 	SectorColor  sql.NullString
 
-	AreaCode string
+	AreaCode sql.NullString
 }

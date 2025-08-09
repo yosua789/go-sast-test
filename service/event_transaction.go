@@ -1215,7 +1215,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 					EventCountry: transactionDetail.Event.Venue.Country,
 
 					SectorName: transactionDetail.VenueSector.Name,
-					AreaCode:   transactionDetail.VenueSector.AreaCode,
+					AreaCode:   transactionDetail.VenueSector.AreaCode.String,
 					Entrance:   transactionDetail.TicketCategory.Entrance,
 
 					SeatRow:      availableSeats[i].SeatRow,
@@ -1612,7 +1612,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 						EventCountry: transactionDetail.Event.Venue.Country,
 
 						SectorName:   transactionDetail.VenueSector.Name,
-						AreaCode:     transactionDetail.VenueSector.AreaCode,
+						AreaCode:     transactionDetail.VenueSector.AreaCode.String,
 						Entrance:     transactionDetail.TicketCategory.Entrance,
 						SeatRow:      val.SeatRow,
 						SeatColumn:   val.SeatColumn,

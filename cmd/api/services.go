@@ -13,7 +13,6 @@ type Service struct {
 	EventTicketCategoryService service.EventTicketCategoryService
 	EventTransactionService    service.EventTransactionService
 	PaymentLogsService         service.PaymentLogsService
-	RetryEmailService          service.RetryEmailService
 }
 
 func Newservice(
@@ -46,7 +45,6 @@ func Newservice(
 		r.PaymentLogsRepository,
 		useCase.TransactionUseCase,
 	)
-	retryEmailService := service.NewRetryEmailServiceImpl(db, env, r.EventSettingRepo, r.EventTransactionRepo, r.EventTransactionItemRepo, useCase.TransactionUseCase)
 
 	return Service{
 		OrganizerService:           organizerService,
@@ -55,6 +53,5 @@ func Newservice(
 		EventTicketCategoryService: eventTicketCategoryService,
 		EventTransactionService:    eventTransactionService,
 		PaymentLogsService:         paymentLogsService,
-		RetryEmailService:          retryEmailService,
 	}
 }

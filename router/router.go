@@ -26,7 +26,6 @@ type Handler struct {
 	EventHandler               handler.EventHandler
 	EventTicketCategoryHandler handler.EventTicketCategoryHandler
 	EventTransaction           handler.EventTransactionHandler
-	RetryEmail                 handler.RetryEmailHandler
 	Middleware                 middleware.Middleware
 }
 
