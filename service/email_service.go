@@ -55,13 +55,12 @@ func (s *RetryEmailServiceImpl) RetryInvoiceEmail(ctx context.Context) (erro err
 	if err != nil {
 		return
 	}
+	log.Info().Int("Count", len(transactions)).Msg("transactions success found")
 
 	if len(transactions) == 0 {
 		log.Error().Msg("transactions empty")
 		return
 	}
-
-	log.Info().Int("Count", len(transactions)).Msg("transactions success found")
 
 	// var garudaActive map[string]bool = make(map[string]bool)
 

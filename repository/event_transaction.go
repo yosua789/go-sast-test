@@ -722,6 +722,7 @@ func (r *EventTransactionRepositoryImpl) GetAllSuccessPayTransaction(ctx context
 	}
 
 	if err != nil {
+		log.Error().Err(err).Msg("failed to get all success pay transactions")
 		return
 	}
 
