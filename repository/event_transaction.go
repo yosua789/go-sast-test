@@ -710,7 +710,7 @@ func (r *EventTransactionRepositoryImpl) GetAllSuccessPayTransaction(ctx context
 		event_ticket_category_id,
 		full_name
 	FROM event_transactions
-	WHERE transaction_status = $1 OR transaction_status = $2
+	WHERE (transaction_status = $1 OR transaction_status = $2)
 		AND event_id IS NOT NULL 
 		AND event_ticket_category_id IS NOT NULL`
 
