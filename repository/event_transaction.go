@@ -754,3 +754,65 @@ func (r *EventTransactionRepositoryImpl) GetAllSuccessPayTransaction(ctx context
 
 	return
 }
+
+func (r *EventTransactionRepositoryImpl) GetAllInProgressPayTransaction(ctx context.Context, tx pgx.Tx) (transactions []model.EventTransaction, err error) {
+	ctx, cancel := context.WithTimeout(ctx, r.Env.Database.Timeout.Read)
+	defer cancel()
+
+	query := `SELECT 
+		id,
+		order_number,
+		transaction_status,
+		transaction_status_information,
+		payment_method,
+		payment_channel, 
+		payment_expired_at,
+		paid_at, 
+		event_id,
+		event_ticket_category_id,
+		full_name
+	FROM event_transactions
+	WHERE (transaction_status = $1 OR transaction_status = $2)
+		AND event_id IS NOT NULL 
+		AND event_ticket_category_id IS NOT NULL`
+
+	transactions = make([]model.EventTransaction, 0)
+
+	var rows pgx.Rows
+	if tx != nil {
+		rows, err = tx.Query(ctx, query, lib.EventTransactionStatusSuccess, lib.EventTransactionStatusProcessingTicket)
+	} else {
+		rows, err = r.WrapDB.Postgres.Query(ctx, query, lib.EventTransactionStatusSuccess, lib.EventTransactionStatusProcessingTicket)
+	}
+
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get all success pay transactions")
+		return
+	}
+
+	for rows.Next() {
+		var trx model.EventTransaction
+		err = rows.Scan(
+			&trx.ID,
+			&trx.OrderNumber,
+			&trx.Status,
+			&trx.StatusInformation,
+			&trx.PaymentMethod,
+			&trx.PaymentChannel,
+			&trx.PaymentExpiredAt,
+			&trx.PaidAt,
+			&trx.EventID,
+			&trx.TicketCategoryID,
+			&trx.Fullname,
+		)
+
+		if err != nil {
+			log.Error().Err(err).Msg("failed to scan")
+			return
+		}
+
+		transactions = append(transactions, trx)
+	}
+
+	return
+}
