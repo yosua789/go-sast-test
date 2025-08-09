@@ -13,6 +13,7 @@ type Middleware interface {
 	PayloadPasser() gin.HandlerFunc
 	TokenAuthMiddleware() gin.HandlerFunc
 	OriginMiddleware() gin.HandlerFunc
+	IsAuthorized() gin.HandlerFunc
 }
 
 type MiddlewareImpl struct {

@@ -84,6 +84,9 @@ type EnvironmentVariable struct {
 
 		AutoAssignSeat bool `mapstructure:"AUTO_ASSIGN_SEAT"` // It will disable validation seat
 	} `mapstructure:"APP"`
+	Admin struct {
+		ApiKey string `mapstructure:"API_KEY"`
+	} `mapstructure:"ADMIN"`
 	Api struct {
 		CorsEnable       bool   `mapstructure:"CORS_ENABLE"`
 		BasePath         string `mapstructure:"BASE_PATH"`

@@ -100,5 +100,5 @@ func ExternalRouter(h Handler, rg *gin.RouterGroup) {
 func RetryRouter(h Handler, rg *gin.RouterGroup) {
 	r := rg.Group("/retry")
 
-	r.POST("/invoices", h.RetryEmail.RetryInvoices)
+	r.POST("/invoices", h.Middleware.IsAuthorized(), h.RetryEmail.RetryInvoices)
 }
