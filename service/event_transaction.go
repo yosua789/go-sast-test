@@ -316,7 +316,7 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 
 	// If venue doesn't have seatmap it will always empty
 	var selectedSectorSeatmap map[string]entity.EventVenueSector
-	if venueSector.HasSeatmap {
+	if venueSector.HasSeatmap.Bool {
 		log.Info().Msg("venueSector in ticket category has seatmap")
 		var seatParams []domain.SeatmapParam
 		for _, val := range req.Items {
@@ -1214,7 +1214,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnap(ctx *gin.Context, req dto.S
 					EventCity:    transactionDetail.Event.Venue.City,
 					EventCountry: transactionDetail.Event.Venue.Country,
 
-					SectorName: transactionDetail.VenueSector.Name,
+					SectorName: transactionDetail.VenueSector.Name.String,
 					AreaCode:   transactionDetail.VenueSector.AreaCode.String,
 					Entrance:   transactionDetail.TicketCategory.Entrance,
 
@@ -1611,7 +1611,7 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabs(ctx *gin.Context, req 
 						EventCity:    transactionDetail.Event.Venue.City,
 						EventCountry: transactionDetail.Event.Venue.Country,
 
-						SectorName:   transactionDetail.VenueSector.Name,
+						SectorName:   transactionDetail.VenueSector.Name.String,
 						AreaCode:     transactionDetail.VenueSector.AreaCode.String,
 						Entrance:     transactionDetail.TicketCategory.Entrance,
 						SeatRow:      val.SeatRow,
