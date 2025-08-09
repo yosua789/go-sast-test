@@ -3,6 +3,7 @@ package service
 import (
 	"assist-tix/config"
 	"assist-tix/database"
+	"assist-tix/entity"
 	"assist-tix/internal/usecase"
 	"assist-tix/lib"
 	"assist-tix/repository"
@@ -103,6 +104,17 @@ func (s *RetryEmailServiceImpl) RetryInvoiceEmail(ctx context.Context) (erro err
 			log.Error().Err(err).Msg("Failed to find transaction detail by transaction id")
 			return err
 		}
+		transactionAdditionalFee := additionalFees
+		transactionAdditionalFee = append(transactionAdditionalFee, entity.AdditionalFee{
+			ID:           "payment_fee",
+			Name:         "Payment Fee",
+			EventID:      transactionDetail.Event.ID,
+			IsPercentage: false,
+			IsTax:        true,
+			Value:        float64(transactionDetail.PgAdditionalFee.Int32),
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		})
 
 		var paidAt time.Time
 		if trx.PaidAt != nil {
@@ -116,7 +128,7 @@ func (s *RetryEmailServiceImpl) RetryInvoiceEmail(ctx context.Context) (erro err
 			true,
 			len(trxItems),
 
-			additionalFees,
+			transactionAdditionalFee,
 			transactionDetail,
 			paidAt,
 		)
