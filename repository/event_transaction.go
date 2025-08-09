@@ -743,6 +743,7 @@ func (r *EventTransactionRepositoryImpl) GetAllSuccessPayTransaction(ctx context
 		)
 
 		if err != nil {
+			log.Error().Err(err).Msg("failed to scan")
 			return
 		}
 
