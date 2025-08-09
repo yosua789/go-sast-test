@@ -97,8 +97,7 @@ func Init(env *config.EnvironmentVariable) (*Setup, error) {
 		EventTicketCategoryHandler: handler.EventTicketCategoryHandler,
 		EventTransaction:           handler.EventTransactionHandler,
 		Middleware:                 middleware,
-
-		RetryEmail: handler.RetryHandler,
+		RetryEmail:                 handler.RetryHandler,
 	}
 
 	routes := router.NewRouter(r)

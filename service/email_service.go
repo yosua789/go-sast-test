@@ -7,6 +7,7 @@ import (
 	"assist-tix/lib"
 	"assist-tix/repository"
 	"context"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -57,10 +58,10 @@ func (s *RetryEmailServiceImpl) RetryInvoiceEmail(ctx context.Context) (erro err
 	}
 	log.Info().Int("Count", len(transactions)).Msg("transactions success found")
 
-	if len(transactions) == 0 {
-		log.Error().Msg("transactions empty")
-		return
-	}
+	// if len(transactions) == 0 {
+	// 	log.Error().Msg("transactions empty")
+	// 	return
+	// }
 
 	// var garudaActive map[string]bool = make(map[string]bool)
 
@@ -77,8 +78,10 @@ func (s *RetryEmailServiceImpl) RetryInvoiceEmail(ctx context.Context) (erro err
 		eventId = "91f8394d-cafc-41fb-9936-719f315b3df3"
 	} else {
 		// Event staging "Panama vs South Africa - Indonesia vs Tajikistan"
+		// eventId = "4ecca486-1ec2-4af6-b3c9-bceca149d7d8"
 		eventId = "4ecca486-1ec2-4af6-b3c9-bceca149d7d8"
 	}
+
 	additionalFees, err := s.EventSettingRepo.FindAdditionalFee(ctx, nil, eventId)
 	if err != nil {
 		log.Error().Err(err).Msg("failed get event settings for invoice")
@@ -86,7 +89,7 @@ func (s *RetryEmailServiceImpl) RetryInvoiceEmail(ctx context.Context) (erro err
 	}
 
 	for _, trx := range transactions {
-		log.Info().Str("TransactionID", trx.ID).Msg("Retry transaction")
+		log.Info().Str("TransactionID", trx.ID).Msg("Retry invoice transaction")
 
 		log.Info().Msg("get trx items")
 		trxItems, err := s.EventTransactionItemRepo.GetTransactionItemsByTransactionId(ctx, tx, trx.ID)
@@ -101,7 +104,12 @@ func (s *RetryEmailServiceImpl) RetryInvoiceEmail(ctx context.Context) (erro err
 			return err
 		}
 
-		err = s.TransactionUseCase.SendInvoice(
+		var paidAt time.Time
+		if trx.PaidAt != nil {
+			paidAt = *trx.PaidAt
+		}
+
+		err = s.TransactionUseCase.SendIssueInvoiceFilename(
 			ctx,
 			trx.Email,
 			trx.Fullname,
@@ -110,8 +118,7 @@ func (s *RetryEmailServiceImpl) RetryInvoiceEmail(ctx context.Context) (erro err
 
 			additionalFees,
 			transactionDetail,
-
-			*trx.PaidAt,
+			paidAt,
 		)
 
 		if err != nil {
@@ -120,7 +127,7 @@ func (s *RetryEmailServiceImpl) RetryInvoiceEmail(ctx context.Context) (erro err
 		}
 	}
 
-	log.Info().Msg("Retry all invoice email")
+	log.Info().Msg("Retry all issues invoice email")
 	err = tx.Commit(ctx)
 	if err != nil {
 		return err
