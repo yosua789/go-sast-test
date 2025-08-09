@@ -124,11 +124,12 @@ type EnvironmentVariable struct {
 		Port     string `mapstructure:"PORT"`
 		Token    string `mapstructure:"TOKEN"`
 		Subjects struct {
-			SendBill      string `mapstructure:"SEND_BILL"`
-			SendInvoice   string `mapstructure:"SEND_INVOICE"`
-			SendETicket   string `mapstructure:"SEND_ETICKET"`
-			AsyncOrder    string `mapstructure:"ASYNC_ORDER"`
-			AsyncCallback string `mapstructure:"ASYNC_CALLBACK"`
+			SendBill            string `mapstructure:"SEND_BILL"`
+			SendInvoice         string `mapstructure:"SEND_INVOICE"`
+			SendInvoiceFilename string `mapstructure:"SEND_INVOICE_FILENAME"`
+			SendETicket         string `mapstructure:"SEND_ETICKET"`
+			AsyncOrder          string `mapstructure:"ASYNC_ORDER"`
+			AsyncCallback       string `mapstructure:"ASYNC_CALLBACK"`
 		} `mapstructure:"SUBJECTS"`
 	} `mapstructure:"NATS"`
 	Mailer struct {

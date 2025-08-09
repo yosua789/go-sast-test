@@ -14,6 +14,8 @@ type Handler struct {
 	EventHandler               handler.EventHandler
 	EventTicketCategoryHandler handler.EventTicketCategoryHandler
 	EventTransactionHandler    handler.EventTransactionHandler
+
+	RetryHandler handler.RetryEmailHandler
 }
 
 func Newhandler(
@@ -28,5 +30,6 @@ func Newhandler(
 		EventHandler:               handler.NewEventHandler(env, s.EventService, validator),
 		EventTicketCategoryHandler: handler.NewEventTicketCategoryHandler(env, s.EventTicketCategoryService, validator),
 		EventTransactionHandler:    handler.NewEventTransactionHandler(env, s.EventTransactionService, s.PaymentLogsService, validator),
+		RetryHandler:               handler.NewRetryEmailHandler(env, validator, s.RetryEmailService),
 	}
 }
