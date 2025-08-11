@@ -246,14 +246,14 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 		return
 	}
 
-	log.Info().Str("eventId", eventId).Str("sectorId", sector.ID).Msg("find seatmap by event sector id")
-	seatmapRes, err := s.EventTicketCategoryRepository.FindSeatmapByEventSectorId(ctx, tx, eventId, sector.ID)
+	log.Info().Str("eventId", eventId).Str("sectorId", eventTickets.VenueSectorId).Msg("find seatmap by event sector id")
+	seatmapRes, err := s.EventTicketCategoryRepository.FindSeatmapByEventSectorId(ctx, tx, eventId, eventTickets.VenueSectorId)
 	if err != nil {
 		return
 	}
 
-	log.Info().Str("eventId", eventId).Str("sectorId", sector.ID).Msg("find seatmap book by event sector id")
-	eventSeatmapBooks, err := s.EventSeatmapBookRepository.FindSeatBooksByEventSectorId(ctx, tx, eventId, sector.ID)
+	log.Info().Str("eventId", eventId).Str("sectorId", eventTickets.VenueSectorId).Msg("find seatmap book by event sector id")
+	eventSeatmapBooks, err := s.EventSeatmapBookRepository.FindSeatBooksByEventSectorId(ctx, tx, eventId, eventTickets.VenueSectorId)
 	if err != nil {
 		return
 	}
@@ -267,11 +267,13 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 	)
 
 	res = dto.EventSectorSeatmapResponse{
-		ID:       sector.ID,
-		Name:     sector.Name,
-		Color:    sector.SectorColor,
-		AreaCode: sector.AreaCode,
+		ID:       "192309123",
+		Name:     "COK",
+		Color:    "asd",
+		AreaCode: "DAOSHDLJS D",
 	}
+
+	var availableSeats []dto.SectorSeatmapRowColumnResponse = make([]dto.SectorSeatmapRowColumnResponse, 0)
 
 	for i, val := range seatmapRes {
 		if currentRow == -1 {
@@ -297,6 +299,16 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 
 			currentSeats = nil
 			currentRow = val.SeatRow
+		}
+
+		if seat.Status == lib.EventVenueSeatmapStatusAvailable {
+			availableSeats = append(availableSeats, dto.SectorSeatmapRowColumnResponse{
+				Row:      currentRow,
+				Column:   seat.Column,
+				Label:    seat.Label,
+				Status:   seat.Status,
+				RowLabel: val.SeatRowLabel,
+			})
 		}
 		currentSeats = append(currentSeats, seat)
 

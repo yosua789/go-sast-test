@@ -329,6 +329,7 @@ func (r *EventTicketCategoryRepositoryImpl) FindSeatmapByEventSectorId(ctx conte
 		vssm.id, 
 		vssm.seat_row, 
 		vssm.seat_column, 
+		vssm.seat_row_label,
 		CASE 
 			WHEN vssm.label != evssm.label THEN evssm.label
 			ELSE vssm.label
@@ -370,6 +371,7 @@ func (r *EventTicketCategoryRepositoryImpl) FindSeatmapByEventSectorId(ctx conte
 			&sectorSeatmap.ID,
 			&sectorSeatmap.SeatRow,
 			&sectorSeatmap.SeatColumn,
+			&sectorSeatmap.SeatRowLabel,
 			&sectorSeatmap.Label,
 			&sectorSeatmap.Status,
 		)

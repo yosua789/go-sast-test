@@ -8,9 +8,10 @@ type TransactionETicket struct {
 	TicketNumber  string `json:"ticket_number"`
 	TicketCode    string `json:"ticket_code"`
 
-	TicketSeatRow    int    `json:"ticket_seat_row"`
-	TicketSeatColumn int    `json:"ticket_seat_column"`
-	TicketSeatLabel  string `json:"ticket_seat_label"`
+	TicketSeatRow      int    `json:"ticket_seat_row"`
+	TicketSeatColumn   int    `json:"ticket_seat_column"`
+	TicketSeatLabel    string `json:"ticket_seat_label"`
+	TicketSeatRowLabel int    `json:"ticket_seat_row_label"`
 
 	Payment           PaymentInformation           `json:"payment"`
 	DetailInformation DetailInformationTransaction `json:"detail_information"`

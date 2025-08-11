@@ -629,13 +629,6 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	for _, item := range req.Items {
 		EventTransactionGarudaID.GarudaIDs = append(EventTransactionGarudaID.GarudaIDs, item.GarudaID)
 	}
-	err = s.EventTransactionGarudaIDRepo.CreateBatch(ctx, tx, EventTransactionGarudaID)
-	if err != nil {
-		sentry.CaptureException(err)
-		log.Error().Err(err).Msg("Failed to create batch garuda id")
-		err = &lib.ErrorInternalServer
-		return
-	}
 	err = tx.Commit(ctx)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -718,39 +711,135 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 	}
 	// 	log.Info().Int("LastSeatRow", res.SeatRow).Int("LastSeatColumn", res.SeatColumn).Msg("Result last book data")
 
-	// 	log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Int("Num", len(transactionItems)).Int("LastRow", res.SeatRow).Int("LastColumn", res.SeatColumn).Msg("find available seats for auto assign")
-	// 	availableSeats, err := s.EventTicketCategoryRepo.FindNAvailableSeatAfterSectorRowColumn(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID, len(transactionItems), res.SeatRow, res.SeatColumn)
+	// 	// log.Info().Str("SectorID", transactionDetail.VenueSector.ID).Str("EventID", transactionDetail.Event.ID).Int("Num", len(transactionItems)).Int("LastRow", res.SeatRow).Int("LastColumn", res.SeatColumn).Msg("find available seats for auto assign")
+	// 	// availableSeats, err := s.EventTicketCategoryRepo.FindNAvailableSeatAfterSectorRowColumn(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID, len(transactionItems), res.SeatRow, res.SeatColumn)
+	// 	// if err != nil {
+	// 	// 	var tixErr *lib.TIXError
+	// 	// 	if errors.As(err, &tixErr) {
+	// 	// 		if tixErr.Code == lib.ErrorSeatAvailableSeatNotMatcheWithRequestSeats.Code {
+	// 	// 			log.Error().Err(err).Msg("available seats not match with requested seats")
+	// 	// 			return
+	// 	// 		}
+	// 	// 	}
+	// 	// 	log.Error().Err(err).Msg("failed to find available seats in sector by row and column")
+	// 	// 	return
+	// 	// }
+
+	// 	// Insert into seatmap books
+	// 	// var seatmaps []domain.SeatmapParam
+	// 	// for _, availableSeat := range availableSeats {
+	// 	// 	log.Info().Int("SeatRow", availableSeat.SeatRow).Int("SeatColumn", availableSeat.SeatColumn).Msg("data avilable seat")
+	// 	// 	seatmaps = append(seatmaps, domain.SeatmapParam{
+	// 	// 		SeatRow:    availableSeat.SeatRow,
+	// 	// 		SeatColumn: availableSeat.SeatColumn,
+	// 	// 	})
+	// 	// }
+	// 	// log.Info().Int("SeatNum", len(seatmaps)).Msg("mark seat as book")
+	// 	// err = s.EventSeatmapBookRepo.CreateSeatBook(ctx, tx, eventId, transactionDetail.VenueSector.ID, seatmaps)
+	// 	// if err != nil {
+	// 	// 	log.Error().Err(err).Msg("failed to create seatbook")
+	// 	// 	return
+	// 	// }
+
+	// 	// log.Info().Interface("Res", availableSeats).Msg("Available seats")
+
+	// 	log.Info().Str("eventId", transactionDetail.Event.ID).Str("sectorId", transactionDetail.VenueSector.ID).Msg("find seatmap by event sector id")
+	// 	seatmapRes, err := s.EventTicketCategoryRepo.FindSeatmapByEventSectorId(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID)
 	// 	if err != nil {
-	// 		var tixErr *lib.TIXError
-	// 		if errors.As(err, &tixErr) {
-	// 			if tixErr.Code == lib.ErrorSeatAvailableSeatNotMatcheWithRequestSeats.Code {
-	// 				log.Error().Err(err).Msg("available seats not match with requested seats")
-	// 				return
-	// 			}
-	// 		}
-	// 		log.Error().Err(err).Msg("failed to find available seats in sector by row and column")
+	// 		log.Error().Err(err).Msg("failed to get seatmap by event sector id")
 	// 		return
 	// 	}
 
-	// 	// Insert into seatmap books
-	// 	var seatmaps []domain.SeatmapParam
-	// 	for _, availableSeat := range availableSeats {
-	// 		log.Info().Int("SeatRow", availableSeat.SeatRow).Int("SeatColumn", availableSeat.SeatColumn).Msg("data avilable seat")
-	// 		seatmaps = append(seatmaps, domain.SeatmapParam{
-	// 			SeatRow:    availableSeat.SeatRow,
-	// 			SeatColumn: availableSeat.SeatColumn,
+	// 	log.Info().Str("eventId", transactionDetail.Event.ID).Str("sectorId", transactionDetail.VenueSector.ID).Msg("find seatmap book by event sector id")
+	// 	eventSeatmapBooks, err := s.EventSeatmapBookRepo.FindSeatBooksByEventSectorId(ctx, tx, transactionDetail.Event.ID, transactionDetail.VenueSector.ID)
+	// 	if err != nil {
+	// 		return
+	// 	}
+
+	// 	log.Info().Msg("mapping seatmap row and column sector")
+	// 	var (
+	// 		currentRow   int = -1
+	// 		currentSeats []dto.SectorSeatmapResponse
+
+	// 		seatmap = make([]dto.SectorSeatmapRowResponse, 0)
+	// 	)
+
+	// 	var availableSeats []dto.SectorSeatmapRowColumnResponse = make([]dto.SectorSeatmapRowColumnResponse, 0)
+
+	// 	for i, val := range seatmapRes {
+	// 		if currentRow == -1 {
+	// 			currentRow = val.SeatRow
+	// 		}
+
+	// 		_, ok := eventSeatmapBooks[helper.ConvertRowColumnKey(val.SeatRow, val.SeatColumn)]
+	// 		if ok {
+	// 			val.Status = lib.SeatmapStatusUnavailable
+	// 		}
+
+	// 		seat := dto.SectorSeatmapResponse{
+	// 			Column: val.SeatColumn,
+	// 			Label:  val.Label,
+	// 			Status: val.Status,
+	// 		}
+
+	// 		if val.SeatRow != currentRow {
+	// 			seatmap = append(seatmap, dto.SectorSeatmapRowResponse{
+	// 				Row:   currentRow,
+	// 				Seats: currentSeats,
+	// 			})
+
+	// 			currentSeats = nil
+	// 			currentRow = val.SeatRow
+	// 		}
+	// 		if seat.Status == lib.EventVenueSeatmapStatusAvailable {
+	// 			availableSeats = append(availableSeats, dto.SectorSeatmapRowColumnResponse{
+	// 				Row:      currentRow,
+	// 				Column:   seat.Column,
+	// 				Label:    seat.Label,
+	// 				Status:   seat.Status,
+	// 				RowLabel: val.SeatRowLabel,
+	// 			})
+
+	// 		}
+	// 		currentSeats = append(currentSeats, seat)
+
+	// 		if i == len(seatmapRes)-1 {
+	// 			seatmap = append(seatmap, dto.SectorSeatmapRowResponse{
+	// 				Row:   currentRow,
+	// 				Seats: currentSeats,
+	// 			})
+	// 		}
+	// 	}
+
+	// 	var ticketSeats []entity.EventVenueSector
+	// 	var seatmapParams []domain.SeatmapParam
+	// 	var currentAvailable int
+
+	// 	for i := 0; i < len(req.Items); i++ {
+	// 		val := availableSeats[i]
+	// 		currentAvailable += 1
+	// 		seatmapParams = append(seatmapParams, domain.SeatmapParam{
+	// 			SeatRow:    val.Row,
+	// 			SeatColumn: val.Column,
+	// 			SeatLabel:  val.RowLabel,
+	// 		})
+	// 		log.Warn().Str("LabelSource", val.Label).Msg("failed to cast seat label")
+	// 		ticketSeats = append(ticketSeats, entity.EventVenueSector{
+	// 			SeatRow:      val.Row,
+	// 			SeatColumn:   val.Column,
+	// 			Label:        val.Label,
+	// 			SeatRowLabel: val.RowLabel,
+	// 			Status:       val.Status,
 	// 		})
 	// 	}
-	// 	log.Info().Int("SeatNum", len(seatmaps)).Msg("mark seat as book")
-	// 	err = s.EventSeatmapBookRepo.CreateSeatBook(ctx, tx, eventId, transactionDetail.VenueSector.ID, seatmaps)
+
+	// 	var eventTickets []model.EventTicket
+	// 	log.Info().Int("SeatNum", len(seatmapParams)).Msg("mark seat as book")
+	// 	err = s.EventSeatmapBookRepo.CreateSeatBook(ctx, tx, eventId, transactionDetail.VenueSector.ID, seatmapParams)
 	// 	if err != nil {
 	// 		log.Error().Err(err).Msg("failed to create seatbook")
 	// 		return
 	// 	}
-
-	// 	log.Info().Interface("Res", availableSeats).Msg("Available seats")
-
-	// 	var eventTickets []model.EventTicket
 
 	// 	for i, val := range transactionItems {
 	// 		if val.Email.Valid && val.Fullname.Valid {
@@ -782,10 +871,10 @@ func (s *EventTransactionServiceImpl) CreateEventTransaction(ctx *gin.Context, e
 	// 				AreaCode:   transactionDetail.VenueSector.AreaCode.String,
 	// 				Entrance:   transactionDetail.TicketCategory.Entrance,
 
-	// 				SeatRow:      availableSeats[i].SeatRow,
-	// 				SeatColumn:   availableSeats[i].SeatColumn,
-	// 				SeatRowLabel: helper.ToSQLInt16(int16(availableSeats[i].SeatRowLabel)),
-	// 				SeatLabel:    helper.ToSQLString(availableSeats[i].Label),
+	// 				SeatRow:      ticketSeats[i].SeatRow,
+	// 				SeatColumn:   ticketSeats[i].SeatColumn,
+	// 				SeatRowLabel: helper.ToSQLInt16(int16(ticketSeats[i].SeatRowLabel)),
+	// 				SeatLabel:    helper.ToSQLString(ticketSeats[i].Label),
 
 	// 				IsCompliment: false,
 	// 			}

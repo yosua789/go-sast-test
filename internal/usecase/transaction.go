@@ -285,9 +285,11 @@ func (u *TransactionUsecase) SendETicket(
 		TicketNumber:  eventTicket.TicketNumber,
 		TicketCode:    eventTicket.TicketCode,
 
-		TicketSeatLabel:  eventTicket.SeatLabel.String,
-		TicketSeatRow:    eventTicket.SeatRow,
-		TicketSeatColumn: eventTicket.SeatColumn,
+		TicketSeatLabel:    eventTicket.SeatLabel.String,
+		TicketSeatRow:      eventTicket.SeatRow,
+		TicketSeatColumn:   eventTicket.SeatColumn,
+		TicketSeatRowLabel: int(eventTicket.SeatRowLabel.Int16),
+
 		Payment: domainEvent.PaymentInformation{
 			// Method:                       transactionDetail.PaymentMethod.PaymentCode,
 			DisplayName:                  transactionDetail.PaymentMethod.Name,
