@@ -589,6 +589,7 @@ func (s *EventTransactionServiceImpl) CallbackVASnapV2(ctx *gin.Context, req dto
 
 	err = s.TransactionUseCase.SendAsyncCallback(ctx,
 		transactionData.ID,
+		transactionTime,
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -840,6 +841,17 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabsV2(ctx *gin.Context, re
 			return
 		}
 		isSuccess = true
+
+		err = s.TransactionUseCase.SendAsyncCallback(ctx,
+			transactionData.ID,
+			paidAt,
+		)
+		if err != nil {
+			sentry.CaptureException(err)
+			log.Warn().Err(err).Msg("error send async callback to nats")
+			return
+		}
+
 	} else {
 		markResult, err = s.EventTransactionRepo.MarkTransactionAsFailed(ctx, tx, transactionData.ID, req.PaymentMethodInfo.RRN)
 		if err != nil {
@@ -861,15 +873,6 @@ func (s *EventTransactionServiceImpl) CallbackQRISPaylabsV2(ctx *gin.Context, re
 	// 	log.Error().Err(err).Msg("Failed to find transaction by order number")
 	// 	return
 	// }
-
-	err = s.TransactionUseCase.SendAsyncCallback(ctx,
-		transactionData.ID,
-	)
-	if err != nil {
-		sentry.CaptureException(err)
-		log.Warn().Err(err).Msg("error send async callback to nats")
-		return
-	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
