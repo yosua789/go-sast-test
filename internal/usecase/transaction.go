@@ -57,7 +57,7 @@ func (u *TransactionUsecase) SendAsyncOrder(
 		ClientIP:               clientIP,
 		OrderInformationBookID: orderInformationBookID,
 	}
-	log.Info().Interface("data", jsonData).Msg("payload")
+	log.Info().Interface("data order", jsonData).Msg("payload")
 
 	bytes, err := json.Marshal(jsonData)
 	if err != nil {
@@ -69,7 +69,7 @@ func (u *TransactionUsecase) SendAsyncOrder(
 		return
 	}
 
-	log.Info().Msg("success send email")
+	log.Info().Msg("success send publish async order")
 
 	return
 }
@@ -77,12 +77,13 @@ func (u *TransactionUsecase) SendAsyncOrder(
 func (u *TransactionUsecase) SendAsyncCallback(
 	ctx context.Context,
 	transactionId string,
+	paidAt time.Time,
 ) (err error) {
 	jsonData := async_callback.AsyncCallback{
 		TransactionId: transactionId,
-		CallbackTime:  time.Now(),
+		CallbackTime:  paidAt,
 	}
-	log.Info().Interface("data", jsonData).Msg("payload")
+	log.Info().Interface("data callback", jsonData).Msg("payload")
 
 	bytes, err := json.Marshal(jsonData)
 	if err != nil {
@@ -94,7 +95,7 @@ func (u *TransactionUsecase) SendAsyncCallback(
 		return
 	}
 
-	log.Info().Msg("success send email")
+	log.Info().Msg("success send publish async callback")
 
 	return
 }
@@ -285,9 +286,11 @@ func (u *TransactionUsecase) SendETicket(
 		TicketNumber:  eventTicket.TicketNumber,
 		TicketCode:    eventTicket.TicketCode,
 
-		TicketSeatLabel:  eventTicket.SeatLabel.String,
-		TicketSeatRow:    eventTicket.SeatRow,
-		TicketSeatColumn: eventTicket.SeatColumn,
+		TicketSeatLabel:    eventTicket.SeatLabel.String,
+		TicketSeatRow:      eventTicket.SeatRow,
+		TicketSeatColumn:   eventTicket.SeatColumn,
+		TicketSeatRowLabel: int(eventTicket.SeatRowLabel.Int16),
+
 		Payment: domainEvent.PaymentInformation{
 			// Method:                       transactionDetail.PaymentMethod.PaymentCode,
 			DisplayName:                  transactionDetail.PaymentMethod.Name,

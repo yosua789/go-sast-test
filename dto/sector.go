@@ -42,3 +42,11 @@ type EventSectorSeatmapResponse struct {
 	AreaCode string                     `json:"area_code"`
 	Seatmap  []SectorSeatmapRowResponse `json:"seatmap"`
 }
+
+type SectorSeatmapRowColumnResponse struct {
+	Row      int    `json:"row"`
+	Column   int    `json:"column"`
+	RowLabel int    `json:"row_label"`
+	Label    string `json:"label"`
+	Status   string `json:"status"`
+}

@@ -246,14 +246,14 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 		return
 	}
 
-	log.Info().Str("eventId", eventId).Str("sectorId", sector.ID).Msg("find seatmap by event sector id")
-	seatmapRes, err := s.EventTicketCategoryRepository.FindSeatmapByEventSectorId(ctx, tx, eventId, sector.ID)
+	log.Info().Str("eventId", eventId).Str("sectorId", eventTickets.VenueSectorId).Msg("find seatmap by event sector id")
+	seatmapRes, err := s.EventTicketCategoryRepository.FindSeatmapByEventSectorId(ctx, tx, eventId, eventTickets.VenueSectorId)
 	if err != nil {
 		return
 	}
 
-	log.Info().Str("eventId", eventId).Str("sectorId", sector.ID).Msg("find seatmap book by event sector id")
-	eventSeatmapBooks, err := s.EventSeatmapBookRepository.FindSeatBooksByEventSectorId(ctx, tx, eventId, sector.ID)
+	log.Info().Str("eventId", eventId).Str("sectorId", eventTickets.VenueSectorId).Msg("find seatmap book by event sector id")
+	eventSeatmapBooks, err := s.EventSeatmapBookRepository.FindSeatBooksByEventSectorId(ctx, tx, eventId, eventTickets.VenueSectorId)
 	if err != nil {
 		return
 	}
@@ -267,10 +267,10 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 	)
 
 	res = dto.EventSectorSeatmapResponse{
-		ID:       sector.ID,
-		Name:     sector.Name,
-		Color:    sector.SectorColor,
-		AreaCode: sector.AreaCode,
+		ID:       "192309123",
+		Name:     "COK",
+		Color:    "asd",
+		AreaCode: "DAOSHDLJS D",
 	}
 
 	for i, val := range seatmapRes {
@@ -298,6 +298,7 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 			currentSeats = nil
 			currentRow = val.SeatRow
 		}
+
 		currentSeats = append(currentSeats, seat)
 
 		if i == len(seatmapRes)-1 {
