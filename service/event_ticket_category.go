@@ -273,8 +273,6 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 		AreaCode: "DAOSHDLJS D",
 	}
 
-	var availableSeats []dto.SectorSeatmapRowColumnResponse = make([]dto.SectorSeatmapRowColumnResponse, 0)
-
 	for i, val := range seatmapRes {
 		if currentRow == -1 {
 			currentRow = val.SeatRow
@@ -301,15 +299,6 @@ func (s *EventTicketCategoryServiceImpl) GetSeatmapByTicketCategoryId(ctx contex
 			currentRow = val.SeatRow
 		}
 
-		if seat.Status == lib.EventVenueSeatmapStatusAvailable {
-			availableSeats = append(availableSeats, dto.SectorSeatmapRowColumnResponse{
-				Row:      currentRow,
-				Column:   seat.Column,
-				Label:    seat.Label,
-				Status:   seat.Status,
-				RowLabel: val.SeatRowLabel,
-			})
-		}
 		currentSeats = append(currentSeats, seat)
 
 		if i == len(seatmapRes)-1 {
