@@ -17,7 +17,7 @@ pipeline {
         checkout([$class: 'GitSCM',
           branches: [[name: '*/main']],
           extensions: [[$class: 'CloneOption', shallow: false, noTags: false]],
-          userRemoteConfigs: [[url: 'https://github.com/yosua789/testing-sast-devsecops.git']]
+          userRemoteConfigs: [[url: 'https://github.com/yosua789/go-sast-test.git']]
         ])
         sh 'echo "WS: $WORKSPACE" && ls -la'
       }
