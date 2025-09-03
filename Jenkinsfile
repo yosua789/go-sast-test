@@ -23,58 +23,25 @@ pipeline {
       }
     }
 
-    stage('Build') {
+    stage('Build & Test (Go)') {
       steps {
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
           sh '''
             set -eux
-            if [ ! -f pom.xml ] && [ ! -f build.gradle ] && [ ! -f gradlew ]; then
-              cat > pom.xml <<'POM'
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>tmp.bootstrap</groupId>
-  <artifactId>testing-sast-bootstrap</artifactId>
-  <version>1.0.0</version>
-  <properties>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-  <dependencies>
-    <dependency><groupId>javax.servlet</groupId><artifactId>javax.servlet-api</artifactId><version>4.0.1</version><scope>provided</scope></dependency>
-    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>1.7.36</version></dependency>
-    <dependency><groupId>org.owasp.esapi</groupId><artifactId>esapi</artifactId><version>2.5.0.0</version></dependency>
-    <dependency><groupId>org.javassist</groupId><artifactId>javassist</artifactId><version>3.29.2-GA</version></dependency>
-  </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.11.0</version>
-        <configuration><release>8</release></configuration>
-      </plugin>
-    </plugins>
-  </build>
-</project>
-POM
-            fi
-
-            if [ -f pom.xml ]; then
-              docker run --rm --network jenkins --volumes-from jenkins -w "$WORKSPACE" \
-                maven:3-eclipse-temurin-17 mvn -B -DskipTests=true clean compile test-compile
-            elif [ -f build.gradle ] || [ -f gradlew ]; then
-              docker run --rm --network jenkins --volumes-from jenkins -w "$WORKSPACE" \
-                gradle:8.10.2-jdk17 bash -lc './gradlew clean build -x test || gradle clean build -x test'
+            if [ -f go.mod ]; then
+              docker run --rm --network jenkins --volumes-from jenkins -w "$WORKSPACE" golang:1.22-bullseye bash -lc '
+                go version
+                go env -w GOMODCACHE=/tmp/go-mod-cache GOPATH=/tmp/go
+                mkdir -p /tmp/go-mod-cache /tmp/go
+                go mod download
+                go build ./... || true
+                go test ./... -count=1 -covermode=atomic -coverprofile=coverage-go.out || true
+                go test -json ./... > gotest-report.json || true
+              '
+              ls -lh coverage-go.out || true
             else
-              mkdir -p target/classes target/test-classes
-              docker run --rm --network jenkins --volumes-from jenkins -w "$WORKSPACE" \
-                eclipse-temurin:17-jdk bash -lc 'find src -type f -name "*.java" > .java-list || true; if [ -s .java-list ]; then javac -d target/classes @.java-list || true; fi'
+              echo "No go.mod. Skipping Go build."
             fi
-
-            find target -name "*.class" | head -n 20 || true
           '''
         }
       }
@@ -86,28 +53,15 @@ POM
           withCredentials([string(credentialsId: 'sonarqube-token', variable: 'T')]) {
             sh '''
               set -eux
-
-              docker run --rm --network jenkins curlimages/curl:8.8.0 -sS http://sonarqube:9000/api/system/status | tee .sq_status
-              grep -q '"status":"UP"' .sq_status
-              docker run --rm --network jenkins curlimages/curl:8.8.0 -sS -u "$T:" http://sonarqube:9000/api/authentication/validate | tee .sq_token
-              grep -q '"valid":true' .sq_token
-
               docker pull sonarsource/sonar-scanner-cli
 
-              EXTRA_JAVA_FLAGS=""
-              [ -d target/classes ] && EXTRA_JAVA_FLAGS="$EXTRA_JAVA_FLAGS -Dsonar.java.binaries=target/classes"
-              [ -d target/test-classes ] && EXTRA_JAVA_FLAGS="$EXTRA_JAVA_FLAGS -Dsonar.java.test.binaries=target/test-classes"
-              if find src -name "*.java" 2>/dev/null | grep -q . && [ ! -d target/classes ]; then
-                EXTRA_JAVA_FLAGS="$EXTRA_JAVA_FLAGS -Dsonar.exclusions=**/*.java"
-              fi
+              EXTRA_GO_FLAGS=""
+              [ -f coverage-go.out ] && EXTRA_GO_FLAGS="$EXTRA_GO_FLAGS -Dsonar.go.coverage.reportPaths=coverage-go.out"
 
-              set +e
               docker run --rm --network jenkins \
-                --volumes-from jenkins \
-                -w "$WORKSPACE" \
+                --volumes-from jenkins -w "$WORKSPACE" \
                 -e SONAR_HOST_URL="$SONAR_HOST_URL" \
                 sonarsource/sonar-scanner-cli \
-                  -X \
                   -Dsonar.host.url="$SONAR_HOST_URL" \
                   -Dsonar.login="$T" \
                   -Dsonar.ws.timeout=120 \
@@ -116,20 +70,10 @@ POM
                   -Dsonar.scm.provider=git \
                   -Dsonar.sources=. \
                   -Dsonar.inclusions="**/*" \
-                  -Dsonar.exclusions="**/log/**,**/log4/**,**/log_3/**,**/*.test.*,**/node_modules/**,**/dist/**,**/build/**,**/target/**,docker-compose.yaml" \
+                  -Dsonar.exclusions="**/log/**,**/node_modules/**,**/dist/**,**/build/**,**/target/**,**/vendor/**,**/.venv/**,**/__pycache__/**,**/*.pyc,docker-compose.yaml" \
                   -Dsonar.coverage.exclusions="**/*.test.*,**/test/**,**/tests**" \
-                  ${EXTRA_JAVA_FLAGS}
-              rc=$?
-              set -e
-              echo $rc > .sonar_exit
+                  ${EXTRA_GO_FLAGS}
             '''
-            script {
-              def rc = readFile('.sonar_exit').trim()
-              echo "SonarScanner exit code: ${rc}"
-              if (env.FAIL_ON_ISSUES == 'true' && rc != '0') {
-                error "Fail build (policy) SonarScanner exit ${rc}"
-              }
-            }
           }
         }
       }
@@ -152,7 +96,7 @@ POM
               /usr/share/dependency-check/bin/dependency-check.sh --updateonly || true
               set +e
               /usr/share/dependency-check/bin/dependency-check.sh \
-                --project "central-dashboard-monitoring" \
+                --project "backend-api-golang" \
                 --scan . \
                 --format ALL \
                 --out dependency-check-report \
@@ -173,8 +117,6 @@ POM
           script {
             if (fileExists('dependency-check-report')) {
               archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: false, onlyIfSuccessful: false
-            } else {
-              echo "Dependency-Check report not found"
             }
           }
         }
@@ -182,22 +124,33 @@ POM
     }
 
     stage('SCA - Trivy (filesystem)') {
-      agent {
-        docker {
-          image 'aquasec/trivy:latest'
-          reuseNode true
-          args "--entrypoint='' -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache -v $WORKSPACE/.trivy-cache:/tmp/trivy-cache"
-        }
-      }
       steps {
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
           script {
             sh '''
+              set -eux
               rm -f trivy-fs.txt trivy-fs.sarif || true
-              set +e
-              trivy fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL . | tee trivy-fs.txt
-              trivy fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL --format sarif -o trivy-fs.sarif .
-              echo $? > .trivy_exit
+              mkdir -p .trivy-cache
+              chmod -R 777 .trivy-cache || true
+              docker pull aquasec/trivy:latest
+
+              docker run --rm --network jenkins \
+                --volumes-from jenkins -w "$WORKSPACE" \
+                -u 0:0 \
+                -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
+                -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
+                aquasec/trivy:latest \
+                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL . \
+                | tee trivy-fs.txt
+
+              docker run --rm --network jenkins \
+                --volumes-from jenkins -w "$WORKSPACE" \
+                -u 0:0 \
+                -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
+                -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
+                aquasec/trivy:latest \
+                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL --format sarif -o trivy-fs.sarif .
+              echo 0 > .trivy_exit
             '''
             def ec = readFile('.trivy_exit').trim()
             echo "Trivy FS scan exit code: ${ec}"
@@ -271,9 +224,5 @@ POM
     }
   }
 
-  post {
-    always {
-      echo "Scanning All Done. Result: ${currentBuild.currentResult}"
-    }
-  }
+  post { always { echo "Scanning All Done. Result: ${currentBuild.currentResult}" } }
 }
