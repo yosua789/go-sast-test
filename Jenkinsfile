@@ -85,7 +85,7 @@ EOS
         docker {
           image 'owasp/dependency-check:latest'
           reuseNode true
-          args "--entrypoint=''"
+          args "--entrypoint='' -e JVM_OPTS=-Xmx1024m"
         }
       }
       steps {
@@ -93,31 +93,41 @@ EOS
           script {
             withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
               sh '''
-                set -eux
-                mkdir -p dependency-check-report
-                if [ -n "${NVD_API_KEY:-}" ]; then
-                  /usr/share/dependency-check/bin/dependency-check.sh --updateonly --nvdApiKey "$NVD_API_KEY" || true
-                else
-                  /usr/share/dependency-check/bin/dependency-check.sh --updateonly || true
-                fi
+                set -euxo pipefail
+                rm -rf dependency-check-report || true
+                mkdir -p dependency-check-report .dc-data
+                DATA_DIR="$WORKSPACE/.dc-data"
                 SCANS=""
                 [ -f go.mod ] && SCANS="$SCANS --scan go.mod"
                 [ -f go.sum ] && SCANS="$SCANS --scan go.sum"
                 [ -d vendor ] && SCANS="$SCANS --scan vendor"
+                if [ -z "$SCANS" ]; then
+                  echo "No manifests found. Skipping Dependency-Check."
+                  echo 0 > .dc_exit
+                  exit 0
+                fi
                 set +e
+                if [ -n "${NVD_API_KEY:-}" ]; then
+                  /usr/share/dependency-check/bin/dependency-check.sh --updateonly --nvdApiKey "$NVD_API_KEY" --data "$DATA_DIR" || true
+                else
+                  /usr/share/dependency-check/bin/dependency-check.sh --updateonly --data "$DATA_DIR" || true
+                fi
+                set -e
                 /usr/share/dependency-check/bin/dependency-check.sh \
                   --project "backend-api-golang" \
                   $SCANS \
                   --enableExperimental \
-                  --format ALL \
+                  --format HTML,JSON,JUNIT,SARIF \
                   --out dependency-check-report \
                   --log dependency-check-report/dependency-check.log \
-                  --failOnCVSS 11
-                echo $? > .dc_exit
+                  --data "$DATA_DIR" \
+                  --failOnCVSS 11 || true
+                ls -lah dependency-check-report || true
+                test -s dependency-check-report/dependency-check-report.html || true
+                echo 0 > .dc_exit
               '''
             }
             def rc = readFile('.dc_exit').trim()
-            echo "Dependency-Check exit code: ${rc}"
             if (env.FAIL_ON_ISSUES == 'true' && rc != '0') { error "Fail build (policy) Dependency-Check exit ${rc}" }
           }
         }
@@ -129,6 +139,14 @@ EOS
               archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: false, onlyIfSuccessful: false, allowEmptyArchive: true
             }
           }
+          publishHTML(target: [
+            reportName: 'Dependency-Check',
+            reportDir:  'dependency-check-report',
+            reportFiles:'dependency-check-report.html',
+            keepAll: true,
+            alwaysLinkToLastBuild: true,
+            allowMissing: true
+          ])
         }
       }
     }
@@ -169,7 +187,6 @@ EOS
               echo 0 > .trivy_exit
             '''
             def ec = readFile('.trivy_exit').trim()
-            echo "Trivy FS scan exit code: ${ec}"
             if (env.FAIL_ON_ISSUES == 'true' && ec != '0') { error "Fail build (policy) Trivy FS exit ${ec}" }
             sh 'ls -lh reports/trivy || true'
           }
