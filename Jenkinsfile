@@ -90,46 +90,37 @@ EOS
       }
       steps {
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-          script {
-            withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
-              sh '''
-                set -euxo pipefail
-                rm -rf dependency-check-report || true
-                mkdir -p dependency-check-report .dc-data
-                DATA_DIR="$WORKSPACE/.dc-data"
-                SCANS=""
-                [ -f go.mod ] && SCANS="$SCANS --scan go.mod"
-                [ -f go.sum ] && SCANS="$SCANS --scan go.sum"
-                [ -d vendor ] && SCANS="$SCANS --scan vendor"
-                if [ -z "$SCANS" ]; then
-                  echo "No manifests found. Skipping Dependency-Check."
-                  echo 0 > .dc_exit
-                  exit 0
-                fi
-                set +e
-                if [ -n "${NVD_API_KEY:-}" ]; then
-                  /usr/share/dependency-check/bin/dependency-check.sh --updateonly --nvdApiKey "$NVD_API_KEY" --data "$DATA_DIR" || true
-                else
-                  /usr/share/dependency-check/bin/dependency-check.sh --updateonly --data "$DATA_DIR" || true
-                fi
-                set -e
-                /usr/share/dependency-check/bin/dependency-check.sh \
-                  --project "backend-api-golang" \
-                  $SCANS \
-                  --enableExperimental \
-                  --format HTML,JSON,JUNIT,SARIF \
-                  --out dependency-check-report \
-                  --log dependency-check-report/dependency-check.log \
-                  --data "$DATA_DIR" \
-                  --failOnCVSS 11 || true
-                ls -lah dependency-check-report || true
-                test -s dependency-check-report/dependency-check-report.html || true
-                echo 0 > .dc_exit
-              '''
-            }
-            def rc = readFile('.dc_exit').trim()
-            if (env.FAIL_ON_ISSUES == 'true' && rc != '0') { error "Fail build (policy) Dependency-Check exit ${rc}" }
-          }
+          sh '''
+            set -euxo pipefail
+            rm -rf dependency-check-report || true
+            mkdir -p dependency-check-report .dc-data
+
+            DATA_DIR="$WORKSPACE/.dc-data"
+            SCANS=""
+            [ -f go.mod ] && SCANS="$SCANS --scan go.mod"
+            [ -f go.sum ] && SCANS="$SCANS --scan go.sum"
+            [ -d vendor ] && SCANS="$SCANS --scan vendor"
+
+            if [ -z "$SCANS" ]; then
+              echo "<html><body><h1>No dependencies scanned</h1></body></html>" > dependency-check-report/dependency-check-report.html
+            else
+              set +e
+              /usr/share/dependency-check/bin/dependency-check.sh --updateonly --data "$DATA_DIR" || true
+              set -e
+              /usr/share/dependency-check/bin/dependency-check.sh \
+                --project "backend-api-golang" \
+                $SCANS \
+                --enableExperimental \
+                --format HTML,JSON,JUNIT,SARIF \
+                --out dependency-check-report \
+                --log dependency-check-report/dependency-check.log \
+                --data "$DATA_DIR" \
+                --failOnCVSS 11 || true
+            fi
+
+            echo "== DC OUTPUT =="
+            ls -lah dependency-check-report || true
+          '''
         }
       }
       post {
@@ -154,42 +145,67 @@ EOS
     stage('SCA - Trivy (filesystem)') {
       steps {
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-          script {
-            sh '''
-              set -euxo pipefail
-              rm -rf reports/trivy || true
-              mkdir -p reports/trivy .trivy-cache
-              chmod -R 777 .trivy-cache || true
-              docker pull aquasec/trivy:latest
-              docker run --rm --network jenkins --volumes-from jenkins -w "$WORKSPACE" --platform linux/arm64 curlimages/curl:8.8.0 -fsSL -o reports/trivy/html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
-              test -s reports/trivy/html.tpl
-              docker run --rm --network jenkins \
-                --volumes-from jenkins -w "$WORKSPACE" \
-                -u 0:0 -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
-                -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
-                aquasec/trivy:latest \
-                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL . | tee reports/trivy/trivy-fs.txt
-              docker run --rm --network jenkins \
-                --volumes-from jenkins -w "$WORKSPACE" \
-                -u 0:0 -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
-                -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
-                aquasec/trivy:latest \
-                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL --format sarif -o reports/trivy/trivy-fs.sarif .
-              docker run --rm --network jenkins \
-                --volumes-from jenkins -w "$WORKSPACE" \
-                -u 0:0 -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
-                -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
-                -v "$WORKSPACE/reports/trivy:/out" \
-                -v "$WORKSPACE/reports/trivy/html.tpl:/html.tpl:ro" \
-                aquasec/trivy:latest \
-                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL --format template --template "@/html.tpl" -o /out/index.html .
-              test -s reports/trivy/index.html
-              echo 0 > .trivy_exit
-            '''
-            def ec = readFile('.trivy_exit').trim()
-            if (env.FAIL_ON_ISSUES == 'true' && ec != '0') { error "Fail build (policy) Trivy FS exit ${ec}" }
-            sh 'ls -lh reports/trivy || true'
-          }
+          sh '''
+            set -euxo pipefail
+            rm -rf reports/trivy || true
+            mkdir -p reports/trivy .trivy-cache
+            chmod -R 777 .trivy-cache || true
+
+            cat > reports/trivy/html.tpl <<'TPL'
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Trivy FS Report</title>
+<style>table{border-collapse:collapse}td,th{border:1px solid #999;padding:4px 8px}th{background:#eee}</style>
+</head><body>
+<h1>Trivy Filesystem Report</h1>
+<p>Generated: {{ .Report.Meta.CreatedAt }}</p>
+<table>
+<tr><th>Target</th><th>VulnerabilityID</th><th>PkgName</th><th>Installed</th><th>Severity</th><th>Title</th></tr>
+{{- range .Results }}
+  {{- $t := .Target }}
+  {{- range .Vulnerabilities }}
+<tr>
+<td>{{ $t }}</td>
+<td>{{ .VulnerabilityID }}</td>
+<td>{{ .PkgName }}</td>
+<td>{{ .InstalledVersion }}</td>
+<td>{{ .Severity }}</td>
+<td>{{ .Title }}</td>
+</tr>
+  {{- end }}
+{{- end }}
+</table></body></html>
+TPL
+
+            docker pull aquasec/trivy:latest
+
+            docker run --rm --network jenkins \
+              --volumes-from jenkins -w "$WORKSPACE" \
+              -u 0:0 -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
+              -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
+              aquasec/trivy:latest \
+              fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 \
+              --severity HIGH,CRITICAL . | tee reports/trivy/trivy-fs.txt
+
+            docker run --rm --network jenkins \
+              --volumes-from jenkins -w "$WORKSPACE" \
+              -u 0:0 -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
+              -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
+              aquasec/trivy:latest \
+              fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 \
+              --severity HIGH,CRITICAL --format sarif -o reports/trivy/trivy-fs.sarif .
+
+            docker run --rm --network jenkins \
+              --volumes-from jenkins -w "$WORKSPACE" \
+              -u 0:0 -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
+              -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
+              -v "$WORKSPACE/reports/trivy:/out" \
+              -v "$WORKSPACE/reports/trivy/html.tpl:/html.tpl:ro" \
+              aquasec/trivy:latest \
+              fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 \
+              --severity HIGH,CRITICAL --format template --template "@/html.tpl" -o /out/index.html .
+
+            echo "== TRIVY OUTPUT =="
+            ls -lah reports/trivy || true
+          '''
         }
       }
       post {
