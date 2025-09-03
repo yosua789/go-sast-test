@@ -138,50 +138,62 @@ EOS
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
           script {
             sh '''
-              set -eux
-              rm -f trivy-fs.txt trivy-fs.sarif trivy-report.html trivy-html.tpl || true
-              mkdir -p .trivy-cache
+              set -euxo pipefail
+              rm -rf reports/trivy || true
+              mkdir -p reports/trivy .trivy-cache
               chmod -R 777 .trivy-cache || true
               docker pull aquasec/trivy:latest
-              docker run --rm --network jenkins --volumes-from jenkins -w "$WORKSPACE" --platform linux/arm64 curlimages/curl:8.8.0 -sSL -o trivy-html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+              docker run --rm --network jenkins --volumes-from jenkins -w "$WORKSPACE" --platform linux/arm64 curlimages/curl:8.8.0 -fsSL -o reports/trivy/html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+              test -s reports/trivy/html.tpl
               docker run --rm --network jenkins \
                 --volumes-from jenkins -w "$WORKSPACE" \
                 -u 0:0 -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
                 -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
                 aquasec/trivy:latest \
-                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL . | tee trivy-fs.txt
+                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL . | tee reports/trivy/trivy-fs.txt
               docker run --rm --network jenkins \
                 --volumes-from jenkins -w "$WORKSPACE" \
                 -u 0:0 -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
                 -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
                 aquasec/trivy:latest \
-                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL --format sarif -o trivy-fs.sarif .
+                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL --format sarif -o reports/trivy/trivy-fs.sarif .
               docker run --rm --network jenkins \
                 --volumes-from jenkins -w "$WORKSPACE" \
                 -u 0:0 -e HOME=/tmp -e XDG_CACHE_HOME=/tmp/trivy-cache \
                 -v "$WORKSPACE/.trivy-cache:/tmp/trivy-cache:rw" \
-                -v "$WORKSPACE/trivy-html.tpl:/trivy-html.tpl:ro" \
+                -v "$WORKSPACE/reports/trivy:/out" \
+                -v "$WORKSPACE/reports/trivy/html.tpl:/html.tpl:ro" \
                 aquasec/trivy:latest \
-                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL --format template --template "@/trivy-html.tpl" -o trivy-report.html .
+                fs --cache-dir /tmp/trivy-cache --no-progress --exit-code 0 --severity HIGH,CRITICAL --format template --template "@/html.tpl" -o /out/index.html .
+              test -s reports/trivy/index.html
               echo 0 > .trivy_exit
             '''
             def ec = readFile('.trivy_exit').trim()
             echo "Trivy FS scan exit code: ${ec}"
             if (env.FAIL_ON_ISSUES == 'true' && ec != '0') { error "Fail build (policy) Trivy FS exit ${ec}" }
-            sh 'ls -lh trivy-fs.* trivy-report.html || true'
+            sh 'ls -lh reports/trivy || true'
           }
         }
       }
       post {
         always {
           script {
-            if (fileExists('trivy-fs.txt'))      archiveArtifacts artifacts: 'trivy-fs.txt', fingerprint: false
-            if (fileExists('trivy-fs.sarif'))    archiveArtifacts artifacts: 'trivy-fs.sarif', fingerprint: false
-            if (fileExists('trivy-report.html')) archiveArtifacts artifacts: 'trivy-report.html', fingerprint: false
+            if (fileExists('reports/trivy/trivy-fs.txt'))   archiveArtifacts artifacts: 'reports/trivy/trivy-fs.txt', fingerprint: false
+            if (fileExists('reports/trivy/trivy-fs.sarif')) archiveArtifacts artifacts: 'reports/trivy/trivy-fs.sarif', fingerprint: false
+            if (fileExists('reports/trivy/index.html'))     archiveArtifacts artifacts: 'reports/trivy/index.html', fingerprint: false
           }
-          publishHTML(target: [reportName: 'Trivy Report', reportDir: '.', reportFiles: 'trivy-report.html', keepAll: true, alwaysLinkToLastBuild: true, allowMissing: true])
+          publishHTML(target: [
+            reportName: 'Trivy Report',
+            reportDir:  'reports/trivy',
+            reportFiles:'index.html',
+            keepAll: true,
+            alwaysLinkToLastBuild: true,
+            allowMissing: false
+          ])
           catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-            recordIssues enabledForFailure: true, tool: sarif(pattern: 'trivy-fs.sarif'), trendChartType: 'TOOLS_ONLY'
+            recordIssues enabledForFailure: true,
+              tool: sarif(pattern: 'reports/trivy/trivy-fs.sarif'),
+              trendChartType: 'TOOLS_ONLY'
           }
         }
       }
